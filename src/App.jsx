@@ -12,6 +12,13 @@ const C = {
   text:'#1e293b', muted:'#64748b', white:'#ffffff',
 }
 
+const CONCEPT_TYPES = [
+  { label:'Core Concept',       icon:'📖', color:'#1a3a5c', bg:'#e8f0fb', border:'#93c5fd' },
+  { label:'Key Principles',     icon:'⚙️',  color:'#166534', bg:'#f0fdf4', border:'#86efac' },
+  { label:'Critical Distinction',icon:'⚠️', color:'#92400e', bg:'#fffbeb', border:'#fcd34d' },
+  { label:'Exam Strategy',      icon:'💡', color:'#5b21b6', bg:'#f5f3ff', border:'#c4b5fd' },
+]
+
 const DOMAINS = Object.keys(MODULES)
 const pct = (c,t) => t===0?0:Math.round((c/t)*100)
 
@@ -332,12 +339,21 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
         <span style={{fontSize:36}}>{mod.icon}</span>
         <h2 style={{fontSize:22,fontWeight:700,color:C.primary,margin:0,fontFamily:'Georgia,serif'}}>{domain}</h2>
       </div>
-      {mod.concepts.map((c,i)=>(
-        <Card key={i} style={{marginBottom:14,borderLeft:`4px solid ${C.primary}`}}>
-          <h3 style={{fontSize:15,fontWeight:700,color:C.primary,margin:'0 0 8px',fontFamily:'system-ui'}}>{c.title}</h3>
-          <p style={{fontSize:14,lineHeight:1.7,color:C.text,margin:0}}>{c.body}</p>
-        </Card>
-      ))}
+      {mod.concepts.map((c,i)=>{
+        const ctype = CONCEPT_TYPES[i % CONCEPT_TYPES.length]
+        return (
+          <div key={i} style={{marginBottom:16,borderRadius:14,overflow:'hidden',boxShadow:'0 2px 12px rgba(0,0,0,0.07)',border:`1px solid ${ctype.border}`}}>
+            <div style={{background:ctype.bg,padding:'9px 16px',borderBottom:`1px solid ${ctype.border}`,display:'flex',alignItems:'center',gap:8}}>
+              <span style={{fontSize:15}}>{ctype.icon}</span>
+              <span style={{fontSize:11,fontWeight:800,color:ctype.color,textTransform:'uppercase',letterSpacing:'0.08em'}}>{ctype.label}</span>
+            </div>
+            <div style={{background:C.white,padding:'16px 18px'}}>
+              <h3 style={{fontSize:15,fontWeight:700,color:ctype.color,margin:'0 0 10px',fontFamily:'system-ui',lineHeight:1.4}}>{c.title}</h3>
+              <p style={{fontSize:14,lineHeight:1.75,color:C.text,margin:0}}>{c.body}</p>
+            </div>
+          </div>
+        )
+      })}
       <button onClick={onStartQuiz} style={{width:'100%',marginTop:8,padding:'15px',background:C.accent,color:C.white,border:'none',borderRadius:12,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
         Take Quiz (5 questions) →
       </button>

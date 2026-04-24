@@ -40,7 +40,7 @@
           "Forecasting when and under what conditions behavior will occur"
         ],
         "correct": 3,
-        "rationale": "occur** Prediction involves using knowledge of functional relationships to forecast when behavior will occur based on environmental conditions. Aligns with Task A-1."
+        "rationale": "Prediction involves using knowledge of functional relationships to forecast when behavior will occur based on environmental conditions. Aligns with Task A-1."
       },
       {
         "stem": "A BCBA is working with a client who reports feeling anxious before social interactions. From a radical behaviorist perspective, the BCBA should:",
@@ -51,7 +51,7 @@
           "Refer the client to a mental health professional for anxiety treatment"
         ],
         "correct": 2,
-        "rationale": "as public behavior** Radical behaviorism treats private events (like anxiety) as behavior that follows the same principles as observable behavior, not as mental constructs. Aligns with Task A-2."
+        "rationale": "Radical behaviorism treats private events (like anxiety) as behavior that follows the same principles as observable behavior, not as mental constructs. Aligns with Task A-2."
       },
       {
         "stem": "Which dimension of Applied Behavior Analysis ensures that interventions can be replicated by others?",
