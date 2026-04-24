@@ -66,7 +66,7 @@ function sampleExamQuestions(pretestQs, count=150) {
 const INITIAL = {
   phase:'welcome', qIndex:0,
   pretestQuestions:[],
-  pretestAnswers:{}, pretestScores:null, weakDomains:[],
+  pretestAnswers:{}, pretestScores:null, weakDomains:[], skippedPretest:false,
   moduleStatuses:{}, activeModule:null, modulePhase:'content',
   moduleQIndex:0, moduleAnswers:{},
   examAnswers:{}, examQuestions:[], examScores:null,
@@ -272,20 +272,21 @@ const NAV = [
   {id:'welcome',label:'Home',emoji:'🏠',always:true},
   {id:'pretest',label:'Pretest',emoji:'📝',always:true},
   {id:'pretest_results',label:'Results',emoji:'📊',needs:'pretestScores'},
-  {id:'modules',label:'Study',emoji:'📚',needs:'pretestScores'},
+  {id:'modules',label:'Study',emoji:'📚',needs:'studyStarted'},
   {id:'exam_intro',label:'Exam',emoji:'🏁',needs:'examReady'},
   {id:'final_results',label:'Report',emoji:'📈',needs:'examScores'},
 ]
 
 function NavBar({st,onNav,onReset,onConfirmReset,onCancelReset}) {
   const active = ['module'].includes(st.phase)?'modules':st.phase
-  const examReady = st.pretestScores && (st.weakDomains.length===0 || st.weakDomains.every(d=>st.moduleStatuses[d]==='passed'))
+  const studyStarted = st.pretestScores || st.skippedPretest
+  const examReady = studyStarted && (st.weakDomains.length===0 || st.weakDomains.every(d=>st.moduleStatuses[d]==='passed'))
   return (
     <div style={{background:C.primary,position:'sticky',top:0,zIndex:200,boxShadow:'0 2px 8px rgba(0,0,0,0.25)'}}>
       <div style={{maxWidth:760,margin:'0 auto',padding:'0 12px',display:'flex',alignItems:'center',justifyContent:'space-between',height:50}}>
         <div style={{display:'flex',gap:2,overflowX:'auto',scrollbarWidth:'none'}}>
           {NAV.map(item=>{
-            const avail = item.always || (item.needs==='pretestScores'&&st.pretestScores) || (item.needs==='examReady'&&examReady) || (item.needs==='examScores'&&st.examScores)
+            const avail = item.always || (item.needs==='pretestScores'&&st.pretestScores) || (item.needs==='studyStarted'&&studyStarted) || (item.needs==='examReady'&&examReady) || (item.needs==='examScores'&&st.examScores)
             const isActive = active===item.id
             return (
               <button key={item.id} onClick={()=>avail&&onNav(item.id)} disabled={!avail}
@@ -313,7 +314,7 @@ function NavBar({st,onNav,onReset,onConfirmReset,onCancelReset}) {
 }
 
 // ── WELCOME ──────────────────────────────────────────────
-function Welcome({onStart}) {
+function Welcome({onStart,onSkipPretest}) {
   return (
     <div style={{maxWidth:660,margin:'0 auto',padding:'40px 20px',fontFamily:'Georgia,serif'}}>
       <div style={{textAlign:'center',marginBottom:36}}>
@@ -349,6 +350,12 @@ function Welcome({onStart}) {
       <button onClick={onStart} style={{width:'100%',padding:'16px',background:C.primary,color:C.white,border:'none',borderRadius:12,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif',letterSpacing:'0.02em'}}>
         Begin Diagnostic Pretest →
       </button>
+      <button onClick={onSkipPretest} style={{width:'100%',marginTop:10,padding:'13px',background:'transparent',color:C.primary,border:`2px solid ${C.primary}`,borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
+        Skip pretest — study all 9 modules →
+      </button>
+      <p style={{fontSize:12,color:C.muted,textAlign:'center',margin:'10px 0 0',fontFamily:'system-ui'}}>
+        Skipping the pretest gives you access to every module. You'll still need to pass each 80% quiz to unlock the full exam.
+      </p>
     </div>
   )
 }
@@ -900,7 +907,7 @@ export default function App() {
       welcome:()=>up({phase:'welcome',confirmReset:false}),
       pretest:()=>up({phase:'pretest',confirmReset:false}),
       pretest_results:()=>st.pretestScores&&up({phase:'pretest_results',confirmReset:false}),
-      modules:()=>st.pretestScores&&up({phase:'modules',confirmReset:false}),
+      modules:()=>(st.pretestScores||st.skippedPretest)&&up({phase:'modules',confirmReset:false}),
       exam_intro:()=>up({phase:'exam_intro',confirmReset:false}),
       final_results:()=>st.examScores&&up({phase:'final_results',confirmReset:false}),
     }
@@ -917,7 +924,9 @@ export default function App() {
     </>
   )
 
-  if(st.phase==='welcome') return <div>{nav}<Welcome onStart={()=>up({phase:'pretest',qIndex:0,pretestAnswers:{},pretestQuestions:shuffleQuestions(PRETEST_QUESTIONS)})}/></div>
+  if(st.phase==='welcome') return <div>{nav}<Welcome
+    onStart={()=>up({phase:'pretest',qIndex:0,pretestAnswers:{},pretestQuestions:shuffleQuestions(PRETEST_QUESTIONS)})}
+    onSkipPretest={()=>up({phase:'modules',skippedPretest:true,weakDomains:DOMAINS,moduleStatuses:{}})}/></div>
 
   if(st.phase==='pretest') {
     const pqs = st.pretestQuestions.length ? st.pretestQuestions : PRETEST_QUESTIONS
