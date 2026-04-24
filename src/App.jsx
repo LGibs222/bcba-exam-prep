@@ -832,7 +832,144 @@ function ExamScreen({questions,answers,qIndex,timerSeconds,onAnswer,onNav,onSubm
 }
 
 // ── FINAL RESULTS ────────────────────────────────────────
-function FinalResults({examScores,pretestScores,onReset}) {
+// ── EXAM REVIEW MODE ─────────────────────────────────────
+function ExamReview({questions, answers, onBack}) {
+  const [filter, setFilter] = useState('all')  // all | missed | correct
+  const [domainFilter, setDomainFilter] = useState('')
+  const [idx, setIdx] = useState(0)
+  const [showNav, setShowNav] = useState(false)
+
+  const allDomains = [...new Set(questions.map(q=>q.domain_name))].sort()
+  const missedCount = questions.filter((q,i)=>answers[i]!==q.correct).length
+  const correctCount = questions.length - missedCount
+
+  const filtered = questions
+    .map((q,i)=>({...q, _origIdx:i, _userAns:answers[i], _isCorrect:answers[i]===q.correct}))
+    .filter(q=>{
+      if (filter==='missed' && q._isCorrect) return false
+      if (filter==='correct' && !q._isCorrect) return false
+      if (domainFilter && q.domain_name !== domainFilter) return false
+      return true
+    })
+
+  useEffect(()=>{ setIdx(0) }, [filter, domainFilter])
+
+  const q = filtered[Math.min(idx, Math.max(0, filtered.length-1))]
+
+  const filterPill = (val, label, count, color) => (
+    <button onClick={()=>setFilter(val)}
+      style={{padding:'6px 12px',borderRadius:99,border:`1.5px solid ${filter===val?color:C.border}`,
+        background:filter===val?color:C.white,color:filter===val?C.white:color,
+        cursor:'pointer',fontSize:12,fontWeight:700,whiteSpace:'nowrap'}}>
+      {label} ({count})
+    </button>
+  )
+
+  return (
+    <div style={{maxWidth:720,margin:'0 auto',padding:'24px 20px',fontFamily:'system-ui'}}>
+      <button onClick={onBack} style={{background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:14,marginBottom:14,padding:0}}>← Back to Results</button>
+      <h2 style={{fontSize:22,fontWeight:700,color:C.primary,margin:'0 0 14px',fontFamily:'Georgia,serif'}}>📖 Exam Review</h2>
+
+      {/* Filter pills */}
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10}}>
+        {filterPill('all','All',questions.length,C.primary)}
+        {filterPill('missed','Missed',missedCount,C.red)}
+        {filterPill('correct','Correct',correctCount,C.green)}
+      </div>
+
+      {/* Domain dropdown */}
+      <div style={{marginBottom:16}}>
+        <select value={domainFilter} onChange={e=>setDomainFilter(e.target.value)}
+          style={{padding:'7px 12px',borderRadius:8,border:`1px solid ${C.border}`,fontSize:13,background:C.white,color:C.text,fontFamily:'inherit',width:'100%',maxWidth:360}}>
+          <option value="">All domains</option>
+          {allDomains.map(d=><option key={d} value={d}>{MODULES[d]?.icon||''} {d}</option>)}
+        </select>
+      </div>
+
+      {filtered.length===0 ? (
+        <Card style={{textAlign:'center'}}>
+          <p style={{fontSize:14,color:C.muted,margin:'12px 0'}}>No questions match the current filters.</p>
+        </Card>
+      ) : (
+        <>
+          {/* Question meta */}
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10,flexWrap:'wrap',gap:8}}>
+            <Pill text={q.domain_name} color={C.primary} bg={C.primaryLight}/>
+            <span style={{fontSize:12,color:C.muted}}>Question {idx+1} of {filtered.length} · original #{q._origIdx+1}</span>
+          </div>
+
+          {/* Result banner */}
+          <div style={{padding:'8px 14px',borderRadius:10,marginBottom:14,fontSize:13,fontWeight:700,
+            background:q._userAns===undefined?C.grayLight:q._isCorrect?C.greenBg:C.redBg,
+            color:q._userAns===undefined?C.muted:q._isCorrect?C.green:C.red,
+            border:`1px solid ${q._userAns===undefined?C.border:q._isCorrect?C.greenBorder:C.redBorder}`}}>
+            {q._userAns===undefined?'— Unanswered':q._isCorrect?'✓ Correct':'✗ Incorrect'}
+          </div>
+
+          {/* Stem */}
+          <Card style={{marginBottom:16}}>
+            <p style={{fontSize:15,lineHeight:1.7,color:C.text,margin:0,fontFamily:'Georgia,serif',fontWeight:500}}>{q.stem}</p>
+          </Card>
+
+          {/* Options with answer reveal */}
+          <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:16}}>
+            {q.options.map((opt,i)=>{
+              const isUser = i===q._userAns
+              const isCorrect = i===q.correct
+              let bg=C.white, border=C.border, labelColor=C.muted
+              if (isCorrect) { bg=C.greenBg; border=C.greenBorder; labelColor=C.green }
+              if (isUser && !isCorrect) { bg=C.redBg; border=C.redBorder; labelColor=C.red }
+              return (
+                <div key={i} style={{textAlign:'left',padding:'11px 14px',borderRadius:10,border:`2px solid ${border}`,background:bg,fontSize:14,color:C.text,display:'flex',alignItems:'flex-start',gap:10}}>
+                  <span style={{fontWeight:700,flexShrink:0,color:labelColor,minWidth:16}}>{['A','B','C','D'][i]}.</span>
+                  <span style={{flex:1,lineHeight:1.55}}>{opt}</span>
+                  <span style={{fontSize:11,fontWeight:700,flexShrink:0,color:labelColor,whiteSpace:'nowrap'}}>
+                    {isUser && isCorrect ? '✓ Your answer' : isCorrect ? '✓ Correct' : isUser ? '✗ Your answer' : ''}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Rationale */}
+          <Card style={{background:C.grayLight,marginBottom:16}}>
+            <div style={{fontSize:11,fontWeight:800,color:C.primary,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:6}}>📘 Rationale</div>
+            <p style={{fontSize:13.5,color:C.text,margin:0,lineHeight:1.7}}>{q.rationale}</p>
+          </Card>
+
+          {/* Navigation */}
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:10,marginBottom:14}}>
+            <button onClick={()=>setIdx(i=>Math.max(0,i-1))} disabled={idx===0}
+              style={{padding:'10px 18px',borderRadius:10,border:`1px solid ${C.border}`,background:C.white,
+                color:idx===0?C.muted:C.primary,cursor:idx===0?'default':'pointer',fontSize:13,fontWeight:600}}>← Previous</button>
+            <button onClick={()=>setShowNav(v=>!v)}
+              style={{padding:'8px 12px',borderRadius:10,border:`1px solid ${C.border}`,background:C.white,color:C.primary,cursor:'pointer',fontSize:12,fontWeight:600}}>📋 Navigator</button>
+            <button onClick={()=>setIdx(i=>Math.min(filtered.length-1,i+1))} disabled={idx===filtered.length-1}
+              style={{padding:'10px 18px',borderRadius:10,border:'none',background:idx===filtered.length-1?C.muted:C.primary,color:C.white,cursor:idx===filtered.length-1?'default':'pointer',fontSize:13,fontWeight:600}}>Next →</button>
+          </div>
+
+          {showNav && (
+            <Card>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(32px,1fr))',gap:4}}>
+                {filtered.map((fq,i)=>(
+                  <button key={i} onClick={()=>{setIdx(i);setShowNav(false)}}
+                    style={{aspectRatio:'1',borderRadius:6,border:i===idx?`2px solid ${C.primary}`:'none',
+                      background:fq._isCorrect?C.greenBg:fq._userAns===undefined?C.grayLight:C.redBg,
+                      color:fq._isCorrect?C.green:fq._userAns===undefined?C.muted:C.red,
+                      fontSize:10,fontWeight:700,cursor:'pointer'}}>
+                    {fq._origIdx+1}
+                  </button>
+                ))}
+              </div>
+            </Card>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+function FinalResults({examScores,pretestScores,onReset,onReview}) {
   const domains = Object.keys(examScores)
   const overall = Math.round(domains.reduce((a,d)=>{
     const s=examScores[d]||{correct:0,total:1}
@@ -884,9 +1021,14 @@ function FinalResults({examScores,pretestScores,onReset}) {
           })}
         </Card>
       )}
-      <button onClick={onReset} style={{width:'100%',padding:'15px',background:C.primary,color:C.white,border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
-        Start Over
-      </button>
+      <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+        <button onClick={onReview} style={{flex:'2 1 220px',padding:'14px',background:C.accent,color:C.white,border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
+          📖 Review All Questions →
+        </button>
+        <button onClick={onReset} style={{flex:'1 1 140px',padding:'14px',background:C.white,color:C.primary,border:`2px solid ${C.primary}`,borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
+          Start Over
+        </button>
+      </div>
     </div>
   )
 }
@@ -1010,7 +1152,12 @@ export default function App() {
 
   if(st.phase==='final_results') return <div>{nav}<FinalResults
     examScores={st.examScores} pretestScores={st.pretestScores}
-    onReset={()=>{clearInterval(timerRef.current);setFlagged(new Set());setSt({...INITIAL})}}/></div>
+    onReview={()=>up({phase:'exam_review'})}
+    onReset={()=>{clearInterval(timerRef.current);clearPersisted();setFlagged(new Set());setSt({...INITIAL})}}/></div>
+
+  if(st.phase==='exam_review') return <div>{nav}<ExamReview
+    questions={st.examQuestions} answers={st.examAnswers}
+    onBack={()=>up({phase:'final_results'})}/></div>
 
   return null
 }
