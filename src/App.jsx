@@ -4,6 +4,20 @@ import { MODULES } from './data/modules.js'
 import { QUESTION_BANK } from './data/questions.js'
 import { MODULE_ENHANCEMENTS } from './data/moduleEnhancements.js'
 
+// ── LOCAL STORAGE PERSISTENCE ────────────────────────────
+const STORAGE_KEY = 'bcba-exam-prep-v1'
+const loadPersisted = () => {
+  try {
+    const r = localStorage.getItem(STORAGE_KEY)
+    if (!r) return null
+    const p = JSON.parse(r)
+    if (p?.st) p.st.confirmReset = false  // never restore mid-reset confirm
+    return p
+  } catch { return null }
+}
+const savePersisted = d => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)) } catch {} }
+const clearPersisted = () => { try { localStorage.removeItem(STORAGE_KEY) } catch {} }
+
 const C = {
   primary:'#1a3a5c', primaryLight:'#e8f0fb', primaryMid:'#2e5fa3',
   accent:'#c47d0e', accentBg:'#fef9ec', accentBorder:'#f5c842',
@@ -879,7 +893,10 @@ function FinalResults({examScores,pretestScores,onReset}) {
 
 // ── MAIN APP ─────────────────────────────────────────────
 export default function App() {
-  const [st,setSt] = useState({...INITIAL})
+  const [st,setSt] = useState(() => {
+    const p = loadPersisted()
+    return p?.st ? {...INITIAL, ...p.st} : {...INITIAL}
+  })
   const up = patch => setSt(p=>({...p,...patch}))
   const timerRef = useRef(null)
 
@@ -899,8 +916,15 @@ export default function App() {
     return ()=>clearInterval(timerRef.current)
   },[st.phase,st.timerActive])
 
-  const [flagged,setFlagged] = useState(new Set())
+  const [flagged,setFlagged] = useState(() => {
+    const p = loadPersisted()
+    return new Set(p?.flagged || [])
+  })
   const toggleFlag = i => setFlagged(f=>{const n=new Set(f);n.has(i)?n.delete(i):n.add(i);return n})
+
+  useEffect(() => {
+    savePersisted({ st, flagged: [...flagged] })
+  }, [st, flagged])
 
   const handleNav = id => {
     const map = {
@@ -919,7 +943,7 @@ export default function App() {
       <GlobalStyles/>
       <NavBar st={st} onNav={handleNav}
         onReset={()=>up({confirmReset:true})}
-        onConfirmReset={()=>{clearInterval(timerRef.current);setFlagged(new Set());setSt({...INITIAL})}}
+        onConfirmReset={()=>{clearInterval(timerRef.current);clearPersisted();setFlagged(new Set());setSt({...INITIAL})}}
         onCancelReset={()=>up({confirmReset:false})}/>
     </>
   )
