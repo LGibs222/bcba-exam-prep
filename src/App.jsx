@@ -532,7 +532,43 @@ function ModuleHub({weakDomains,moduleStatuses,onSelect,onExam}) {
 }
 
 // ── LEARNING MODULE ──────────────────────────────────────
-function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz,onFinish}) {
+// ── MISSED QUESTION CARD (quiz remediation) ─────────────
+function MissedQuestionCard({q}) {
+  const [expanded,setExpanded] = useState(true)
+  return (
+    <div style={{border:`1px solid ${C.redBorder}`,borderRadius:10,marginBottom:10,overflow:'hidden',background:C.white}}>
+      <button onClick={()=>setExpanded(e=>!e)}
+        style={{width:'100%',padding:'10px 14px',background:expanded?C.redBg:C.white,
+          border:'none',textAlign:'left',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontFamily:'inherit'}}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontSize:13,fontWeight:800,color:C.red}}>✗</span>
+          <span style={{fontSize:13,fontWeight:600,color:C.text}}>Question {q._i + 1}</span>
+        </div>
+        <span style={{fontSize:14,color:C.muted,fontWeight:700}}>{expanded?'−':'+'}</span>
+      </button>
+      {expanded && (
+        <div style={{padding:'14px 16px 16px',borderTop:`1px solid ${C.redBorder}`,background:'#fefcfc'}}>
+          <p style={{fontSize:13.5,color:C.text,margin:'0 0 12px',lineHeight:1.65,fontFamily:'Georgia,serif',fontWeight:500}}>{q.stem}</p>
+          {q._userAns !== undefined && q._userAns !== q.correct && (
+            <div style={{fontSize:12.5,padding:'9px 11px',borderRadius:8,background:C.redBg,color:C.red,border:`1px solid ${C.redBorder}`,marginBottom:6,lineHeight:1.5}}>
+              <strong>✗ Your answer:</strong> {['A','B','C','D'][q._userAns]}. {q.options[q._userAns]}
+            </div>
+          )}
+          <div style={{fontSize:12.5,padding:'9px 11px',borderRadius:8,background:C.greenBg,color:C.green,border:`1px solid ${C.greenBorder}`,marginBottom:10,lineHeight:1.5}}>
+            <strong>✓ Correct:</strong> {['A','B','C','D'][q.correct]}. {q.options[q.correct]}
+          </div>
+          {q.rationale && (
+            <div style={{padding:'10px 12px',background:C.grayLight,borderRadius:8,fontSize:12.5,color:C.text,lineHeight:1.65}}>
+              <strong style={{color:C.primary}}>📘 Why:</strong> {q.rationale}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz,onFinish,onReviewConcepts}) {
   const mod = MODULES[domain]
   const [conceptIdx, setConceptIdx] = useState(0)
   useEffect(()=>{ setConceptIdx(0) }, [domain])
@@ -643,24 +679,47 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
     )
   }
 
-  if(allAnswered) return (
-    <div style={{maxWidth:580,margin:'0 auto',padding:'48px 20px',textAlign:'center',fontFamily:'system-ui'}}>
-      <div style={{fontSize:52,marginBottom:12}}>{passed?'🎉':'📖'}</div>
-      <h2 style={{fontSize:22,fontWeight:700,color:passed?C.green:C.red,fontFamily:'Georgia,serif',marginBottom:8}}>
-        {passed?'Module Passed!':'Not Quite Yet'}
-      </h2>
-      <p style={{fontSize:16,color:C.muted,marginBottom:28}}>
-        Score: <strong style={{color:passed?C.green:C.red}}>{score}/5 ({pct(score,5)}%)</strong>
-        {passed?' — 80% threshold met':' — 80% required to pass'}
-      </p>
-      {passed
-        ?<button onClick={()=>onFinish('passed')} style={{padding:'14px 32px',background:C.green,color:C.white,border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer'}}>✓ Complete Module</button>
-        :<div style={{display:'flex',gap:12,justifyContent:'center'}}>
-           <button onClick={()=>onFinish('failed')} style={{padding:'14px 24px',background:C.white,color:C.primary,border:`2px solid ${C.primary}`,borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer'}}>← Back to Concepts</button>
-           <button onClick={()=>onAnswer('reset')} style={{padding:'14px 24px',background:C.red,color:C.white,border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer'}}>Retry Quiz</button>
-         </div>}
-    </div>
-  )
+  if(allAnswered) {
+    const missed = mod.practice
+      .map((pq, i) => ({...pq, _i: i, _userAns: answers[i]}))
+      .filter(pq => pq._userAns !== pq.correct)
+
+    return (
+      <div style={{maxWidth:660,margin:'0 auto',padding:passed?'48px 20px':'32px 20px',fontFamily:'system-ui'}}>
+        <div style={{textAlign:'center',marginBottom:24}}>
+          <div style={{fontSize:52,marginBottom:10}}>{passed?'🎉':'📖'}</div>
+          <h2 style={{fontSize:22,fontWeight:700,color:passed?C.green:C.red,fontFamily:'Georgia,serif',margin:'0 0 6px'}}>
+            {passed?'Module Passed!':'Not Quite Yet'}
+          </h2>
+          <p style={{fontSize:16,color:C.muted,margin:0}}>
+            Score: <strong style={{color:passed?C.green:C.red}}>{score}/5 ({pct(score,5)}%)</strong>
+            {passed?' — 80% threshold met':' — 80% required to pass'}
+          </p>
+        </div>
+
+        {!passed && missed.length > 0 && (
+          <>
+            <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:10,display:'flex',alignItems:'center',gap:6}}>
+              <span>🔍</span> Review your {missed.length} missed question{missed.length>1?'s':''} before retrying
+            </div>
+            {missed.map(mq => <MissedQuestionCard key={mq._i} q={mq}/>)}
+          </>
+        )}
+
+        <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap',marginTop:24}}>
+          {passed ? (
+            <button onClick={()=>onFinish('passed')} style={{padding:'14px 32px',background:C.green,color:C.white,border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer'}}>✓ Complete Module</button>
+          ) : (
+            <>
+              <button onClick={onReviewConcepts} style={{padding:'13px 22px',background:C.white,color:C.primary,border:`2px solid ${C.primary}`,borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer'}}>📖 Re-read Concepts</button>
+              <button onClick={()=>onAnswer('reset')} style={{padding:'13px 26px',background:C.primary,color:C.white,border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer'}}>↻ Retry Quiz</button>
+              <button onClick={()=>onFinish('failed')} style={{padding:'13px 18px',background:'transparent',color:C.muted,border:'none',cursor:'pointer',fontSize:13,fontWeight:600}}>Back to Modules</button>
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{maxWidth:680,margin:'0 auto',padding:'28px 20px',fontFamily:'system-ui'}}>
@@ -1130,6 +1189,7 @@ export default function App() {
     }}
     onBack={()=>up({phase:'modules'})}
     onStartQuiz={()=>up({modulePhase:'quiz',moduleQIndex:0,moduleAnswers:{}})}
+    onReviewConcepts={()=>up({modulePhase:'content'})}
     onFinish={status=>up({phase:'modules',moduleStatuses:{...st.moduleStatuses,[st.activeModule]:status},modulePhase:'content'})}/></div>
 
   if(st.phase==='exam_intro') return <div>{nav}<ExamIntro onStart={()=>{
