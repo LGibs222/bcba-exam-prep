@@ -1,0 +1,699 @@
+import { useState, useEffect, useRef } from 'react'
+import { PRETEST_QUESTIONS } from './data/pretest.js'
+import { MODULES } from './data/modules.js'
+import { QUESTION_BANK } from './data/questions.js'
+
+const C = {
+  primary:'#1a3a5c', primaryLight:'#e8f0fb', primaryMid:'#2e5fa3',
+  accent:'#c47d0e', accentBg:'#fef9ec', accentBorder:'#f5c842',
+  green:'#166534', greenBg:'#dcfce7', greenBorder:'#86efac',
+  red:'#991b1b', redBg:'#fee2e2', redBorder:'#fca5a5',
+  gray:'#475569', grayLight:'#f1f5f9', border:'#e2e8f0',
+  text:'#1e293b', muted:'#64748b', white:'#ffffff',
+}
+
+const DOMAINS = Object.keys(MODULES)
+const pct = (c,t) => t===0?0:Math.round((c/t)*100)
+
+function calcScores(questions, answers) {
+  const byDomain = {}
+  questions.forEach((q,i) => {
+    const d = q.domain_name
+    if (!byDomain[d]) byDomain[d] = {correct:0,total:0}
+    byDomain[d].total++
+    if (answers[i] === q.correct) byDomain[d].correct++
+  })
+  return byDomain
+}
+
+function sampleExamQuestions(pretestQs, count=150) {
+  const pretestStems = new Set(pretestQs.map(q=>q.stem.substring(0,60)))
+  const pool = QUESTION_BANK.filter(q => !pretestStems.has(q.stem.substring(0,60)))
+  const byDomain = {}
+  DOMAINS.forEach(d => { byDomain[d] = pool.filter(q=>q.domain_name===d) })
+  const perDomain = Math.floor(count/DOMAINS.length)
+  const sampled = []
+  DOMAINS.forEach(d => {
+    const qs = [...byDomain[d]].sort(()=>Math.random()-0.5).slice(0,perDomain)
+    sampled.push(...qs)
+  })
+  while (sampled.length < count && pool.length > sampled.length) {
+    const extra = pool.filter(q=>!sampled.includes(q))
+    if (extra.length===0) break
+    sampled.push(extra[Math.floor(Math.random()*extra.length)])
+  }
+  return sampled.slice(0,count).sort(()=>Math.random()-0.5)
+}
+
+const INITIAL = {
+  phase:'welcome', qIndex:0,
+  pretestAnswers:{}, pretestScores:null, weakDomains:[],
+  moduleStatuses:{}, activeModule:null, modulePhase:'content',
+  moduleQIndex:0, moduleAnswers:{},
+  examAnswers:{}, examQuestions:[], examScores:null,
+  confirmReset:false, timerSeconds:14400, timerActive:false,
+}
+
+// ── UI PRIMITIVES ─────────────────────────────────────────
+const Card = ({children,style={}}) => (
+  <div style={{background:C.white,borderRadius:16,padding:28,boxShadow:'0 2px 16px rgba(0,0,0,0.07)',border:`1px solid ${C.border}`,...style}}>{children}</div>
+)
+const Pill = ({text,color,bg}) => (
+  <span style={{fontSize:11,fontWeight:700,color,background:bg,padding:'2px 10px',borderRadius:99,textTransform:'uppercase',letterSpacing:'0.06em'}}>{text}</span>
+)
+const ProgressBar = ({value,color=C.primary,label}) => (
+  <div style={{marginBottom:4}}>
+    <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
+      <span style={{fontSize:13,color:C.muted}}>{label}</span>
+      <span style={{fontSize:13,fontWeight:700,color}}>{value}%</span>
+    </div>
+    <div style={{background:C.border,borderRadius:99,height:8,overflow:'hidden'}}>
+      <div style={{width:`${value}%`,height:'100%',background:color,borderRadius:99,transition:'width 0.6s ease'}}/>
+    </div>
+  </div>
+)
+
+// ── NAVBAR ───────────────────────────────────────────────
+const NAV = [
+  {id:'welcome',label:'Home',emoji:'🏠',always:true},
+  {id:'pretest',label:'Pretest',emoji:'📝',always:true},
+  {id:'pretest_results',label:'Results',emoji:'📊',needs:'pretestScores'},
+  {id:'modules',label:'Study',emoji:'📚',needs:'pretestScores'},
+  {id:'exam_intro',label:'Exam',emoji:'🏁',needs:'examReady'},
+  {id:'final_results',label:'Report',emoji:'📈',needs:'examScores'},
+]
+
+function NavBar({st,onNav,onReset,onConfirmReset,onCancelReset}) {
+  const active = ['module'].includes(st.phase)?'modules':st.phase
+  const examReady = st.pretestScores && (st.weakDomains.length===0 || st.weakDomains.every(d=>st.moduleStatuses[d]==='passed'))
+  return (
+    <div style={{background:C.primary,position:'sticky',top:0,zIndex:200,boxShadow:'0 2px 8px rgba(0,0,0,0.25)'}}>
+      <div style={{maxWidth:760,margin:'0 auto',padding:'0 12px',display:'flex',alignItems:'center',justifyContent:'space-between',height:50}}>
+        <div style={{display:'flex',gap:2,overflowX:'auto',scrollbarWidth:'none'}}>
+          {NAV.map(item=>{
+            const avail = item.always || (item.needs==='pretestScores'&&st.pretestScores) || (item.needs==='examReady'&&examReady) || (item.needs==='examScores'&&st.examScores)
+            const isActive = active===item.id
+            return (
+              <button key={item.id} onClick={()=>avail&&onNav(item.id)} disabled={!avail}
+                style={{padding:'5px 10px',borderRadius:7,border:'none',whiteSpace:'nowrap',
+                  background:isActive?C.white:'transparent',
+                  color:isActive?C.primary:avail?'#93c5fd':'#2d4a63',
+                  cursor:avail?'pointer':'default',fontSize:11,fontWeight:700,fontFamily:'system-ui',outline:'none'}}>
+                {item.emoji} {item.label}
+              </button>
+            )
+          })}
+        </div>
+        <div style={{flexShrink:0,marginLeft:8}}>
+          {!st.confirmReset
+            ?<button onClick={onReset} style={{padding:'4px 10px',borderRadius:7,border:'1px solid #2d4a63',background:'transparent',color:'#f87171',cursor:'pointer',fontSize:11,fontWeight:700,whiteSpace:'nowrap'}}>Reset</button>
+            :<div style={{display:'flex',gap:4,alignItems:'center'}}>
+               <span style={{fontSize:10,color:'#fca5a5',whiteSpace:'nowrap'}}>Start over?</span>
+               <button onClick={onConfirmReset} style={{padding:'3px 8px',borderRadius:6,border:'none',background:'#dc2626',color:C.white,cursor:'pointer',fontSize:10,fontWeight:700}}>Yes</button>
+               <button onClick={onCancelReset} style={{padding:'3px 8px',borderRadius:6,border:'1px solid #2d4a63',background:'transparent',color:'#94a3b8',cursor:'pointer',fontSize:10,fontWeight:700}}>No</button>
+             </div>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── WELCOME ──────────────────────────────────────────────
+function Welcome({onStart}) {
+  return (
+    <div style={{maxWidth:660,margin:'0 auto',padding:'40px 20px',fontFamily:'Georgia,serif'}}>
+      <div style={{textAlign:'center',marginBottom:36}}>
+        <div style={{fontSize:52,marginBottom:12}}>🎓</div>
+        <h1 style={{fontSize:28,fontWeight:700,color:C.primary,margin:'0 0 8px',letterSpacing:'-0.5px'}}>BCBA Exam Prep</h1>
+        <p style={{fontSize:15,color:C.muted,margin:0,fontFamily:'system-ui'}}>6th Edition Task Content Outline · BACB Aligned · 522-Question Bank</p>
+      </div>
+      <Card style={{marginBottom:20}}>
+        <h2 style={{fontSize:17,fontWeight:700,color:C.primary,margin:'0 0 16px',fontFamily:'system-ui'}}>Your Study Path</h2>
+        {[
+          ['1','Diagnostic Pretest','30 scenario-based questions across all 9 domains'],
+          ['2','Personalized Results','See exactly which domains fall below 70%'],
+          ['3','Targeted Modules','Deep-dive study with concept review — must pass 80% quiz to unlock exam'],
+          ['4','Full Mock Exam','150 questions, 4-hour timer, mirrors the real BCBA exam'],
+        ].map(([n,title,desc])=>(
+          <div key={n} style={{display:'flex',gap:14,marginBottom:14,alignItems:'flex-start'}}>
+            <div style={{width:28,height:28,borderRadius:'50%',background:C.primary,color:C.white,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,flexShrink:0,fontFamily:'system-ui'}}>{n}</div>
+            <div>
+              <div style={{fontSize:15,fontWeight:700,color:C.text,marginBottom:2,fontFamily:'system-ui'}}>{title}</div>
+              <div style={{fontSize:13,color:C.muted,fontFamily:'system-ui'}}>{desc}</div>
+            </div>
+          </div>
+        ))}
+      </Card>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:28}}>
+        {DOMAINS.map(d=>(
+          <Card key={d} style={{textAlign:'center',padding:14}}>
+            <div style={{fontSize:24,marginBottom:4}}>{MODULES[d].icon}</div>
+            <div style={{fontSize:11,fontWeight:700,color:C.primary,fontFamily:'system-ui',lineHeight:1.3}}>{d}</div>
+          </Card>
+        ))}
+      </div>
+      <button onClick={onStart} style={{width:'100%',padding:'16px',background:C.primary,color:C.white,border:'none',borderRadius:12,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif',letterSpacing:'0.02em'}}>
+        Begin Diagnostic Pretest →
+      </button>
+    </div>
+  )
+}
+
+// ── QUESTION SCREEN ──────────────────────────────────────
+function QuestionScreen({questions,answers,qIndex,onAnswer,onNav,onSubmit,label,showFeedback=false}) {
+  const q = questions[qIndex]
+  const selected = answers[qIndex]
+  const total = questions.length
+  const answered = Object.keys(answers).length
+  return (
+    <div style={{maxWidth:700,margin:'0 auto',padding:'28px 20px',fontFamily:'system-ui'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+        <div>
+          <Pill text={q.domain_name} color={C.primary} bg={C.primaryLight}/>
+          {q.task&&<span style={{marginLeft:8,fontSize:11,color:C.muted}}>{q.task}</span>}
+        </div>
+        <span style={{fontSize:13,color:C.muted}}>Q {qIndex+1} / {total}</span>
+      </div>
+      <div style={{height:4,background:C.border,borderRadius:99,marginBottom:24,overflow:'hidden'}}>
+        <div style={{width:`${((qIndex+1)/total)*100}%`,height:'100%',background:C.primary,borderRadius:99,transition:'width 0.3s'}}/>
+      </div>
+      <Card style={{marginBottom:18}}>
+        <p style={{fontSize:16,lineHeight:1.65,color:C.text,margin:0,fontFamily:'Georgia,serif',fontWeight:500}}>{q.stem}</p>
+      </Card>
+      <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:24}}>
+        {q.options.map((opt,i)=>{
+          const isSel = selected===i
+          const showFb = showFeedback && selected!==undefined
+          const isCorrect = i===q.correct
+          let bg=C.white, border=C.border
+          if(showFb&&isCorrect){bg=C.greenBg;border=C.greenBorder}
+          else if(showFb&&isSel&&!isCorrect){bg=C.redBg;border=C.redBorder}
+          else if(isSel){bg=C.primaryLight;border=C.primary}
+          return (
+            <button key={i} onClick={()=>(!showFb||!selected)&&onAnswer(qIndex,i)}
+              style={{textAlign:'left',padding:'13px 16px',borderRadius:12,border:`2px solid ${border}`,background:bg,cursor:'pointer',fontSize:14,color:C.text,display:'flex',alignItems:'center',gap:12}}>
+              <span style={{width:26,height:26,borderRadius:'50%',border:`2px solid ${isSel&&!showFb?C.primary:border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:isSel?C.primary:C.muted,flexShrink:0,background:isSel&&!showFb?C.white:'transparent'}}>
+                {['A','B','C','D'][i]}
+              </span>
+              <span style={{flex:1}}>{opt}</span>
+              {showFb&&isCorrect&&<span style={{color:C.green,fontWeight:700}}>✓</span>}
+              {showFb&&isSel&&!isCorrect&&<span style={{color:C.red,fontWeight:700}}>✗</span>}
+            </button>
+          )
+        })}
+      </div>
+      {showFeedback&&selected!==undefined&&(
+        <Card style={{background:C.grayLight,marginBottom:16}}>
+          <p style={{fontSize:13,color:C.text,margin:0,lineHeight:1.6}}><strong>Explanation:</strong> {q.rationale}</p>
+        </Card>
+      )}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <button onClick={()=>onNav(-1)} disabled={qIndex===0}
+          style={{padding:'10px 20px',borderRadius:10,border:`1px solid ${C.border}`,background:C.white,color:qIndex===0?C.muted:C.primary,cursor:qIndex===0?'default':'pointer',fontSize:14,fontWeight:600}}>← Back</button>
+        <span style={{fontSize:13,color:C.muted}}>{answered}/{total} answered</span>
+        {qIndex<total-1
+          ?<button onClick={()=>onNav(1)} style={{padding:'10px 20px',borderRadius:10,border:'none',background:C.primary,color:C.white,cursor:'pointer',fontSize:14,fontWeight:600}}>Next →</button>
+          :<button onClick={onSubmit} disabled={answered<total}
+              style={{padding:'10px 20px',borderRadius:10,border:'none',background:answered<total?C.muted:C.accent,color:C.white,cursor:answered<total?'default':'pointer',fontSize:14,fontWeight:600}}>
+              {answered<total?`${total-answered} left`:`Submit ${label} ✓`}
+            </button>}
+      </div>
+    </div>
+  )
+}
+
+// ── PRETEST RESULTS ──────────────────────────────────────
+function PretestResults({scores,weakDomains,onStudy,onSkip}) {
+  const allPcts = DOMAINS.map(d=>scores[d]?pct(scores[d].correct,scores[d].total):0)
+  const overall = Math.round(allPcts.reduce((a,b)=>a+b,0)/allPcts.length)
+  return (
+    <div style={{maxWidth:680,margin:'0 auto',padding:'32px 20px',fontFamily:'system-ui'}}>
+      <div style={{textAlign:'center',marginBottom:28}}>
+        <div style={{fontSize:48,marginBottom:8}}>{overall>=70?'📊':'📉'}</div>
+        <h2 style={{fontSize:24,fontWeight:700,color:C.primary,margin:'0 0 4px',fontFamily:'Georgia,serif'}}>Diagnostic Results</h2>
+        <p style={{fontSize:15,color:C.muted,margin:0}}>Average across domains: <strong style={{color:C.primary}}>{overall}%</strong></p>
+      </div>
+      <Card style={{marginBottom:20}}>
+        <h3 style={{fontSize:15,fontWeight:700,color:C.primary,margin:'0 0 16px'}}>Results by Domain</h3>
+        {DOMAINS.map(d=>{
+          const s=scores[d]||{correct:0,total:0}
+          const p=pct(s.correct,s.total)
+          const weak=p<70
+          return (
+            <div key={d} style={{marginBottom:12,padding:'10px 14px',borderRadius:10,background:weak?C.redBg:'transparent',border:`1px solid ${weak?C.redBorder:C.border}`}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+                <span style={{fontSize:13,fontWeight:600,color:C.text}}>{MODULES[d]?.icon} {d}</span>
+                {weak&&<Pill text="Needs Review" color={C.red} bg={C.redBg}/>}
+              </div>
+              <ProgressBar value={p} label={`${s.correct}/${s.total} correct`} color={weak?C.red:C.green}/>
+            </div>
+          )
+        })}
+      </Card>
+      {weakDomains.length>0&&(
+        <div style={{background:C.accentBg,border:`1px solid ${C.accentBorder}`,borderRadius:14,padding:20,marginBottom:20}}>
+          <p style={{fontSize:14,color:C.accent,fontWeight:700,margin:'0 0 8px'}}>📚 {weakDomains.length} domain{weakDomains.length>1?'s':''} require module completion before the full exam</p>
+          {weakDomains.map(d=><div key={d} style={{fontSize:13,color:C.text,padding:'2px 0'}}>→ {d}</div>)}
+        </div>
+      )}
+      <div style={{display:'flex',gap:12}}>
+        {weakDomains.length>0&&(
+          <button onClick={onStudy} style={{flex:1,padding:'15px',background:C.primary,color:C.white,border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
+            Start Study Plan ({weakDomains.length} modules) →
+          </button>
+        )}
+        <button onClick={onSkip} style={{flex:weakDomains.length>0?0:1,padding:'15px 24px',background:weakDomains.length>0?C.white:C.primary,color:weakDomains.length>0?C.primary:C.white,border:`2px solid ${C.primary}`,borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
+          {weakDomains.length===0?'Proceed to Full Exam →':'Skip to Exam'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── MODULE HUB ───────────────────────────────────────────
+function ModuleHub({weakDomains,moduleStatuses,onSelect,onExam}) {
+  const allPassed = weakDomains.every(d=>moduleStatuses[d]==='passed')
+  const passedCount = weakDomains.filter(d=>moduleStatuses[d]==='passed').length
+  return (
+    <div style={{maxWidth:680,margin:'0 auto',padding:'32px 20px',fontFamily:'system-ui'}}>
+      <div style={{textAlign:'center',marginBottom:28}}>
+        <h2 style={{fontSize:22,fontWeight:700,color:C.primary,margin:'0 0 6px',fontFamily:'Georgia,serif'}}>Study Plan</h2>
+        <p style={{fontSize:14,color:C.muted,margin:0}}>Complete each module and pass the 5-question quiz (≥80%) to unlock the full exam</p>
+      </div>
+      {weakDomains.map(d=>{
+        const status=moduleStatuses[d]||'not_started'
+        const statusColors={not_started:{bg:C.primaryLight,color:C.primary,label:'Not Started'},passed:{bg:C.greenBg,color:C.green,label:'✓ Passed'},failed:{bg:C.redBg,color:C.red,label:'✗ Retry'}}
+        const sc=statusColors[status]
+        return (
+          <Card key={d} style={{marginBottom:12}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <div style={{display:'flex',alignItems:'center',gap:12}}>
+                <div style={{fontSize:28}}>{MODULES[d]?.icon}</div>
+                <div>
+                  <div style={{fontSize:15,fontWeight:700,color:C.primary}}>{d}</div>
+                  <div style={{fontSize:12,color:C.muted}}>{MODULES[d]?.concepts?.length||0} concepts · 5-question quiz</div>
+                </div>
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <Pill text={sc.label} color={sc.color} bg={sc.bg}/>
+                <button onClick={()=>onSelect(d)}
+                  style={{padding:'8px 16px',borderRadius:10,border:'none',background:status==='passed'?C.greenBg:C.primary,color:status==='passed'?C.green:C.white,cursor:'pointer',fontSize:13,fontWeight:700}}>
+                  {status==='passed'?'Review':'Study →'}
+                </button>
+              </div>
+            </div>
+          </Card>
+        )
+      })}
+      <div style={{marginTop:24,textAlign:'center'}}>
+        <p style={{fontSize:13,color:C.muted,marginBottom:12}}>{passedCount}/{weakDomains.length} modules passed</p>
+        <button onClick={onExam} disabled={!allPassed}
+          style={{padding:'14px 32px',background:allPassed?C.primary:C.muted,color:C.white,border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:allPassed?'pointer':'default',fontFamily:'Georgia,serif'}}>
+          {allPassed?'Begin Full Exam →':'Complete all modules to unlock exam'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── LEARNING MODULE ──────────────────────────────────────
+function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz,onFinish}) {
+  const mod = MODULES[domain]
+  const pq = mod.practice[qIndex]
+  const selected = answers[qIndex]
+  const allAnswered = Object.keys(answers).length===mod.practice.length
+  const score = allAnswered?mod.practice.filter((_,i)=>answers[i]===mod.practice[i].correct).length:0
+  const passed = score>=4
+
+  if(phase==='content') return (
+    <div style={{maxWidth:680,margin:'0 auto',padding:'32px 20px',fontFamily:'system-ui'}}>
+      <button onClick={onBack} style={{background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:14,marginBottom:20,padding:0}}>← Back to modules</button>
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:24}}>
+        <span style={{fontSize:36}}>{mod.icon}</span>
+        <h2 style={{fontSize:22,fontWeight:700,color:C.primary,margin:0,fontFamily:'Georgia,serif'}}>{domain}</h2>
+      </div>
+      {mod.concepts.map((c,i)=>(
+        <Card key={i} style={{marginBottom:14,borderLeft:`4px solid ${C.primary}`}}>
+          <h3 style={{fontSize:15,fontWeight:700,color:C.primary,margin:'0 0 8px',fontFamily:'system-ui'}}>{c.title}</h3>
+          <p style={{fontSize:14,lineHeight:1.7,color:C.text,margin:0}}>{c.body}</p>
+        </Card>
+      ))}
+      <button onClick={onStartQuiz} style={{width:'100%',marginTop:8,padding:'15px',background:C.accent,color:C.white,border:'none',borderRadius:12,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
+        Take Quiz (5 questions) →
+      </button>
+    </div>
+  )
+
+  if(allAnswered) return (
+    <div style={{maxWidth:580,margin:'0 auto',padding:'48px 20px',textAlign:'center',fontFamily:'system-ui'}}>
+      <div style={{fontSize:52,marginBottom:12}}>{passed?'🎉':'📖'}</div>
+      <h2 style={{fontSize:22,fontWeight:700,color:passed?C.green:C.red,fontFamily:'Georgia,serif',marginBottom:8}}>
+        {passed?'Module Passed!':'Not Quite Yet'}
+      </h2>
+      <p style={{fontSize:16,color:C.muted,marginBottom:28}}>
+        Score: <strong style={{color:passed?C.green:C.red}}>{score}/5 ({pct(score,5)}%)</strong>
+        {passed?' — 80% threshold met':' — 80% required to pass'}
+      </p>
+      {passed
+        ?<button onClick={()=>onFinish('passed')} style={{padding:'14px 32px',background:C.green,color:C.white,border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer'}}>✓ Complete Module</button>
+        :<div style={{display:'flex',gap:12,justifyContent:'center'}}>
+           <button onClick={()=>onFinish('failed')} style={{padding:'14px 24px',background:C.white,color:C.primary,border:`2px solid ${C.primary}`,borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer'}}>← Back to Concepts</button>
+           <button onClick={()=>onAnswer('reset')} style={{padding:'14px 24px',background:C.red,color:C.white,border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer'}}>Retry Quiz</button>
+         </div>}
+    </div>
+  )
+
+  return (
+    <div style={{maxWidth:680,margin:'0 auto',padding:'28px 20px',fontFamily:'system-ui'}}>
+      <div style={{marginBottom:16}}>
+        <Pill text={domain} color={C.primary} bg={C.primaryLight}/>
+        <span style={{marginLeft:8,fontSize:12,color:C.muted}}>Quiz Q {qIndex+1} of {mod.practice.length}</span>
+      </div>
+      <div style={{height:4,background:C.border,borderRadius:99,marginBottom:20,overflow:'hidden'}}>
+        <div style={{width:`${((qIndex+1)/mod.practice.length)*100}%`,height:'100%',background:C.accent,borderRadius:99}}/>
+      </div>
+      <Card style={{marginBottom:16}}>
+        <p style={{fontSize:16,lineHeight:1.65,color:C.text,margin:0,fontFamily:'Georgia,serif',fontWeight:500}}>{pq.stem}</p>
+      </Card>
+      <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:16}}>
+        {pq.options.map((opt,i)=>{
+          const isSel=selected===i
+          const showFb=selected!==undefined
+          const isCorrect=i===pq.correct
+          let bg=C.white,border=C.border
+          if(showFb&&isCorrect){bg=C.greenBg;border=C.greenBorder}
+          else if(showFb&&isSel&&!isCorrect){bg=C.redBg;border=C.redBorder}
+          else if(isSel){bg=C.primaryLight;border=C.primary}
+          return (
+            <button key={i} onClick={()=>!showFb&&onAnswer(qIndex,i)}
+              style={{textAlign:'left',padding:'13px 16px',borderRadius:12,border:`2px solid ${border}`,background:bg,cursor:showFb?'default':'pointer',fontSize:14,color:C.text,display:'flex',gap:12,alignItems:'flex-start'}}>
+              <span style={{fontWeight:700,flexShrink:0,color:C.muted}}>{['A','B','C','D'][i]}.</span>
+              <span style={{flex:1}}>{opt}</span>
+              {showFb&&isCorrect&&<span style={{color:C.green,fontWeight:700}}>✓</span>}
+              {showFb&&isSel&&!isCorrect&&<span style={{color:C.red,fontWeight:700}}>✗</span>}
+            </button>
+          )
+        })}
+      </div>
+      {selected!==undefined&&(
+        <>
+          <Card style={{background:C.grayLight,marginBottom:14}}>
+            <p style={{fontSize:13,color:C.text,margin:0,lineHeight:1.6}}><strong>Explanation:</strong> {pq.rationale}</p>
+          </Card>
+          {qIndex<mod.practice.length-1&&(
+            <button onClick={()=>onAnswer('next')} style={{width:'100%',padding:'13px',background:C.primary,color:C.white,border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer'}}>Next Question →</button>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+// ── EXAM INTRO ───────────────────────────────────────────
+function ExamIntro({onStart}) {
+  return (
+    <div style={{maxWidth:580,margin:'0 auto',padding:'56px 20px',textAlign:'center',fontFamily:'system-ui'}}>
+      <div style={{fontSize:52,marginBottom:12}}>🏁</div>
+      <h2 style={{fontSize:24,fontWeight:700,color:C.primary,fontFamily:'Georgia,serif',marginBottom:8}}>Full BCBA Mock Exam</h2>
+      <p style={{fontSize:15,color:C.muted,marginBottom:28,lineHeight:1.6}}>
+        150 questions · 4-hour timer · All 9 domains<br/>
+        Mirrors the format and difficulty of the real BCBA exam.<br/>
+        Passing score: <strong>70%</strong>
+      </p>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:32}}>
+        {[['150','Questions'],['4 hrs','Time Limit'],['70%','Passing Score']].map(([v,l])=>(
+          <Card key={l} style={{padding:16,textAlign:'center'}}>
+            <div style={{fontSize:22,fontWeight:800,color:C.primary}}>{v}</div>
+            <div style={{fontSize:12,color:C.muted,marginTop:2}}>{l}</div>
+          </Card>
+        ))}
+      </div>
+      <button onClick={onStart} style={{padding:'15px 40px',background:C.primary,color:C.white,border:'none',borderRadius:12,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
+        Begin Full Exam →
+      </button>
+    </div>
+  )
+}
+
+// ── EXAM SCREEN ──────────────────────────────────────────
+function ExamScreen({questions,answers,qIndex,timerSeconds,onAnswer,onNav,onSubmit,flagged,onFlag}) {
+  const total = questions.length
+  const answered = Object.keys(answers).length
+  const q = questions[qIndex]
+  const selected = answers[qIndex]
+  const hrs = Math.floor(timerSeconds/3600)
+  const mins = Math.floor((timerSeconds%3600)/60)
+  const secs = timerSeconds%60
+  const timerColor = timerSeconds<1800?C.red:timerSeconds<3600?C.accent:C.white
+  const [showMap,setShowMap] = useState(false)
+
+  return (
+    <div style={{maxWidth:700,margin:'0 auto',padding:'20px 20px',fontFamily:'system-ui'}}>
+      <div style={{background:C.primary,borderRadius:12,padding:'10px 16px',marginBottom:20,display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:8}}>
+        <div>
+          <Pill text={q.domain_name} color={C.primary} bg={C.white}/>
+          <span style={{marginLeft:8,fontSize:12,color:'#93c5fd'}}>Q {qIndex+1}/{total}</span>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:16}}>
+          <span style={{fontSize:13,color:'rgba(255,255,255,0.75)'}}>{answered}/{total} answered</span>
+          <span style={{fontSize:20,fontWeight:800,color:timerColor,fontVariantNumeric:'tabular-nums'}}>
+            {String(hrs).padStart(2,'0')}:{String(mins).padStart(2,'0')}:{String(secs).padStart(2,'0')}
+          </span>
+        </div>
+      </div>
+      <div style={{height:3,background:C.border,borderRadius:99,marginBottom:20,overflow:'hidden'}}>
+        <div style={{width:`${(answered/total)*100}%`,height:'100%',background:C.primaryMid,borderRadius:99}}/>
+      </div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+        <Card style={{flex:1,padding:'16px 20px'}}>
+          <p style={{fontSize:16,lineHeight:1.65,color:C.text,margin:0,fontFamily:'Georgia,serif',fontWeight:500}}>{q.stem}</p>
+        </Card>
+      </div>
+      <button onClick={()=>onFlag(qIndex)}
+        style={{marginBottom:12,padding:'5px 12px',borderRadius:8,border:`1px solid ${flagged.has(qIndex)?C.accent:C.border}`,background:flagged.has(qIndex)?C.accentBg:C.white,color:flagged.has(qIndex)?C.accent:C.muted,cursor:'pointer',fontSize:12,fontWeight:600}}>
+        {flagged.has(qIndex)?'🚩 Flagged':'🏳 Flag for Review'}
+      </button>
+      <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:24}}>
+        {q.options.map((opt,i)=>{
+          const isSel=selected===i
+          return (
+            <button key={i} onClick={()=>onAnswer(qIndex,i)}
+              style={{textAlign:'left',padding:'13px 16px',borderRadius:12,border:`2px solid ${isSel?C.primary:C.border}`,background:isSel?C.primaryLight:C.white,cursor:'pointer',fontSize:14,color:C.text,display:'flex',alignItems:'center',gap:12}}>
+              <span style={{width:26,height:26,borderRadius:'50%',border:`2px solid ${isSel?C.primary:C.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:isSel?C.primary:C.muted,flexShrink:0,background:isSel?C.white:'transparent'}}>
+                {['A','B','C','D'][i]}
+              </span>
+              {opt}
+            </button>
+          )
+        })}
+      </div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <button onClick={()=>onNav(-1)} disabled={qIndex===0}
+          style={{padding:'10px 20px',borderRadius:10,border:`1px solid ${C.border}`,background:C.white,color:qIndex===0?C.muted:C.primary,cursor:qIndex===0?'default':'pointer',fontSize:14,fontWeight:600}}>← Back</button>
+        <button onClick={()=>setShowMap(!showMap)}
+          style={{padding:'8px 14px',borderRadius:10,border:`1px solid ${C.border}`,background:C.white,color:C.primary,cursor:'pointer',fontSize:13,fontWeight:600}}>📋 Navigator</button>
+        {qIndex<total-1
+          ?<button onClick={()=>onNav(1)} style={{padding:'10px 20px',borderRadius:10,border:'none',background:C.primary,color:C.white,cursor:'pointer',fontSize:14,fontWeight:600}}>Next →</button>
+          :<button onClick={onSubmit} disabled={answered<total}
+              style={{padding:'10px 20px',borderRadius:10,border:'none',background:answered<total?C.muted:C.accent,color:C.white,cursor:answered<total?'default':'pointer',fontSize:14,fontWeight:600}}>
+              {answered<total?`${total-answered} left`:'Submit Exam ✓'}
+            </button>}
+      </div>
+      {showMap&&(
+        <Card style={{marginTop:16}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+            <h3 style={{fontSize:14,fontWeight:700,color:C.primary,margin:0}}>Question Navigator</h3>
+            <button onClick={()=>setShowMap(false)} style={{background:'none',border:'none',cursor:'pointer',fontSize:18,color:C.muted}}>×</button>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(10,1fr)',gap:4}}>
+            {questions.map((_,i)=>{
+              const isAns=answers[i]!==undefined
+              const isFlag=flagged.has(i)
+              const isCur=i===qIndex
+              return (
+                <button key={i} onClick={()=>{onNav(i-qIndex);setShowMap(false)}}
+                  style={{aspectRatio:'1',borderRadius:6,border:isCur?`2px solid ${C.primary}`:'none',background:isFlag?C.accentBg:isAns?C.primaryLight:C.grayLight,color:isFlag?C.accent:isAns?C.primary:C.muted,fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                  {i+1}
+                </button>
+              )
+            })}
+          </div>
+          <div style={{display:'flex',gap:16,marginTop:10,flexWrap:'wrap'}}>
+            {[['Answered',C.primaryLight,C.primary],['Flagged',C.accentBg,C.accent],['Unanswered',C.grayLight,C.muted]].map(([l,bg,c])=>(
+              <span key={l} style={{fontSize:11,color:c,display:'flex',alignItems:'center',gap:4}}>
+                <span style={{width:12,height:12,background:bg,borderRadius:3,display:'inline-block'}}/>
+                {l}
+              </span>
+            ))}
+          </div>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+// ── FINAL RESULTS ────────────────────────────────────────
+function FinalResults({examScores,pretestScores,onReset}) {
+  const domains = Object.keys(examScores)
+  const overall = Math.round(domains.reduce((a,d)=>{
+    const s=examScores[d]||{correct:0,total:1}
+    return a+pct(s.correct,s.total)
+  },0)/domains.length)
+  const passed = overall>=70
+  return (
+    <div style={{maxWidth:680,margin:'0 auto',padding:'32px 20px',fontFamily:'system-ui'}}>
+      <div style={{textAlign:'center',marginBottom:28}}>
+        <div style={{fontSize:52,marginBottom:8}}>{passed?'🏆':'📖'}</div>
+        <h2 style={{fontSize:24,fontWeight:700,color:passed?C.green:C.red,margin:'0 0 4px',fontFamily:'Georgia,serif'}}>
+          {passed?'Exam Passed!':'Keep Studying'}
+        </h2>
+        <p style={{fontSize:16,color:C.muted,margin:0}}>
+          Overall Score: <strong style={{color:passed?C.green:C.red,fontSize:20}}>{overall}%</strong>
+          <span style={{marginLeft:8,fontSize:13}}>{passed?'✓ Above 70% passing threshold':'✗ Below 70% passing threshold'}</span>
+        </p>
+      </div>
+      <Card style={{marginBottom:20}}>
+        <h3 style={{fontSize:15,fontWeight:700,color:C.primary,margin:'0 0 16px'}}>Domain Breakdown</h3>
+        {domains.map(d=>{
+          const s=examScores[d]||{correct:0,total:0}
+          const p=pct(s.correct,s.total)
+          return (
+            <div key={d} style={{marginBottom:12}}>
+              <ProgressBar value={p} label={`${MODULES[d]?.icon||''} ${d} (${s.correct}/${s.total})`} color={p>=70?C.green:C.red}/>
+            </div>
+          )
+        })}
+      </Card>
+      {pretestScores&&(
+        <Card style={{marginBottom:20,background:C.accentBg,border:`1px solid ${C.accentBorder}`}}>
+          <h3 style={{fontSize:15,fontWeight:700,color:C.accent,margin:'0 0 12px'}}>📈 Growth: Pretest → Exam</h3>
+          {domains.map(d=>{
+            const pre=pretestScores[d]
+            const exam=examScores[d]
+            if(!pre||!exam) return null
+            const preP=pct(pre.correct,pre.total)
+            const examP=pct(exam.correct,exam.total)
+            const diff=examP-preP
+            return (
+              <div key={d} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 0',borderBottom:`1px solid ${C.accentBorder}`}}>
+                <span style={{fontSize:13,color:C.text}}>{MODULES[d]?.icon} {d}</span>
+                <span style={{fontSize:13,fontWeight:700,color:diff>0?C.green:diff<0?C.red:C.muted}}>
+                  {preP}% → {examP}% ({diff>0?'+':''}{diff}%)
+                </span>
+              </div>
+            )
+          })}
+        </Card>
+      )}
+      <button onClick={onReset} style={{width:'100%',padding:'15px',background:C.primary,color:C.white,border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
+        Start Over
+      </button>
+    </div>
+  )
+}
+
+// ── MAIN APP ─────────────────────────────────────────────
+export default function App() {
+  const [st,setSt] = useState({...INITIAL})
+  const up = patch => setSt(p=>({...p,...patch}))
+  const timerRef = useRef(null)
+
+  useEffect(()=>{
+    if(st.phase==='fullexam'&&st.timerActive&&st.timerSeconds>0) {
+      timerRef.current = setInterval(()=>{
+        setSt(p=>{
+          if(p.timerSeconds<=1) {
+            clearInterval(timerRef.current)
+            const scores = calcScores(p.examQuestions, p.examAnswers)
+            return {...p, timerSeconds:0, timerActive:false, phase:'final_results', examScores:scores}
+          }
+          return {...p, timerSeconds:p.timerSeconds-1}
+        })
+      },1000)
+    }
+    return ()=>clearInterval(timerRef.current)
+  },[st.phase,st.timerActive])
+
+  const [flagged,setFlagged] = useState(new Set())
+  const toggleFlag = i => setFlagged(f=>{const n=new Set(f);n.has(i)?n.delete(i):n.add(i);return n})
+
+  const handleNav = id => {
+    const map = {
+      welcome:()=>up({phase:'welcome',confirmReset:false}),
+      pretest:()=>up({phase:'pretest',confirmReset:false}),
+      pretest_results:()=>st.pretestScores&&up({phase:'pretest_results',confirmReset:false}),
+      modules:()=>st.pretestScores&&up({phase:'modules',confirmReset:false}),
+      exam_intro:()=>up({phase:'exam_intro',confirmReset:false}),
+      final_results:()=>st.examScores&&up({phase:'final_results',confirmReset:false}),
+    }
+    map[id]?.()
+  }
+
+  const nav = (
+    <NavBar st={st} onNav={handleNav}
+      onReset={()=>up({confirmReset:true})}
+      onConfirmReset={()=>{clearInterval(timerRef.current);setFlagged(new Set());setSt({...INITIAL})}}
+      onCancelReset={()=>up({confirmReset:false})}/>
+  )
+
+  if(st.phase==='welcome') return <div>{nav}<Welcome onStart={()=>up({phase:'pretest',qIndex:0,pretestAnswers:{}})}/></div>
+
+  if(st.phase==='pretest') return <div>{nav}<QuestionScreen
+    questions={PRETEST_QUESTIONS} answers={st.pretestAnswers} qIndex={st.qIndex}
+    onAnswer={(i,a)=>up({pretestAnswers:{...st.pretestAnswers,[i]:a}})}
+    onNav={d=>up({qIndex:Math.max(0,Math.min(PRETEST_QUESTIONS.length-1,st.qIndex+d))})}
+    onSubmit={()=>{
+      const scores=calcScores(PRETEST_QUESTIONS,st.pretestAnswers)
+      const weak=DOMAINS.filter(d=>scores[d]&&pct(scores[d].correct,scores[d].total)<70)
+      up({phase:'pretest_results',pretestScores:scores,weakDomains:weak})
+    }}
+    label="Pretest"/></div>
+
+  if(st.phase==='pretest_results') return <div>{nav}<PretestResults
+    scores={st.pretestScores} weakDomains={st.weakDomains}
+    onStudy={()=>up({phase:'modules'})}
+    onSkip={()=>up({phase:'exam_intro'})}/></div>
+
+  if(st.phase==='modules') return <div>{nav}<ModuleHub
+    weakDomains={st.weakDomains} moduleStatuses={st.moduleStatuses}
+    onSelect={d=>up({phase:'module',activeModule:d,modulePhase:'content',moduleQIndex:0,moduleAnswers:{}})}
+    onExam={()=>up({phase:'exam_intro'})}/></div>
+
+  if(st.phase==='module') return <div>{nav}<LearningModule
+    domain={st.activeModule} phase={st.modulePhase}
+    qIndex={st.moduleQIndex} answers={st.moduleAnswers}
+    onAnswer={(i,a)=>{
+      if(i==='reset'){up({moduleAnswers:{},moduleQIndex:0});return}
+      if(i==='next'){up({moduleQIndex:st.moduleQIndex+1});return}
+      const newAns={...st.moduleAnswers,[i]:a}
+      up({moduleAnswers:newAns})
+      if(i<MODULES[st.activeModule].practice.length-1) setTimeout(()=>up({moduleQIndex:i+1}),800)
+    }}
+    onBack={()=>up({phase:'modules'})}
+    onStartQuiz={()=>up({modulePhase:'quiz',moduleQIndex:0,moduleAnswers:{}})}
+    onFinish={status=>up({phase:'modules',moduleStatuses:{...st.moduleStatuses,[st.activeModule]:status},modulePhase:'content'})}/></div>
+
+  if(st.phase==='exam_intro') return <div>{nav}<ExamIntro onStart={()=>{
+    const qs=sampleExamQuestions(PRETEST_QUESTIONS,150)
+    up({phase:'fullexam',examQuestions:qs,examAnswers:{},qIndex:0,timerSeconds:14400,timerActive:true})
+    setFlagged(new Set())
+  }}/></div>
+
+  if(st.phase==='fullexam') return <div>{nav}<ExamScreen
+    questions={st.examQuestions} answers={st.examAnswers} qIndex={st.qIndex}
+    timerSeconds={st.timerSeconds} flagged={flagged}
+    onAnswer={(i,a)=>up({examAnswers:{...st.examAnswers,[i]:a}})}
+    onNav={d=>up({qIndex:Math.max(0,Math.min(st.examQuestions.length-1,st.qIndex+d))})}
+    onFlag={toggleFlag}
+    onSubmit={()=>{
+      clearInterval(timerRef.current)
+      const scores=calcScores(st.examQuestions,st.examAnswers)
+      up({phase:'final_results',examScores:scores,timerActive:false})
+    }}/></div>
+
+  if(st.phase==='final_results') return <div>{nav}<FinalResults
+    examScores={st.examScores} pretestScores={st.pretestScores}
+    onReset={()=>{clearInterval(timerRef.current);setFlagged(new Set());setSt({...INITIAL})}}/></div>
+
+  return null
+}
