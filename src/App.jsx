@@ -33,6 +33,16 @@ function calcScores(questions, answers) {
   return byDomain
 }
 
+function shuffleQuestion(q) {
+  const idx = [0,1,2,3]
+  for(let i=3; i>0; i--) { const j=Math.floor(Math.random()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]] }
+  return {...q, options: idx.map(i=>q.options[i]), correct: idx.indexOf(q.correct)}
+}
+
+function shuffleQuestions(qs) {
+  return [...qs].sort(()=>Math.random()-0.5).map(shuffleQuestion)
+}
+
 function sampleExamQuestions(pretestQs, count=150) {
   const pretestStems = new Set(pretestQs.map(q=>q.stem.substring(0,60)))
   const pool = QUESTION_BANK.filter(q => !pretestStems.has(q.stem.substring(0,60)))
@@ -54,6 +64,7 @@ function sampleExamQuestions(pretestQs, count=150) {
 
 const INITIAL = {
   phase:'welcome', qIndex:0,
+  pretestQuestions:[],
   pretestAnswers:{}, pretestScores:null, weakDomains:[],
   moduleStatuses:{}, activeModule:null, modulePhase:'content',
   moduleQIndex:0, moduleAnswers:{},
@@ -652,18 +663,21 @@ export default function App() {
       onCancelReset={()=>up({confirmReset:false})}/>
   )
 
-  if(st.phase==='welcome') return <div>{nav}<Welcome onStart={()=>up({phase:'pretest',qIndex:0,pretestAnswers:{}})}/></div>
+  if(st.phase==='welcome') return <div>{nav}<Welcome onStart={()=>up({phase:'pretest',qIndex:0,pretestAnswers:{},pretestQuestions:shuffleQuestions(PRETEST_QUESTIONS)})}/></div>
 
-  if(st.phase==='pretest') return <div>{nav}<QuestionScreen
-    questions={PRETEST_QUESTIONS} answers={st.pretestAnswers} qIndex={st.qIndex}
-    onAnswer={(i,a)=>up({pretestAnswers:{...st.pretestAnswers,[i]:a}})}
-    onNav={d=>up({qIndex:Math.max(0,Math.min(PRETEST_QUESTIONS.length-1,st.qIndex+d))})}
-    onSubmit={()=>{
-      const scores=calcScores(PRETEST_QUESTIONS,st.pretestAnswers)
-      const weak=DOMAINS.filter(d=>scores[d]&&pct(scores[d].correct,scores[d].total)<70)
-      up({phase:'pretest_results',pretestScores:scores,weakDomains:weak})
-    }}
-    label="Pretest"/></div>
+  if(st.phase==='pretest') {
+    const pqs = st.pretestQuestions.length ? st.pretestQuestions : PRETEST_QUESTIONS
+    return <div>{nav}<QuestionScreen
+      questions={pqs} answers={st.pretestAnswers} qIndex={st.qIndex}
+      onAnswer={(i,a)=>up({pretestAnswers:{...st.pretestAnswers,[i]:a}})}
+      onNav={d=>up({qIndex:Math.max(0,Math.min(pqs.length-1,st.qIndex+d))})}
+      onSubmit={()=>{
+        const scores=calcScores(pqs,st.pretestAnswers)
+        const weak=DOMAINS.filter(d=>scores[d]&&pct(scores[d].correct,scores[d].total)<70)
+        up({phase:'pretest_results',pretestScores:scores,weakDomains:weak})
+      }}
+      label="Pretest"/></div>
+  }
 
   if(st.phase==='pretest_results') return <div>{nav}<PretestResults
     scores={st.pretestScores} weakDomains={st.weakDomains}
@@ -690,7 +704,7 @@ export default function App() {
     onFinish={status=>up({phase:'modules',moduleStatuses:{...st.moduleStatuses,[st.activeModule]:status},modulePhase:'content'})}/></div>
 
   if(st.phase==='exam_intro') return <div>{nav}<ExamIntro onStart={()=>{
-    const qs=sampleExamQuestions(PRETEST_QUESTIONS,150)
+    const qs=sampleExamQuestions(PRETEST_QUESTIONS,150).map(shuffleQuestion)
     up({phase:'fullexam',examQuestions:qs,examAnswers:{},qIndex:0,timerSeconds:14400,timerActive:true})
     setFlagged(new Set())
   }}/></div>
