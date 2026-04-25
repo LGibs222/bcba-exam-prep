@@ -18,6 +18,31 @@ const loadPersisted = () => {
 const savePersisted = d => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)) } catch {} }
 const clearPersisted = () => { try { localStorage.removeItem(STORAGE_KEY) } catch {} }
 
+// ── STUDY STATS HELPERS ──────────────────────────────────
+const todayISO = () => new Date().toISOString().slice(0, 10)
+function calculateStreak(daysStudied) {
+  if (!daysStudied?.length) return 0
+  const daySet = new Set(daysStudied)
+  const today = new Date()
+  const todayStr = todayISO()
+  const yesterdayStr = new Date(today.getTime() - 86400000).toISOString().slice(0, 10)
+  if (!daySet.has(todayStr) && !daySet.has(yesterdayStr)) return 0
+  let streak = 0
+  let checkDate = new Date(daySet.has(todayStr) ? todayStr : yesterdayStr)
+  while (daySet.has(checkDate.toISOString().slice(0, 10))) {
+    streak++
+    checkDate = new Date(checkDate.getTime() - 86400000)
+  }
+  return streak
+}
+function formatDuration(minutes) {
+  if (!minutes) return '0 min'
+  if (minutes < 60) return `${minutes} min`
+  const h = Math.floor(minutes / 60), m = minutes % 60
+  return m ? `${h}h ${m}m` : `${h}h`
+}
+const bumpStat = (stats, key, by=1) => ({ ...(stats||{}), [key]: (stats?.[key]||0) + by })
+
 const C = {
   primary:'#1a3a5c', primaryLight:'#e8f0fb', primaryMid:'#2e5fa3',
   accent:'#c47d0e', accentBg:'#fef9ec', accentBorder:'#f5c842',
@@ -85,6 +110,7 @@ const INITIAL = {
   moduleQIndex:0, moduleAnswers:{},
   examAnswers:{}, examQuestions:[], examScores:null,
   confirmReset:false, timerSeconds:14400, timerActive:false,
+  stats: {daysStudied:[], todayDate:'', todayMinutes:0, totalMinutes:0, modulesPassed:0, pretestsCompleted:0, examAttempts:0},
 }
 
 // ── UI PRIMITIVES ─────────────────────────────────────────
@@ -327,8 +353,39 @@ function NavBar({st,onNav,onReset,onConfirmReset,onCancelReset}) {
   )
 }
 
+// ── STATS CARD ───────────────────────────────────────────
+function StatsCard({stats}) {
+  const days = stats?.daysStudied?.length || 0
+  if (days === 0 && !stats?.pretestsCompleted && !stats?.modulesPassed && !stats?.examAttempts) return null
+  const streak = calculateStreak(stats?.daysStudied)
+  return (
+    <div style={{marginBottom:20,background:'linear-gradient(135deg, #fef9ec 0%, #fef3c7 100%)',border:`1px solid ${C.accentBorder}`,borderRadius:14,padding:'16px 18px'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,gap:10,flexWrap:'wrap'}}>
+        <h3 style={{fontSize:14,fontWeight:800,color:C.accent,margin:0,fontFamily:'system-ui',textTransform:'uppercase',letterSpacing:'0.06em'}}>📊 Your Progress</h3>
+        {streak > 0 && (
+          <div style={{fontSize:12,fontWeight:800,color:C.accent,background:C.white,padding:'4px 11px',borderRadius:99,border:`1.5px solid ${C.accentBorder}`,whiteSpace:'nowrap'}}>
+            🔥 {streak}-day streak
+          </div>
+        )}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px 14px',fontSize:13,color:C.text}}>
+        <div>📅 <strong>{days}</strong> day{days===1?'':'s'} studied</div>
+        <div>⏱️ Today: <strong>{formatDuration(stats?.todayMinutes||0)}</strong></div>
+        <div>✓ <strong>{stats?.modulesPassed||0}</strong> quiz{(stats?.modulesPassed||0)===1?'':'zes'} passed</div>
+        <div>🕐 Total: <strong>{formatDuration(stats?.totalMinutes||0)}</strong></div>
+      </div>
+      {((stats?.pretestsCompleted||0) > 0 || (stats?.examAttempts||0) > 0) && (
+        <div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.accentBorder}`,fontSize:12,color:C.muted}}>
+          {(stats?.pretestsCompleted||0) > 0 && <span style={{marginRight:14}}>📝 {stats.pretestsCompleted} pretest{stats.pretestsCompleted===1?'':'s'}</span>}
+          {(stats?.examAttempts||0) > 0 && <span>🏁 {stats.examAttempts} exam attempt{stats.examAttempts===1?'':'s'}</span>}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── WELCOME ──────────────────────────────────────────────
-function Welcome({onStart,onSkipPretest}) {
+function Welcome({onStart,onSkipPretest,stats}) {
   return (
     <div style={{maxWidth:660,margin:'0 auto',padding:'40px 20px',fontFamily:'Georgia,serif'}}>
       <div style={{textAlign:'center',marginBottom:36}}>
@@ -336,6 +393,7 @@ function Welcome({onStart,onSkipPretest}) {
         <h1 style={{fontSize:28,fontWeight:700,color:C.primary,margin:'0 0 8px',letterSpacing:'-0.5px'}}>BCBA Exam Prep</h1>
         <p style={{fontSize:15,color:C.muted,margin:0,fontFamily:'system-ui'}}>6th Edition Task Content Outline · BACB Aligned · 522-Question Bank</p>
       </div>
+      <StatsCard stats={stats}/>
       <Card style={{marginBottom:20}}>
         <h2 style={{fontSize:17,fontWeight:700,color:C.primary,margin:'0 0 16px',fontFamily:'system-ui'}}>Your Study Path</h2>
         {[
@@ -1108,7 +1166,7 @@ export default function App() {
           if(p.timerSeconds<=1) {
             clearInterval(timerRef.current)
             const scores = calcScores(p.examQuestions, p.examAnswers)
-            return {...p, timerSeconds:0, timerActive:false, phase:'final_results', examScores:scores}
+            return {...p, timerSeconds:0, timerActive:false, phase:'final_results', examScores:scores, stats:bumpStat(p.stats,'examAttempts')}
           }
           return {...p, timerSeconds:p.timerSeconds-1}
         })
@@ -1126,6 +1184,30 @@ export default function App() {
   useEffect(() => {
     savePersisted({ st, flagged: [...flagged] })
   }, [st, flagged])
+
+  // Daily activity tracking + session heartbeat (counts 1 min per visible-tab minute)
+  useEffect(() => {
+    const today = todayISO()
+    setSt(p => {
+      const s = p.stats || {}
+      const days = s.daysStudied || []
+      const newDays = days.includes(today) ? days : [...days, today]
+      const todayMinutes = s.todayDate === today ? (s.todayMinutes || 0) : 0
+      return { ...p, stats: { ...s, daysStudied: newDays, todayDate: today, todayMinutes } }
+    })
+    const heartbeat = setInterval(() => {
+      if (document.visibilityState !== 'visible') return
+      setSt(p => ({
+        ...p,
+        stats: {
+          ...(p.stats || {}),
+          todayMinutes: ((p.stats?.todayMinutes) || 0) + 1,
+          totalMinutes: ((p.stats?.totalMinutes) || 0) + 1,
+        }
+      }))
+    }, 60000)
+    return () => clearInterval(heartbeat)
+  }, [])
 
   const handleNav = id => {
     const map = {
@@ -1149,7 +1231,7 @@ export default function App() {
     </>
   )
 
-  if(st.phase==='welcome') return <div>{nav}<Welcome
+  if(st.phase==='welcome') return <div>{nav}<Welcome stats={st.stats}
     onStart={()=>up({phase:'pretest',qIndex:0,pretestAnswers:{},pretestQuestions:shuffleQuestions(PRETEST_QUESTIONS)})}
     onSkipPretest={()=>up({phase:'modules',skippedPretest:true,weakDomains:DOMAINS,moduleStatuses:{}})}/></div>
 
@@ -1162,7 +1244,7 @@ export default function App() {
       onSubmit={()=>{
         const scores=calcScores(pqs,st.pretestAnswers)
         const weak=DOMAINS.filter(d=>scores[d]&&pct(scores[d].correct,scores[d].total)<70)
-        up({phase:'pretest_results',pretestScores:scores,weakDomains:weak})
+        setSt(p=>({...p, phase:'pretest_results', pretestScores:scores, weakDomains:weak, stats:bumpStat(p.stats,'pretestsCompleted')}))
       }}
       label="Pretest"/></div>
   }
@@ -1190,7 +1272,13 @@ export default function App() {
     onBack={()=>up({phase:'modules'})}
     onStartQuiz={()=>up({modulePhase:'quiz',moduleQIndex:0,moduleAnswers:{}})}
     onReviewConcepts={()=>up({modulePhase:'content'})}
-    onFinish={status=>up({phase:'modules',moduleStatuses:{...st.moduleStatuses,[st.activeModule]:status},modulePhase:'content'})}/></div>
+    onFinish={status=>setSt(p=>({
+      ...p,
+      phase:'modules',
+      moduleStatuses:{...p.moduleStatuses,[p.activeModule]:status},
+      modulePhase:'content',
+      ...(status==='passed' ? {stats:bumpStat(p.stats,'modulesPassed')} : {}),
+    }))}/></div>
 
   if(st.phase==='exam_intro') return <div>{nav}<ExamIntro onStart={()=>{
     const qs=sampleExamQuestions(PRETEST_QUESTIONS,150).map(shuffleQuestion)
@@ -1207,7 +1295,7 @@ export default function App() {
     onSubmit={()=>{
       clearInterval(timerRef.current)
       const scores=calcScores(st.examQuestions,st.examAnswers)
-      up({phase:'final_results',examScores:scores,timerActive:false})
+      setSt(p=>({...p, phase:'final_results', examScores:scores, timerActive:false, stats:bumpStat(p.stats,'examAttempts')}))
     }}/></div>
 
   if(st.phase==='final_results') return <div>{nav}<FinalResults
