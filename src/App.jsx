@@ -125,13 +125,16 @@ function updateWeakSpots(weakSpots, questions, answers) {
   return updated
 }
 
+// Color palette — surface/text/border colors come from CSS vars so they
+// switch between light and dark themes via [data-theme="dark"] on <html>.
+// Brand colors (primary, accent) stay literal for consistent identity.
 const C = {
-  primary:'#1a3a5c', primaryLight:'#e8f0fb', primaryMid:'#2e5fa3',
-  accent:'#c47d0e', accentBg:'#fef9ec', accentBorder:'#f5c842',
-  green:'#166534', greenBg:'#dcfce7', greenBorder:'#86efac',
-  red:'#991b1b', redBg:'#fee2e2', redBorder:'#fca5a5',
-  gray:'#475569', grayLight:'#f1f5f9', border:'#e2e8f0',
-  text:'#1e293b', muted:'#64748b', white:'#ffffff',
+  primary:'#1a3a5c', primaryLight:'var(--primary-light)', primaryMid:'#2e5fa3',
+  accent:'#c47d0e', accentBg:'var(--accent-bg)', accentBorder:'var(--accent-border)',
+  green:'var(--green)', greenBg:'var(--green-bg)', greenBorder:'var(--green-border)',
+  red:'var(--red)', redBg:'var(--red-bg)', redBorder:'var(--red-border)',
+  gray:'var(--gray)', grayLight:'var(--surface-alt)', border:'var(--border)',
+  text:'var(--text)', muted:'var(--muted)', white:'var(--surface)',
 }
 
 const CONCEPT_TYPES = [
@@ -221,6 +224,8 @@ const INITIAL = {
   safmeds: { totalTokens:0, decks:{}, history:[], dailyStreak:0, lastSafmedsDate:'', lastDeckId:'beginner', lastTimer:60, lastMode:'timed' },
   // SAFMEDS transient session
   sfxDeckId:null, sfxMode:'timed', sfxTimer:60, sfxCards:[], sfxCardIdx:0, sfxRevealed:false, sfxCorrect:0, sfxMissed:0, sfxRemaining:60, sfxResults:null,
+  // theme: 'light' | 'dark'
+  theme: 'light',
   confirmReset:false, timerSeconds:14400, timerActive:false,
   stats: {daysStudied:[], todayDate:'', todayMinutes:0, totalMinutes:0, modulesPassed:0, pretestsCompleted:0, examAttempts:0},
 }
@@ -244,12 +249,54 @@ const ProgressBar = ({value,color=C.primary,label}) => (
   </div>
 )
 
-// ── GLOBAL STYLES (keyframes for flip cards + concept animation) ─────────────
+// ── GLOBAL STYLES (theme variables + keyframes) ──────────────────────────────
 const GlobalStyles = () => (
   <style>{`
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-alt: #f1f5f9;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --gray: #475569;
+      --primary-light: #e8f0fb;
+      --accent-bg: #fef9ec;
+      --accent-border: #f5c842;
+      --green: #166534;
+      --green-bg: #dcfce7;
+      --green-border: #86efac;
+      --red: #991b1b;
+      --red-bg: #fee2e2;
+      --red-border: #fca5a5;
+      --shadow: 0 2px 16px rgba(0,0,0,0.07);
+    }
+    :root[data-theme="dark"] {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-alt: #0b1220;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --border: #334155;
+      --gray: #cbd5e1;
+      --primary-light: rgba(46,95,163,0.28);
+      --accent-bg: rgba(196,125,14,0.22);
+      --accent-border: #b45309;
+      --green: #4ade80;
+      --green-bg: rgba(22,101,52,0.28);
+      --green-border: #166534;
+      --red: #fca5a5;
+      --red-bg: rgba(153,27,27,0.28);
+      --red-border: #991b1b;
+      --shadow: 0 2px 16px rgba(0,0,0,0.4);
+    }
+    html, body { background: var(--bg); color: var(--text); }
+    body { transition: background .25s ease, color .25s ease; margin: 0; }
     @keyframes conceptIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     .concept-in{animation:conceptIn .32s ease forwards}
     .kt-card:hover{filter:brightness(.96)}
+    /* SVG visuals: keep on a near-white card in both themes for legibility */
+    :root[data-theme="dark"] .visual-card { background: #f1f5f9 !important; }
   `}</style>
 )
 
@@ -430,7 +477,7 @@ const NAV = [
   {id:'final_results',label:'Report',emoji:'📈',needs:'examScores'},
 ]
 
-function NavBar({st,onNav,onReset,onConfirmReset,onCancelReset}) {
+function NavBar({st,onNav,onReset,onConfirmReset,onCancelReset,onToggleTheme}) {
   const active = ['module'].includes(st.phase)?'modules':['safmeds_session','safmeds_results'].includes(st.phase)?'safmeds':st.phase
   const studyStarted = st.pretestScores || st.skippedPretest
   const examReady = studyStarted && (st.weakDomains.length===0 || st.weakDomains.every(d=>st.moduleStatuses[d]==='passed'))
@@ -452,7 +499,13 @@ function NavBar({st,onNav,onReset,onConfirmReset,onCancelReset}) {
             )
           })}
         </div>
-        <div style={{flexShrink:0,marginLeft:8}}>
+        <div style={{flexShrink:0,marginLeft:8,display:'flex',gap:6,alignItems:'center'}}>
+          {!st.confirmReset && (
+            <button onClick={onToggleTheme} title={st.theme==='dark'?'Switch to light mode':'Switch to dark mode'}
+              style={{padding:'4px 9px',borderRadius:7,border:'1px solid #2d4a63',background:'transparent',color:'#cbd5e1',cursor:'pointer',fontSize:13,fontWeight:700,whiteSpace:'nowrap',lineHeight:1}}>
+              {st.theme==='dark'?'☀️':'🌙'}
+            </button>
+          )}
           {!st.confirmReset
             ?<button onClick={onReset} style={{padding:'4px 10px',borderRadius:7,border:'1px solid #2d4a63',background:'transparent',color:'#f87171',cursor:'pointer',fontSize:11,fontWeight:700,whiteSpace:'nowrap'}}>Reset</button>
             :<div style={{display:'flex',gap:4,alignItems:'center'}}>
@@ -813,7 +866,7 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
 
             {/* SVG visual */}
             {concept.visual && (
-              <div style={{marginTop:20,background:C.grayLight,borderRadius:12,padding:'16px 10px'}}>
+              <div className="visual-card" style={{marginTop:20,background:C.grayLight,borderRadius:12,padding:'16px 10px'}}>
                 <ConceptVisual type={concept.visual}/>
               </div>
             )}
@@ -1780,6 +1833,11 @@ export default function App() {
     savePersisted({ st, flagged: [...flagged] })
   }, [st, flagged])
 
+  // Reflect theme on <html> so CSS vars switch
+  useEffect(() => {
+    document.documentElement.dataset.theme = st.theme || 'light'
+  }, [st.theme])
+
   // Daily activity tracking + session heartbeat (counts 1 min per visible-tab minute)
   useEffect(() => {
     const today = todayISO()
@@ -1823,7 +1881,8 @@ export default function App() {
       <NavBar st={st} onNav={handleNav}
         onReset={()=>up({confirmReset:true})}
         onConfirmReset={()=>{clearInterval(timerRef.current);clearPersisted();setFlagged(new Set());setSt({...INITIAL})}}
-        onCancelReset={()=>up({confirmReset:false})}/>
+        onCancelReset={()=>up({confirmReset:false})}
+        onToggleTheme={()=>up({theme: st.theme==='dark'?'light':'dark'})}/>
     </>
   )
 
