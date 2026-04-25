@@ -1,4 +1,4 @@
-﻿export const PRETEST_QUESTIONS = [
+export const PRETEST_QUESTIONS = [
   {
     "id": "bcba-pre-1",
     "stem": "A behavior analyst successfully predicts that a student's off-task behavior will increase during long independent writing assignments. This demonstrates which goal of behavior analysis?",
@@ -10,7 +10,7 @@
     ],
     "correct": 2,
     "rationale": "Prediction involves using knowledge of functional relationships to forecast when and under what conditions behavior will occur. Description simply accounts for what is happening; control requires active manipulation; understanding is a colloquial term sometimes conflated with prediction.",
-    "domain_name": "Foundational Knowledge"
+    "domain_name": "Behaviorism and Philosophical Foundations"
   },
   {
     "id": "bcba-pre-2",
@@ -23,7 +23,7 @@
     ],
     "correct": 1,
     "rationale": "Determinism holds that behavior is caused by observable, identifiable variables rather than hypothetical internal constructs. Radical behaviorism does not deny private events but rejects unverifiable mentalistic explanations as causes. 'Inner rage' is an explanatory fiction.",
-    "domain_name": "Foundational Knowledge"
+    "domain_name": "Behaviorism and Philosophical Foundations"
   },
   {
     "id": "bcba-pre-3",
@@ -36,7 +36,7 @@
     ],
     "correct": 1,
     "rationale": "Food deprivation (hunger) is a motivating operation — specifically an establishing operation — that temporarily increases the reinforcing value of food and evokes behavior that has produced food in the past. It is NOT a discriminative stimulus (which only signals reinforcement availability) nor a conditioned or unconditioned stimulus in the respondent sense.",
-    "domain_name": "Foundational Knowledge"
+    "domain_name": "Behaviorism and Philosophical Foundations"
   },
   {
     "id": "bcba-pre-4",
@@ -49,7 +49,7 @@
     ],
     "correct": 2,
     "rationale": "High responding exclusively in the alone condition — where no social antecedents or consequences are available — indicates behavior maintained by automatic (sensory) reinforcement. Escape-maintained behavior would be highest in the demand condition where aversive events are present. The 'alone' condition serves as the test for automatic functions.",
-    "domain_name": "Foundational Knowledge"
+    "domain_name": "Behaviorism and Philosophical Foundations"
   },
   {
     "id": "bcba-pre-5",
@@ -62,7 +62,7 @@
     ],
     "correct": 1,
     "rationale": "The key differentiating question is whether the behavior is maintained by sensory stimulation (automatic) or by escape from demands (negative reinforcement). Comparing rates in the alone condition (tests automatic reinforcement) to the demand condition (tests escape) within a structured functional analysis provides the most direct experimental test of each hypothesis.",
-    "domain_name": "Foundational Knowledge"
+    "domain_name": "Behaviorism and Philosophical Foundations"
   },
   {
     "id": "bcba-pre-6",
@@ -75,7 +75,7 @@
     ],
     "correct": 1,
     "rationale": "The red card has discriminative stimulus control: requests occur in its presence regardless of current deprivation state. An EO (like deprivation) alters the VALUE of the reinforcer. The fact that requests persist even after satiation rules out a purely motivational explanation and confirms the red card functions as an SD.",
-    "domain_name": "Concepts & Principles"
+    "domain_name": "Concepts and Principles"
   },
   {
     "id": "bcba-pre-7",
@@ -88,7 +88,7 @@
     ],
     "correct": 0,
     "rationale": "DRO reinforces the ABSENCE of behavior regardless of what the client is doing — it does not teach an alternative way to access tangibles. For tangible-maintained behavior, FCT (teaching an appropriate request) is function-matched and more likely to produce durable reduction. DRO used alone for tangible-maintained behavior does not address the establishing operation and provides no communicative replacement.",
-    "domain_name": "Concepts & Principles"
+    "domain_name": "Concepts and Principles"
   },
   {
     "id": "bcba-pre-8",
@@ -101,7 +101,7 @@
     ],
     "correct": 2,
     "rationale": "Variable ratio schedules produce (1) high, steady response rates, (2) minimal post-reinforcement pause, and (3) greatest resistance to extinction — exactly the described pattern. Fixed ratio produces pausing; fixed interval produces scallop patterns; variable interval produces lower, steadier rates than VR but not the highest rates.",
-    "domain_name": "Concepts & Principles"
+    "domain_name": "Concepts and Principles"
   },
   {
     "id": "bcba-pre-9",
@@ -114,7 +114,7 @@
     ],
     "correct": 1,
     "rationale": "Matched stimulation (NCR providing sensory input similar to what the behavior produces) directly reduces the establishing operation for automatically reinforced behavior. By pre-saturating the sensory reinforcer non-contingently, the motivation to engage in SIB is reduced. This is the mechanism: the EO is abolished, not that extinction failed.",
-    "domain_name": "Concepts & Principles"
+    "domain_name": "Concepts and Principles"
   },
   {
     "id": "bcba-pre-10",
@@ -127,7 +127,7 @@
     ],
     "correct": 0,
     "rationale": "IOA = smaller/larger = 14/18 = 77.8% (~78%). The important limitation is that partial interval recording systematically OVERESTIMATES occurrence — both observers may agree at a relatively high rate but both could be inflating the true occurrence. Adequate IOA does not correct for systematic measurement bias inherent in the procedure itself.",
-    "domain_name": "Measurement & Data"
+    "domain_name": "Measurement, Data Display, and Interpretation"
   },
   {
     "id": "bcba-pre-11",
@@ -140,7 +140,7 @@
     ],
     "correct": 1,
     "rationale": "In a reversal design, complete return to baseline demonstrates strong experimental control. Partial return (higher than baseline but lower than intervention) is common in applied settings and suggests the intervention had a real effect while acknowledging possible carryover. This is NOT evidence of ineffectiveness — it is evidence of partial reversal and may reflect that the skill partially generalized or the behavior change was partially irreversible.",
-    "domain_name": "Measurement & Data"
+    "domain_name": "Measurement, Data Display, and Interpretation"
   },
   {
     "id": "bcba-pre-12",
@@ -192,7 +192,7 @@
     ],
     "correct": 1,
     "rationale": "Billing for services not rendered is insurance fraud regardless of intent to provide future services. The BACB Ethics Code requires honesty and accurate reporting in all professional activities. The BCBA must refuse, document the request, and may have legal obligations to report it through appropriate channels. Compliance makes the BCBA liable.",
-    "domain_name": "Ethics & Professional Conduct"
+    "domain_name": "Ethical and Professional Issues"
   },
   {
     "id": "bcba-pre-16",
@@ -205,7 +205,7 @@
     ],
     "correct": 1,
     "rationale": "When standard FA poses significant risk, ethical practice requires modifying the assessment to minimize harm while still gathering useful functional data. Options include brief FA formats, latency-based FA, precursor analyses, or FA of lower-severity topographies. Skipping assessment entirely without justification is not best practice, but client safety must be protected. This is a genuine ethical gray area requiring clinical judgment.",
-    "domain_name": "Ethics & Professional Conduct"
+    "domain_name": "Ethical and Professional Issues"
   },
   {
     "id": "bcba-pre-17",
@@ -218,7 +218,7 @@
     ],
     "correct": 2,
     "rationale": "The BACB Ethics Code 2.0, Section 1.06 does not categorically prohibit all social contact, but requires BCBAs to evaluate whether extending the relationship could impair professional objectivity, exploit the client/family, or harm the therapeutic relationship. Attending a birthday party creates a social relationship that can complicate clinical decision-making. The BCBA must evaluate the risks and most often should decline, explaining professionally. Blanket prohibition and blanket permission are both oversimplifications.",
-    "domain_name": "Ethics & Professional Conduct"
+    "domain_name": "Ethical and Professional Issues"
   },
   {
     "id": "bcba-pre-18",
@@ -231,7 +231,7 @@
     ],
     "correct": 1,
     "rationale": "A subpoena alone does not automatically waive client confidentiality under all circumstances. The BCBA should consult with legal counsel, inform the client and seek consent if possible, and release only the legally required information. Different jurisdictions and contexts vary — a court order differs from a subpoena. This nuanced legal-ethical intersection requires more than compliance or total refusal.",
-    "domain_name": "Ethics & Professional Conduct"
+    "domain_name": "Ethical and Professional Issues"
   },
   {
     "id": "bcba-pre-19",
@@ -322,7 +322,7 @@
     ],
     "correct": 1,
     "rationale": "Least restrictive alternative principles require starting with the least intrusive function-based option (A: matched stimulation addresses the automatic reinforcer non-punitively) before more intrusive options. Response blocking (B) is more restrictive but may be needed for safety. Punishment (C: reprimand) is the most restrictive and is not function-matched for automatic reinforcement since the maintaining variable is sensory, not social. Ethical use requires this hierarchy with documentation.",
-    "domain_name": "Selecting & Implementing Interventions"
+    "domain_name": "Selecting and Implementing Interventions"
   },
   {
     "id": "bcba-pre-26",
@@ -335,7 +335,7 @@
     ],
     "correct": 1,
     "rationale": "Component analysis via systematic dismantling allows identification of active versus inactive ingredients. Removing component 3 (which lacks correlation with outcomes) while monitoring data is the empirically justified approach. Maintaining an unnecessarily complex package violates least restrictive principles and may reduce sustainability. This is an important clinical judgment call about balancing fidelity with feasibility.",
-    "domain_name": "Selecting & Implementing Interventions"
+    "domain_name": "Selecting and Implementing Interventions"
   },
   {
     "id": "bcba-pre-27",
@@ -348,7 +348,7 @@
     ],
     "correct": 1,
     "rationale": "This pattern — accurate performance when supervised, inaccurate when unsupervised — is a classic stimulus control problem in applied settings. The supervisor's presence has become an SD for accurate behavior, while absence signals non-reinforcement. The solution is to build in variable, unannounced observations and reinforce accurate performance across observed and unobserved conditions to transfer stimulus control to the task materials and client performance.",
-    "domain_name": "Supervision & Management"
+    "domain_name": "Personnel Supervision and Management"
   },
   {
     "id": "bcba-pre-28",
@@ -361,7 +361,7 @@
     ],
     "correct": 1,
     "rationale": "Effective corrective feedback is specific (citing observable behavior), outcome-linked (explaining clinical impact), and includes modeling and rehearsal (BST elements). The supervisor must also clarify that unauthorized modifications to procedures are outside the supervisee's scope. Dropping the issue fails the client. Jumping to a PIP skips progressive steps. Accepting unilateral modifications rewards scope violations.",
-    "domain_name": "Supervision & Management"
+    "domain_name": "Personnel Supervision and Management"
   },
   {
     "id": "bcba-pre-29",
@@ -374,7 +374,7 @@
     ],
     "correct": 1,
     "rationale": "Supervisors have a primary obligation to protect clients. If there is evidence of impaired practice, the supervisor must act regardless of confidentiality preferences. The supervisor should conduct a performance-based assessment, connect the supervisee with appropriate support resources, and implement workload adjustments if warranted. Client welfare cannot be subordinated to supervisee confidentiality preferences in this context.",
-    "domain_name": "Supervision & Management"
+    "domain_name": "Personnel Supervision and Management"
   },
   {
     "id": "bcba-pre-30",
@@ -387,6 +387,6 @@
     ],
     "correct": 1,
     "rationale": "Evidence-based supervision requires frequent direct observation, timely and specific feedback, behavioral rehearsal (BST), and performance monitoring. Monthly observation with delayed email feedback fails to provide the density and immediacy required. The BST model — instruction, modeling, rehearsal, feedback — cannot be implemented through email alone. Client outcomes are the ultimate metric of supervision effectiveness.",
-    "domain_name": "Supervision & Management"
+    "domain_name": "Personnel Supervision and Management"
   }
 ];

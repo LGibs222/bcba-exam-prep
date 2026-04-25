@@ -1,5 +1,5 @@
-﻿export const MODULES = {
-  "Foundational Knowledge": {
+export const MODULES = {
+  "Behaviorism and Philosophical Foundations": {
     "icon": "🧠",
     "concepts": [
       {
@@ -77,7 +77,7 @@
       }
     ]
   },
-  "Concepts & Principles": {
+  "Concepts and Principles": {
     "icon": "⚙️",
     "concepts": [
       {
@@ -155,7 +155,7 @@
       }
     ]
   },
-  "Measurement & Data": {
+  "Measurement, Data Display, and Interpretation": {
     "icon": "📊",
     "concepts": [
       {
@@ -311,7 +311,7 @@
       }
     ]
   },
-  "Ethics & Professional Conduct": {
+  "Ethical and Professional Issues": {
     "icon": "⚖️",
     "concepts": [
       {
@@ -545,7 +545,7 @@
       }
     ]
   },
-  "Selecting & Implementing Interventions": {
+  "Selecting and Implementing Interventions": {
     "icon": "🎯",
     "concepts": [
       {
@@ -623,7 +623,7 @@
       }
     ]
   },
-  "Supervision & Management": {
+  "Personnel Supervision and Management": {
     "icon": "👥",
     "concepts": [
       {

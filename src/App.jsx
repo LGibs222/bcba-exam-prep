@@ -171,23 +171,41 @@ function sampleDomainQuestions(domain, count=20, excludeStems=[]) {
   return [...pool].sort(()=>Math.random()-0.5).slice(0, Math.min(count, pool.length)).map(shuffleQuestion)
 }
 
-function sampleExamQuestions(pretestQs, count=150) {
+// Official BCBA 6th Edition Test Content Outline (2025+)
+// 175 scored questions distributed across 9 domains, plus 10 unscored pilot questions = 185 total
+const BCBA_OFFICIAL_DOMAIN_COUNTS = {
+  "Behaviorism and Philosophical Foundations": 8,
+  "Concepts and Principles": 24,
+  "Measurement, Data Display, and Interpretation": 21,
+  "Experimental Design": 13,
+  "Ethical and Professional Issues": 22,
+  "Behavior Assessment": 23,
+  "Behavior-Change Procedures": 25,
+  "Selecting and Implementing Interventions": 20,
+  "Personnel Supervision and Management": 19,
+}
+const BCBA_TOTAL_QUESTIONS = 185
+const BCBA_SCORED_QUESTIONS = 175
+const BCBA_PILOT_QUESTIONS = 10  // unscored
+
+function sampleExamQuestions(pretestQs, count=BCBA_TOTAL_QUESTIONS) {
   const pretestStems = new Set(pretestQs.map(q=>q.stem.substring(0,60)))
   const pool = QUESTION_BANK.filter(q => !pretestStems.has(q.stem.substring(0,60)))
-  const byDomain = {}
-  DOMAINS.forEach(d => { byDomain[d] = pool.filter(q=>q.domain_name===d) })
-  const perDomain = Math.floor(count/DOMAINS.length)
+  const used = new Set()
   const sampled = []
-  DOMAINS.forEach(d => {
-    const qs = [...byDomain[d]].sort(()=>Math.random()-0.5).slice(0,perDomain)
-    sampled.push(...qs)
+  // Sample by official scored proportions first
+  Object.entries(BCBA_OFFICIAL_DOMAIN_COUNTS).forEach(([domain, n]) => {
+    const dPool = pool.filter(q => q.domain_name === domain && !used.has(q))
+    const shuffled = [...dPool].sort(()=>Math.random()-0.5).slice(0, n)
+    shuffled.forEach(q => used.add(q))
+    sampled.push(...shuffled)
   })
-  while (sampled.length < count && pool.length > sampled.length) {
-    const extra = pool.filter(q=>!sampled.includes(q))
-    if (extra.length===0) break
-    sampled.push(extra[Math.floor(Math.random()*extra.length)])
-  }
-  return sampled.slice(0,count).sort(()=>Math.random()-0.5)
+  // Fill remaining slots (pilot questions) with random items from any domain
+  const remaining = pool.filter(q => !used.has(q))
+  const shuffledRemaining = [...remaining].sort(()=>Math.random()-0.5)
+  sampled.push(...shuffledRemaining.slice(0, Math.max(0, count - sampled.length)))
+  // Final shuffle so domain blocks are interleaved
+  return sampled.slice(0, count).sort(()=>Math.random()-0.5)
 }
 
 const INITIAL = {
@@ -497,7 +515,7 @@ function Welcome({onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpots,s
           ['1','Diagnostic Pretest','30 scenario-based questions across all 9 domains'],
           ['2','Personalized Results','See exactly which domains fall below 70%'],
           ['3','Targeted Modules','Deep-dive study with concept review — must pass 80% quiz to unlock exam'],
-          ['4','Full Mock Exam','150 questions, 4-hour timer, mirrors the real BCBA exam'],
+          ['4','Full Mock Exam','185 questions (175 scored + 10 pilot), 4-hour timer, mirrors the real BCBA exam'],
         ].map(([n,title,desc])=>(
           <div key={n} style={{display:'flex',gap:14,marginBottom:14,alignItems:'flex-start'}}>
             <div style={{width:28,height:28,borderRadius:'50%',background:C.primary,color:C.white,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,flexShrink:0,fontFamily:'system-ui'}}>{n}</div>
@@ -933,12 +951,12 @@ function ExamIntro({onStart}) {
       <div style={{fontSize:52,marginBottom:12}}>🏁</div>
       <h2 style={{fontSize:24,fontWeight:700,color:C.primary,fontFamily:'Georgia,serif',marginBottom:8}}>Full BCBA Mock Exam</h2>
       <p style={{fontSize:15,color:C.muted,marginBottom:28,lineHeight:1.6}}>
-        150 questions · 4-hour timer · All 9 domains<br/>
-        Mirrors the format and difficulty of the real BCBA exam.<br/>
-        Passing score: <strong>70%</strong>
+        185 questions (175 scored + 10 pilot) · 4-hour timer · All 9 domains<br/>
+        Mirrors the BCBA® 6th Edition Test Content Outline (2025+).<br/>
+        Passing score: <strong>~70%</strong>
       </p>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:32}}>
-        {[['150','Questions'],['4 hrs','Time Limit'],['70%','Passing Score']].map(([v,l])=>(
+        {[['185','Questions'],['4 hrs','Time Limit'],['~70%','Passing Score']].map(([v,l])=>(
           <Card key={l} style={{padding:16,textAlign:'center'}}>
             <div style={{fontSize:22,fontWeight:800,color:C.primary}}>{v}</div>
             <div style={{fontSize:12,color:C.muted,marginTop:2}}>{l}</div>
@@ -1978,7 +1996,7 @@ export default function App() {
     }))}/></div>
 
   if(st.phase==='exam_intro') return <div>{nav}<ExamIntro onStart={()=>{
-    const qs=sampleExamQuestions(PRETEST_QUESTIONS,150).map(shuffleQuestion)
+    const qs=sampleExamQuestions(PRETEST_QUESTIONS,BCBA_TOTAL_QUESTIONS).map(shuffleQuestion)
     up({phase:'fullexam',examQuestions:qs,examAnswers:{},qIndex:0,timerSeconds:14400,timerActive:true})
     setFlagged(new Set())
   }}/></div>

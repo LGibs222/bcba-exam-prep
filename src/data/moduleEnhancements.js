@@ -1,5 +1,5 @@
 export const MODULE_ENHANCEMENTS = {
-  "Foundational Knowledge": [
+  "Behaviorism and Philosophical Foundations": [
     {
       // concept[0]: The Goals of Behavior Analysis: Description, Prediction, Control
       example: "Dr. Chen, a BCBA, is reviewing classroom data on Jaylen, a 7-year-old with ADHD. She first describes his out-of-seat behavior precisely — 14 occurrences per 30-minute session. From her functional assessment, she predicts he will leave his seat most during independent seatwork when teacher proximity is low. She then systematically moves the teacher's station closer during seatwork and documents a drop to 3 occurrences, demonstrating experimental control over the variable she identified.",
@@ -42,7 +42,7 @@ export const MODULE_ENHANCEMENTS = {
     }
   ],
 
-  "Concepts & Principles": [
+  "Concepts and Principles": [
     {
       // concept[0]: Motivating Operations vs. Discriminative Stimuli
       example: "Tomas, a 6-year-old with ASD, cries and grabs for food throughout the school day — but his BCBA, Ms. Park, notices the behavior is dramatically worse on days when Tomas skips breakfast. The food deprivation is functioning as an establishing operation: it increases the value of food and makes food-seeking behavior more frequent, even in settings where no food is visible. When Ms. Park ensures Tomas eats breakfast and provides a scheduled snack, the same cafeteria environment (still an SD for food) no longer evokes grabbing because the MO has been abolished.",
@@ -88,7 +88,7 @@ export const MODULE_ENHANCEMENTS = {
     }
   ],
 
-  "Measurement & Data": [
+  "Measurement, Data Display, and Interpretation": [
     {
       // concept[0]: Continuous vs. Discontinuous Measurement
       example: "Dr. Santos is measuring Elijah's hand-biting, which occurs in brief half-second bursts dozens of times per hour. A colleague suggests partial interval recording with 10-second intervals for ease of data collection. Dr. Santos rejects this because partial interval recording will systematically overestimate the behavior — recording an entire 10-second interval as 'occurred' for a half-second bite. Instead, she uses event recording with a tally counter, capturing each discrete instance accurately and enabling true rate calculation.",
@@ -176,7 +176,7 @@ export const MODULE_ENHANCEMENTS = {
     }
   ],
 
-  "Ethics & Professional Conduct": [
+  "Ethical and Professional Issues": [
     {
       // concept[0]: BACB Ethics Code 2.0: Core Responsibilities and Multiple Relationships
       example: "BCBA Ms. Brennan has been working with a family for two years and is now invited to the client's birthday party. She considers Section 1.06: the relationship is warm but not a pre-existing personal friendship — the family views her as a trusted professional. She consults with a colleague, documents her reasoning, and determines that attending a brief birthday event poses low exploitation risk given the context. She attends for 20 minutes, maintains professional boundaries, and documents her decision rationale in the clinical record.",
@@ -306,7 +306,7 @@ export const MODULE_ENHANCEMENTS = {
     }
   ],
 
-  "Selecting & Implementing Interventions": [
+  "Selecting and Implementing Interventions": [
     {
       // concept[0]: Least Restrictive Effective Treatment: Principle and Application
       example: "Tobias, a 12-year-old, engages in severe, tissue-damaging head-banging that has resulted in a skull fracture. His BCBA, Dr. Reyes, considers the least restrictive alternative principle but recognizes that the medical severity justifies implementing a more intensive intervention package immediately rather than starting with the most minimal approach and waiting to see if it works. She documents the clinical rationale, obtains appropriate consent, and includes a plan for fading to less intensive procedures as behavior improves — demonstrating that LRA guides the overall trajectory, not necessarily the first step.",
@@ -349,7 +349,7 @@ export const MODULE_ENHANCEMENTS = {
     }
   ],
 
-  "Supervision & Management": [
+  "Personnel Supervision and Management": [
     {
       // concept[0]: Behavioral Skills Training (BST): The Evidence-Based Supervision Model
       example: "A new RBT, Carlos, receives a printed manual about discrete trial training and watches a video demonstration. His supervisor, Dr. Ellis, observes him with a client the next day and finds his error correction procedure is incorrect on 8 out of 10 trials. Dr. Ellis recognizes this as a BST failure — instruction and modeling were delivered but behavioral rehearsal with feedback was skipped. She conducts a role-play session that afternoon, provides immediate specific feedback, and re-observes Carlos with the client until his implementation reaches 95% fidelity.",
