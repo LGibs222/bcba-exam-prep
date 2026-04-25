@@ -43,6 +43,43 @@ function formatDuration(minutes) {
 }
 const bumpStat = (stats, key, by=1) => ({ ...(stats||{}), [key]: (stats?.[key]||0) + by })
 
+// ── WEAK SPOTS (spaced-mastery review queue) ──────────────
+const weakSpotId = q => q.id || `stem:${(q.stem||'').substring(0,80)}`
+function updateWeakSpots(weakSpots, questions, answers) {
+  const updated = {...(weakSpots||{})}
+  const now = Date.now()
+  questions.forEach((q, i) => {
+    const id = weakSpotId(q)
+    const userAns = answers[i]
+    if (userAns === undefined) return  // unanswered, skip
+    const isCorrect = userAns === q.correct
+    const existing = updated[id]
+    if (!isCorrect) {
+      updated[id] = {
+        question: { stem:q.stem, options:q.options, correct:q.correct, rationale:q.rationale, domain_name:q.domain_name },
+        consecutiveCorrect: 0,
+        lastSeen: now,
+        timesAttempted: (existing?.timesAttempted || 0) + 1,
+        timesCorrect: existing?.timesCorrect || 0,
+      }
+    } else if (existing) {
+      const newStreak = (existing.consecutiveCorrect || 0) + 1
+      if (newStreak >= 2) {
+        delete updated[id]  // graduated
+      } else {
+        updated[id] = {
+          ...existing,
+          consecutiveCorrect: newStreak,
+          lastSeen: now,
+          timesAttempted: existing.timesAttempted + 1,
+          timesCorrect: existing.timesCorrect + 1,
+        }
+      }
+    }
+  })
+  return updated
+}
+
 const C = {
   primary:'#1a3a5c', primaryLight:'#e8f0fb', primaryMid:'#2e5fa3',
   accent:'#c47d0e', accentBg:'#fef9ec', accentBorder:'#f5c842',
@@ -116,6 +153,7 @@ const INITIAL = {
   moduleQIndex:0, moduleAnswers:{},
   examAnswers:{}, examQuestions:[], examScores:null,
   domainQuizDomain:null, domainQuizQuestions:[], domainQuizAnswers:{}, domainQuizQIndex:0,
+  weakSpots:{}, weakReviewQueue:[], weakReviewIdx:0, weakReviewAnswers:{}, weakReviewStartCount:0,
   confirmReset:false, timerSeconds:14400, timerActive:false,
   stats: {daysStudied:[], todayDate:'', todayMinutes:0, totalMinutes:0, modulesPassed:0, pretestsCompleted:0, examAttempts:0},
 }
@@ -392,7 +430,7 @@ function StatsCard({stats}) {
 }
 
 // ── WELCOME ──────────────────────────────────────────────
-function Welcome({onStart,onSkipPretest,stats}) {
+function Welcome({onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpots}) {
   return (
     <div style={{maxWidth:660,margin:'0 auto',padding:'40px 20px',fontFamily:'Georgia,serif'}}>
       <div style={{textAlign:'center',marginBottom:36}}>
@@ -401,6 +439,7 @@ function Welcome({onStart,onSkipPretest,stats}) {
         <p style={{fontSize:15,color:C.muted,margin:0,fontFamily:'system-ui'}}>6th Edition Task Content Outline · BACB Aligned · 522-Question Bank</p>
       </div>
       <StatsCard stats={stats}/>
+      <WeakSpotsCard count={weakSpotsCount} onReview={onReviewWeakSpots}/>
       <Card style={{marginBottom:20}}>
         <h2 style={{fontSize:17,fontWeight:700,color:C.primary,margin:'0 0 16px',fontFamily:'system-ui'}}>Your Study Path</h2>
         {[
@@ -960,6 +999,129 @@ function ExamScreen({questions,answers,qIndex,timerSeconds,onAnswer,onNav,onSubm
 }
 
 // ── FINAL RESULTS ────────────────────────────────────────
+// ── WEAK SPOTS CARD (Welcome screen) ─────────────────────
+function WeakSpotsCard({count, onReview}) {
+  if (!count) return null
+  return (
+    <div style={{marginBottom:20,background:'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',border:`1px solid ${C.redBorder}`,borderRadius:14,padding:'16px 18px',display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+      <div>
+        <h3 style={{fontSize:14,fontWeight:800,color:C.red,margin:'0 0 4px',textTransform:'uppercase',letterSpacing:'0.06em'}}>🎯 Weak Spots</h3>
+        <p style={{fontSize:13,color:C.red,margin:0,opacity:0.85}}>You have <strong>{count}</strong> question{count===1?'':'s'} to review</p>
+      </div>
+      <button onClick={onReview} style={{padding:'10px 18px',background:C.red,color:C.white,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>
+        Review →
+      </button>
+    </div>
+  )
+}
+
+// ── WEAK SPOT REVIEW (single-question with feedback) ──────
+function WeakSpotReview({queue, idx, answers, onAnswer, onNext, onQuit, startCount}) {
+  const item = queue[idx]
+  if (!item) return null
+  const q = item.question
+  const userAns = answers[idx]
+  const showFeedback = userAns !== undefined
+  const isCorrect = showFeedback && userAns === q.correct
+  return (
+    <div style={{maxWidth:680,margin:'0 auto',padding:'24px 20px',fontFamily:'system-ui'}}>
+      <button onClick={onQuit} style={{background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:14,marginBottom:14,padding:0}}>← Save & Exit</button>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14,flexWrap:'wrap',gap:8}}>
+        <h2 style={{fontSize:20,fontWeight:700,color:C.red,margin:0,fontFamily:'Georgia,serif'}}>🎯 Weak Spots Review</h2>
+        <span style={{fontSize:12,color:C.muted}}>Question {idx+1} of {queue.length} · started with {startCount}</span>
+      </div>
+      <div style={{height:4,background:C.border,borderRadius:99,marginBottom:18,overflow:'hidden'}}>
+        <div style={{width:`${((idx+1)/queue.length)*100}%`,height:'100%',background:C.red,borderRadius:99,transition:'width 0.3s'}}/>
+      </div>
+      <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap'}}>
+        <Pill text={q.domain_name} color={C.primary} bg={C.primaryLight}/>
+        <span style={{fontSize:11,color:C.muted}}>Streak: {item.consecutiveCorrect||0}/2 to graduate · seen {item.timesAttempted||1}×</span>
+      </div>
+      <Card style={{marginBottom:16}}>
+        <p style={{fontSize:15,lineHeight:1.7,color:C.text,margin:0,fontFamily:'Georgia,serif',fontWeight:500}}>{q.stem}</p>
+      </Card>
+      <div style={{display:'flex',flexDirection:'column',gap:9,marginBottom:16}}>
+        {q.options.map((opt,i)=>{
+          const isSel=userAns===i
+          const isCorrectOpt = i===q.correct
+          let bg=C.white, border=C.border, labelColor=C.muted
+          if (showFeedback && isCorrectOpt) { bg=C.greenBg; border=C.greenBorder; labelColor=C.green }
+          if (showFeedback && isSel && !isCorrectOpt) { bg=C.redBg; border=C.redBorder; labelColor=C.red }
+          if (!showFeedback && isSel) { bg=C.primaryLight; border=C.primary; labelColor=C.primary }
+          return (
+            <button key={i} onClick={()=>!showFeedback && onAnswer(i)}
+              disabled={showFeedback}
+              style={{textAlign:'left',padding:'12px 15px',borderRadius:10,border:`2px solid ${border}`,background:bg,
+                cursor:showFeedback?'default':'pointer',fontSize:14,color:C.text,display:'flex',alignItems:'flex-start',gap:10}}>
+              <span style={{fontWeight:700,flexShrink:0,color:labelColor,minWidth:16}}>{['A','B','C','D'][i]}.</span>
+              <span style={{flex:1,lineHeight:1.55}}>{opt}</span>
+              {showFeedback && isCorrectOpt && <span style={{color:C.green,fontWeight:700,fontSize:12,whiteSpace:'nowrap'}}>✓ Correct</span>}
+              {showFeedback && isSel && !isCorrectOpt && <span style={{color:C.red,fontWeight:700,fontSize:12,whiteSpace:'nowrap'}}>✗ Your pick</span>}
+            </button>
+          )
+        })}
+      </div>
+      {showFeedback && (
+        <>
+          <div style={{padding:'10px 14px',borderRadius:10,marginBottom:12,fontSize:13,fontWeight:700,
+            background:isCorrect?C.greenBg:C.redBg,color:isCorrect?C.green:C.red,
+            border:`1px solid ${isCorrect?C.greenBorder:C.redBorder}`,textAlign:'center'}}>
+            {isCorrect ? `✓ Right! ${(item.consecutiveCorrect||0)+1 >= 2 ? 'Graduated 🎓' : `One more in a row to graduate`}` : '✗ Stays in queue — try again next time'}
+          </div>
+          <Card style={{background:C.grayLight,marginBottom:14}}>
+            <div style={{fontSize:11,fontWeight:800,color:C.primary,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:6}}>📘 Rationale</div>
+            <p style={{fontSize:13.5,color:C.text,margin:0,lineHeight:1.7}}>{q.rationale}</p>
+          </Card>
+          <button onClick={onNext}
+            style={{width:'100%',padding:'13px',background:C.primary,color:C.white,border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>
+            {idx < queue.length - 1 ? 'Next Question →' : 'See Summary →'}
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
+function WeakSpotSummary({queue, answers, startCount, onContinue, onDone, remaining}) {
+  const correctCount = queue.filter((_,i) => answers[i] === queue[i].question.correct).length
+  const graduatedCount = queue.filter((item,i) => answers[i] === item.question.correct && (item.consecutiveCorrect||0) + 1 >= 2).length
+  return (
+    <div style={{maxWidth:560,margin:'0 auto',padding:'48px 20px',textAlign:'center',fontFamily:'system-ui'}}>
+      <div style={{fontSize:48,marginBottom:8}}>🎯</div>
+      <h2 style={{fontSize:22,fontWeight:700,color:C.primary,fontFamily:'Georgia,serif',margin:'0 0 6px'}}>Review Complete</h2>
+      <p style={{fontSize:14,color:C.muted,margin:'0 0 24px'}}>You worked through {queue.length} weak-spot question{queue.length===1?'':'s'}</p>
+
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3, 1fr)',gap:10,marginBottom:24}}>
+        <div style={{padding:'14px 8px',borderRadius:12,background:C.greenBg,border:`1px solid ${C.greenBorder}`}}>
+          <div style={{fontSize:24,fontWeight:900,color:C.green}}>{correctCount}</div>
+          <div style={{fontSize:11,color:C.green,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em'}}>Correct</div>
+        </div>
+        <div style={{padding:'14px 8px',borderRadius:12,background:C.accentBg,border:`1px solid ${C.accentBorder}`}}>
+          <div style={{fontSize:24,fontWeight:900,color:C.accent}}>🎓 {graduatedCount}</div>
+          <div style={{fontSize:11,color:C.accent,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em'}}>Graduated</div>
+        </div>
+        <div style={{padding:'14px 8px',borderRadius:12,background:C.redBg,border:`1px solid ${C.redBorder}`}}>
+          <div style={{fontSize:24,fontWeight:900,color:C.red}}>{remaining}</div>
+          <div style={{fontSize:11,color:C.red,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em'}}>Still Queued</div>
+        </div>
+      </div>
+
+      <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
+        {remaining > 0 && (
+          <button onClick={onContinue}
+            style={{padding:'13px 24px',background:C.red,color:C.white,border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>
+            Keep Reviewing ({remaining}) →
+          </button>
+        )}
+        <button onClick={onDone}
+          style={{padding:'13px 24px',background:remaining>0?C.white:C.primary,color:remaining>0?C.primary:C.white,border:remaining>0?`2px solid ${C.primary}`:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>
+          🏠 Back to Home
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── DOMAIN SPOT-CHECK RESULTS ────────────────────────────
 function DomainQuizResults({domain, questions, answers, onReview, onTryAnother, onBack}) {
   const correct = questions.filter((q,i)=>answers[i]===q.correct).length
@@ -1204,7 +1366,9 @@ export default function App() {
           if(p.timerSeconds<=1) {
             clearInterval(timerRef.current)
             const scores = calcScores(p.examQuestions, p.examAnswers)
-            return {...p, timerSeconds:0, timerActive:false, phase:'final_results', examScores:scores, stats:bumpStat(p.stats,'examAttempts')}
+            return {...p, timerSeconds:0, timerActive:false, phase:'final_results', examScores:scores,
+              weakSpots:updateWeakSpots(p.weakSpots, p.examQuestions, p.examAnswers),
+              stats:bumpStat(p.stats,'examAttempts')}
           }
           return {...p, timerSeconds:p.timerSeconds-1}
         })
@@ -1270,6 +1434,12 @@ export default function App() {
   )
 
   if(st.phase==='welcome') return <div>{nav}<Welcome stats={st.stats}
+    weakSpotsCount={Object.keys(st.weakSpots||{}).length}
+    onReviewWeakSpots={()=>{
+      const items = Object.values(st.weakSpots||{})
+      const queue = [...items].sort(()=>Math.random()-0.5)
+      up({phase:'weak_review', weakReviewQueue:queue, weakReviewIdx:0, weakReviewAnswers:{}, weakReviewStartCount:queue.length})
+    }}
     onStart={()=>up({phase:'pretest',qIndex:0,pretestAnswers:{},pretestQuestions:shuffleQuestions(PRETEST_QUESTIONS)})}
     onSkipPretest={()=>up({phase:'modules',skippedPretest:true,weakDomains:DOMAINS,moduleStatuses:{}})}/></div>
 
@@ -1282,7 +1452,9 @@ export default function App() {
       onSubmit={()=>{
         const scores=calcScores(pqs,st.pretestAnswers)
         const weak=DOMAINS.filter(d=>scores[d]&&pct(scores[d].correct,scores[d].total)<70)
-        setSt(p=>({...p, phase:'pretest_results', pretestScores:scores, weakDomains:weak, stats:bumpStat(p.stats,'pretestsCompleted')}))
+        setSt(p=>({...p, phase:'pretest_results', pretestScores:scores, weakDomains:weak,
+          weakSpots:updateWeakSpots(p.weakSpots, pqs, p.pretestAnswers),
+          stats:bumpStat(p.stats,'pretestsCompleted')}))
       }}
       label="Pretest"/></div>
   }
@@ -1307,7 +1479,7 @@ export default function App() {
       questions={dqs} answers={st.domainQuizAnswers} qIndex={st.domainQuizQIndex}
       onAnswer={(i,a)=>up({domainQuizAnswers:{...st.domainQuizAnswers,[i]:a}})}
       onNav={d=>up({domainQuizQIndex:Math.max(0,Math.min(dqs.length-1,st.domainQuizQIndex+d))})}
-      onSubmit={()=>up({phase:'domain_quiz_results'})}
+      onSubmit={()=>setSt(p=>({...p, phase:'domain_quiz_results', weakSpots:updateWeakSpots(p.weakSpots, p.domainQuizQuestions, p.domainQuizAnswers)}))}
       label="Spot-Check"/></div>
   }
 
@@ -1324,6 +1496,42 @@ export default function App() {
     questions={st.domainQuizQuestions} answers={st.domainQuizAnswers}
     onBack={()=>up({phase:'domain_quiz_results'})}/></div>
 
+  if(st.phase==='weak_review') return <div>{nav}<WeakSpotReview
+    queue={st.weakReviewQueue} idx={st.weakReviewIdx} answers={st.weakReviewAnswers}
+    startCount={st.weakReviewStartCount}
+    onAnswer={(choice)=>{
+      const item = st.weakReviewQueue[st.weakReviewIdx]
+      const isCorrect = choice === item.question.correct
+      setSt(p=>{
+        const newAns = {...p.weakReviewAnswers, [p.weakReviewIdx]:choice}
+        const ws = {...(p.weakSpots||{})}
+        const id = weakSpotId(item.question)
+        if (isCorrect) {
+          const newStreak = (ws[id]?.consecutiveCorrect || 0) + 1
+          if (newStreak >= 2) { delete ws[id] }
+          else if (ws[id]) ws[id] = {...ws[id], consecutiveCorrect:newStreak, lastSeen:Date.now(), timesAttempted:(ws[id].timesAttempted||0)+1, timesCorrect:(ws[id].timesCorrect||0)+1}
+        } else if (ws[id]) {
+          ws[id] = {...ws[id], consecutiveCorrect:0, lastSeen:Date.now(), timesAttempted:(ws[id].timesAttempted||0)+1}
+        }
+        return {...p, weakReviewAnswers:newAns, weakSpots:ws}
+      })
+    }}
+    onNext={()=>{
+      if (st.weakReviewIdx < st.weakReviewQueue.length - 1) up({weakReviewIdx: st.weakReviewIdx + 1})
+      else up({phase:'weak_review_summary'})
+    }}
+    onQuit={()=>up({phase:'welcome'})}/></div>
+
+  if(st.phase==='weak_review_summary') return <div>{nav}<WeakSpotSummary
+    queue={st.weakReviewQueue} answers={st.weakReviewAnswers} startCount={st.weakReviewStartCount}
+    remaining={Object.keys(st.weakSpots||{}).length}
+    onContinue={()=>{
+      const items = Object.values(st.weakSpots||{})
+      const queue = [...items].sort(()=>Math.random()-0.5)
+      up({phase:'weak_review', weakReviewQueue:queue, weakReviewIdx:0, weakReviewAnswers:{}, weakReviewStartCount:queue.length})
+    }}
+    onDone={()=>up({phase:'welcome'})}/></div>
+
   if(st.phase==='module') return <div>{nav}<LearningModule
     domain={st.activeModule} phase={st.modulePhase}
     qIndex={st.moduleQIndex} answers={st.moduleAnswers}
@@ -1331,8 +1539,14 @@ export default function App() {
       if(i==='reset'){up({moduleAnswers:{},moduleQIndex:0});return}
       if(i==='next'){up({moduleQIndex:st.moduleQIndex+1});return}
       const newAns={...st.moduleAnswers,[i]:a}
-      up({moduleAnswers:newAns})
-      if(i<MODULES[st.activeModule].practice.length-1) setTimeout(()=>up({moduleQIndex:i+1}),800)
+      const practice = MODULES[st.activeModule].practice
+      const nowAllAnswered = Object.keys(newAns).length === practice.length
+      if (nowAllAnswered) {
+        setSt(p=>({...p, moduleAnswers:newAns, weakSpots:updateWeakSpots(p.weakSpots, practice, newAns)}))
+      } else {
+        up({moduleAnswers:newAns})
+        if(i<practice.length-1) setTimeout(()=>up({moduleQIndex:i+1}),800)
+      }
     }}
     onBack={()=>up({phase:'modules'})}
     onStartQuiz={()=>up({modulePhase:'quiz',moduleQIndex:0,moduleAnswers:{}})}
@@ -1360,7 +1574,9 @@ export default function App() {
     onSubmit={()=>{
       clearInterval(timerRef.current)
       const scores=calcScores(st.examQuestions,st.examAnswers)
-      setSt(p=>({...p, phase:'final_results', examScores:scores, timerActive:false, stats:bumpStat(p.stats,'examAttempts')}))
+      setSt(p=>({...p, phase:'final_results', examScores:scores, timerActive:false,
+        weakSpots:updateWeakSpots(p.weakSpots, p.examQuestions, p.examAnswers),
+        stats:bumpStat(p.stats,'examAttempts')}))
     }}/></div>
 
   if(st.phase==='final_results') return <div>{nav}<FinalResults
