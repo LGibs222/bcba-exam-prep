@@ -83,6 +83,12 @@ function shuffleQuestions(qs) {
   return [...qs].sort(()=>Math.random()-0.5).map(shuffleQuestion)
 }
 
+function sampleDomainQuestions(domain, count=20, excludeStems=[]) {
+  const exclude = new Set(excludeStems.map(s => (s||'').substring(0,60)))
+  const pool = QUESTION_BANK.filter(q => q.domain_name === domain && !exclude.has(q.stem.substring(0,60)))
+  return [...pool].sort(()=>Math.random()-0.5).slice(0, Math.min(count, pool.length)).map(shuffleQuestion)
+}
+
 function sampleExamQuestions(pretestQs, count=150) {
   const pretestStems = new Set(pretestQs.map(q=>q.stem.substring(0,60)))
   const pool = QUESTION_BANK.filter(q => !pretestStems.has(q.stem.substring(0,60)))
@@ -109,6 +115,7 @@ const INITIAL = {
   moduleStatuses:{}, activeModule:null, modulePhase:'content',
   moduleQIndex:0, moduleAnswers:{},
   examAnswers:{}, examQuestions:[], examScores:null,
+  domainQuizDomain:null, domainQuizQuestions:[], domainQuizAnswers:{}, domainQuizQIndex:0,
   confirmReset:false, timerSeconds:14400, timerActive:false,
   stats: {daysStudied:[], todayDate:'', todayMinutes:0, totalMinutes:0, modulesPassed:0, pretestsCompleted:0, examAttempts:0},
 }
@@ -544,14 +551,14 @@ function PretestResults({scores,weakDomains,onStudy,onSkip}) {
 }
 
 // ── MODULE HUB ───────────────────────────────────────────
-function ModuleHub({weakDomains,moduleStatuses,onSelect,onExam}) {
+function ModuleHub({weakDomains,moduleStatuses,onSelect,onExam,onSpotCheck}) {
   const allPassed = weakDomains.every(d=>moduleStatuses[d]==='passed')
   const passedCount = weakDomains.filter(d=>moduleStatuses[d]==='passed').length
   return (
     <div style={{maxWidth:680,margin:'0 auto',padding:'32px 20px',fontFamily:'system-ui'}}>
       <div style={{textAlign:'center',marginBottom:28}}>
         <h2 style={{fontSize:22,fontWeight:700,color:C.primary,margin:'0 0 6px',fontFamily:'Georgia,serif'}}>Study Plan</h2>
-        <p style={{fontSize:14,color:C.muted,margin:0}}>Complete each module and pass the 5-question quiz (≥80%) to unlock the full exam</p>
+        <p style={{fontSize:14,color:C.muted,margin:0}}>Pass each 5-question module quiz to unlock the full exam — or run a 20-question spot-check anytime</p>
       </div>
       {weakDomains.map(d=>{
         const status=moduleStatuses[d]||'not_started'
@@ -559,21 +566,25 @@ function ModuleHub({weakDomains,moduleStatuses,onSelect,onExam}) {
         const sc=statusColors[status]
         return (
           <Card key={d} style={{marginBottom:12}}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-              <div style={{display:'flex',alignItems:'center',gap:12}}>
-                <div style={{fontSize:28}}>{MODULES[d]?.icon}</div>
-                <div>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12,gap:8,flexWrap:'wrap'}}>
+              <div style={{display:'flex',alignItems:'center',gap:12,flex:1,minWidth:0}}>
+                <div style={{fontSize:28,flexShrink:0}}>{MODULES[d]?.icon}</div>
+                <div style={{minWidth:0}}>
                   <div style={{fontSize:15,fontWeight:700,color:C.primary}}>{d}</div>
-                  <div style={{fontSize:12,color:C.muted}}>{MODULES[d]?.concepts?.length||0} concepts · 5-question quiz</div>
+                  <div style={{fontSize:12,color:C.muted}}>{MODULES[d]?.concepts?.length||0} concepts · 5-Q checkpoint</div>
                 </div>
               </div>
-              <div style={{display:'flex',alignItems:'center',gap:8}}>
-                <Pill text={sc.label} color={sc.color} bg={sc.bg}/>
-                <button onClick={()=>onSelect(d)}
-                  style={{padding:'8px 16px',borderRadius:10,border:'none',background:status==='passed'?C.greenBg:C.primary,color:status==='passed'?C.green:C.white,cursor:'pointer',fontSize:13,fontWeight:700}}>
-                  {status==='passed'?'Review':'Study →'}
-                </button>
-              </div>
+              <Pill text={sc.label} color={sc.color} bg={sc.bg}/>
+            </div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>onSelect(d)}
+                style={{flex:1,padding:'10px 14px',borderRadius:10,border:`1.5px solid ${C.primary}`,background:status==='passed'?C.white:C.primary,color:status==='passed'?C.primary:C.white,cursor:'pointer',fontSize:13,fontWeight:700}}>
+                {status==='passed'?'📖 Review':'Study →'}
+              </button>
+              <button onClick={()=>onSpotCheck(d)}
+                style={{flex:1,padding:'10px 14px',borderRadius:10,border:'none',background:C.accent,color:C.white,cursor:'pointer',fontSize:13,fontWeight:700}}>
+                🎯 Spot-Check 20Q
+              </button>
             </div>
           </Card>
         )
@@ -949,6 +960,33 @@ function ExamScreen({questions,answers,qIndex,timerSeconds,onAnswer,onNav,onSubm
 }
 
 // ── FINAL RESULTS ────────────────────────────────────────
+// ── DOMAIN SPOT-CHECK RESULTS ────────────────────────────
+function DomainQuizResults({domain, questions, answers, onReview, onTryAnother, onBack}) {
+  const correct = questions.filter((q,i)=>answers[i]===q.correct).length
+  const total = questions.length
+  const percent = Math.round((correct/total)*100)
+  const passed = percent >= 80
+  return (
+    <div style={{maxWidth:580,margin:'0 auto',padding:'40px 20px',textAlign:'center',fontFamily:'system-ui'}}>
+      <div style={{fontSize:48,marginBottom:8}}>{MODULES[domain]?.icon}</div>
+      <h2 style={{fontSize:22,fontWeight:700,color:C.primary,fontFamily:'Georgia,serif',margin:'0 0 6px'}}>Spot-Check Complete</h2>
+      <p style={{fontSize:14,color:C.muted,margin:'0 0 22px'}}>{domain}</p>
+      <div style={{padding:'24px 20px',borderRadius:14,background:passed?C.greenBg:C.redBg,border:`1px solid ${passed?C.greenBorder:C.redBorder}`,marginBottom:24}}>
+        <div style={{fontSize:48,fontWeight:900,color:passed?C.green:C.red,lineHeight:1}}>{percent}%</div>
+        <p style={{fontSize:16,fontWeight:700,color:passed?C.green:C.red,margin:'6px 0 0'}}>{correct} / {total} correct</p>
+        <p style={{fontSize:12,color:passed?C.green:C.red,margin:'4px 0 0',opacity:0.8}}>
+          {passed?'✓ Strong on this domain':'Needs more review'}
+        </p>
+      </div>
+      <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
+        <button onClick={onReview} style={{padding:'12px 20px',background:C.primary,color:C.white,border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>📖 Review Questions</button>
+        <button onClick={onTryAnother} style={{padding:'12px 20px',background:C.white,color:C.accent,border:`2px solid ${C.accent}`,borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>↻ New 20 Questions</button>
+        <button onClick={onBack} style={{padding:'12px 18px',background:'transparent',color:C.muted,border:'none',cursor:'pointer',fontSize:13,fontWeight:600}}>← Back to Study Plan</button>
+      </div>
+    </div>
+  )
+}
+
 // ── EXAM REVIEW MODE ─────────────────────────────────────
 function ExamReview({questions, answers, onBack}) {
   const [filter, setFilter] = useState('all')  // all | missed | correct
@@ -1257,7 +1295,34 @@ export default function App() {
   if(st.phase==='modules') return <div>{nav}<ModuleHub
     weakDomains={st.weakDomains} moduleStatuses={st.moduleStatuses}
     onSelect={d=>up({phase:'module',activeModule:d,modulePhase:'content',moduleQIndex:0,moduleAnswers:{}})}
-    onExam={()=>up({phase:'exam_intro'})}/></div>
+    onExam={()=>up({phase:'exam_intro'})}
+    onSpotCheck={d=>{
+      const qs = sampleDomainQuestions(d, 20, PRETEST_QUESTIONS.map(q=>q.stem))
+      up({phase:'domain_quiz', domainQuizDomain:d, domainQuizQuestions:qs, domainQuizAnswers:{}, domainQuizQIndex:0})
+    }}/></div>
+
+  if(st.phase==='domain_quiz') {
+    const dqs = st.domainQuizQuestions
+    return <div>{nav}<QuestionScreen
+      questions={dqs} answers={st.domainQuizAnswers} qIndex={st.domainQuizQIndex}
+      onAnswer={(i,a)=>up({domainQuizAnswers:{...st.domainQuizAnswers,[i]:a}})}
+      onNav={d=>up({domainQuizQIndex:Math.max(0,Math.min(dqs.length-1,st.domainQuizQIndex+d))})}
+      onSubmit={()=>up({phase:'domain_quiz_results'})}
+      label="Spot-Check"/></div>
+  }
+
+  if(st.phase==='domain_quiz_results') return <div>{nav}<DomainQuizResults
+    domain={st.domainQuizDomain} questions={st.domainQuizQuestions} answers={st.domainQuizAnswers}
+    onReview={()=>up({phase:'domain_quiz_review'})}
+    onTryAnother={()=>{
+      const qs = sampleDomainQuestions(st.domainQuizDomain, 20, PRETEST_QUESTIONS.map(q=>q.stem))
+      up({phase:'domain_quiz', domainQuizQuestions:qs, domainQuizAnswers:{}, domainQuizQIndex:0})
+    }}
+    onBack={()=>up({phase:'modules'})}/></div>
+
+  if(st.phase==='domain_quiz_review') return <div>{nav}<ExamReview
+    questions={st.domainQuizQuestions} answers={st.domainQuizAnswers}
+    onBack={()=>up({phase:'domain_quiz_results'})}/></div>
 
   if(st.phase==='module') return <div>{nav}<LearningModule
     domain={st.activeModule} phase={st.modulePhase}
