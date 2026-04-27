@@ -44,6 +44,59 @@ function formatDuration(minutes) {
 }
 const bumpStat = (stats, key, by=1) => ({ ...(stats||{}), [key]: (stats?.[key]||0) + by })
 
+// Time-of-day greeting for the Welcome screen.
+function getGreeting() {
+  const h = new Date().getHours()
+  if (h < 5)  return { greeting: 'Studying late?',     accent: 'Quiet hours.' }
+  if (h < 12) return { greeting: 'Good morning.',      accent: 'Steady focus.' }
+  if (h < 17) return { greeting: 'Good afternoon.',    accent: 'Keep going.' }
+  if (h < 21) return { greeting: 'Good evening.',      accent: 'One more rep.' }
+  return        { greeting: 'Late-night session.',  accent: 'Be kind to yourself.' }
+}
+
+// Compute earned achievements from user state. Each badge:
+// { id, label, icon, earned (bool), description }
+function computeAchievements(stats, safmeds, moduleStatuses, examScores) {
+  const days = stats?.daysStudied?.length || 0
+  const streak = calculateStreak(stats?.daysStudied)
+  const modulesPassed = stats?.modulesPassed || 0
+  const examAttempts = stats?.examAttempts || 0
+  const safmedsTokens = safmeds?.totalTokens || 0
+  const totalMinutes = stats?.totalMinutes || 0
+
+  const all = [
+    { id:'first_step',   label:'First Step',     icon:'🌱', earned: days >= 1,             description:'Studied for the first time' },
+    { id:'streak_3',     label:'On a Roll',      icon:'🔥', earned: streak >= 3,           description:'3-day study streak' },
+    { id:'streak_7',     label:'Week Strong',    icon:'⭐', earned: streak >= 7,           description:'7-day study streak' },
+    { id:'streak_14',    label:'Two Weeks',      icon:'💎', earned: streak >= 14,          description:'14-day study streak' },
+    { id:'first_module', label:'Module Master',  icon:'📚', earned: modulesPassed >= 1,    description:'Passed your first module quiz' },
+    { id:'half_modules', label:'Halfway',        icon:'🌗', earned: modulesPassed >= 5,    description:'Passed 5 module quizzes' },
+    { id:'all_modules',  label:'All Domains',    icon:'🎯', earned: modulesPassed >= 9,    description:'Passed every domain quiz' },
+    { id:'first_exam',   label:'Test-Ready',     icon:'🏁', earned: examAttempts >= 1,     description:'Took your first mock exam' },
+    { id:'fluency_50',   label:'Fluency',        icon:'🎴', earned: safmedsTokens >= 50,   description:'Earned 50 SAFMEDS tokens' },
+    { id:'time_60',      label:'Hour One',       icon:'⏱',  earned: totalMinutes >= 60,    description:'Studied for 60 minutes total' },
+    { id:'time_300',     label:'Five Hours',     icon:'🕐', earned: totalMinutes >= 300,   description:'Studied for 5 hours total' },
+  ]
+  return all
+}
+
+// Smart "Today's focus" suggestion based on user's furthest-along state.
+function suggestNextFocus(st) {
+  if (!st.pretestScores && !st.skippedPretest) {
+    return { title:'Start with the diagnostic', desc:'Take the 30-question pretest to find your weak domains.', cta:'Start Pretest', go:'pretest' }
+  }
+  const passedAll = DOMAINS.every(d => st.moduleStatuses[d] === 'passed')
+  if (!passedAll) {
+    // Find first domain not yet passed
+    const next = (st.weakDomains.length ? st.weakDomains : DOMAINS).find(d => st.moduleStatuses[d] !== 'passed')
+    if (next) return { title:`Study Domain ${next.split('.')[0]}`, desc:`Continue with "${next}". Pass the 80% quiz to unlock the mock.`, cta:'Open Module', go:'modules' }
+  }
+  if (passedAll && !st.examScores) {
+    return { title:'Take the full mock', desc:'All domains unlocked. The 185-question mock exam is ready.', cta:'Begin Mock', go:'exam' }
+  }
+  return { title:'Maintain fluency', desc:'Run a SAFMEDS drill to stay sharp on the terminology.', cta:'Open SAFMEDS', go:'safmeds' }
+}
+
 // ── SAFMEDS (Say All Fast Minute Each Day Shuffled) ────────
 const SAFMEDS_LEVELS = [
   { id:'beginner',     label:'Beginner',     icon:'🌱', unlock:0,   color:'#16a34a' },
@@ -237,8 +290,8 @@ const INITIAL = {
 // Glassmorphic surface — uses --surface (rgba) + backdrop-filter for the
 // frosted look; falls back to a translucent panel where backdrop-filter
 // isn't supported.
-const Card = ({children,style={}}) => (
-  <div style={{
+const Card = ({children,style={},className=''}) => (
+  <div className={className} style={{
     background:C.white,
     backdropFilter:'blur(14px)',
     WebkitBackdropFilter:'blur(14px)',
@@ -349,6 +402,72 @@ const GlobalStyles = () => (
     .kt-card:hover{filter:brightness(.96)}
     /* SVG visuals: keep on a near-white card in both themes for legibility */
     :root[data-theme="dark"] .visual-card { background: #f1f5f9 !important; }
+
+    /* ── Welcome-screen entrance + micro-interactions ──────────── */
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+    .fade-up { animation: fadeUp .5s cubic-bezier(.2,.7,.2,1) both; }
+    .fade-up-1 { animation-delay: .05s; }
+    .fade-up-2 { animation-delay: .15s; }
+    .fade-up-3 { animation-delay: .25s; }
+    .fade-up-4 { animation-delay: .35s; }
+    .fade-up-5 { animation-delay: .45s; }
+    .fade-up-6 { animation-delay: .55s; }
+    .fade-up-7 { animation-delay: .65s; }
+
+    @keyframes softPulse { 0%,100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(212,165,116,0)); } 50% { transform: scale(1.08); filter: drop-shadow(0 0 8px rgba(212,165,116,.55)); } }
+    .pulse-soft { display:inline-block; animation: softPulse 2.4s ease-in-out infinite; }
+
+    @keyframes orbDrift { 0%,100% { transform: translate(0,0); } 50% { transform: translate(8px,-12px); } }
+    .welcome-orb {
+      position: absolute; border-radius: 50%; filter: blur(60px);
+      pointer-events: none; z-index: 0;
+      animation: orbDrift 14s ease-in-out infinite;
+    }
+    .welcome-orb-1 { top: -80px; right: -60px; width: 280px; height: 280px;
+      background: radial-gradient(circle, rgba(192,133,112,.22) 0%, transparent 70%); }
+    .welcome-orb-2 { top: 40%; left: -100px; width: 320px; height: 320px;
+      background: radial-gradient(circle, rgba(107,142,127,.18) 0%, transparent 70%);
+      animation-delay: -4s; animation-duration: 18s; }
+    .welcome-orb-3 { bottom: -60px; right: 10%; width: 220px; height: 220px;
+      background: radial-gradient(circle, rgba(184,127,173,.18) 0%, transparent 70%);
+      animation-delay: -8s; animation-duration: 16s; }
+
+    /* Hover lift for interactive cards / domain tiles */
+    .lift { transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s, border-color .25s; }
+    .lift:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(31,41,52,.12); }
+
+    /* Domain tile sage hover ring */
+    .domain-tile { transition: all .25s cubic-bezier(.2,.7,.2,1); }
+    .domain-tile:hover { transform: translateY(-3px); border-color: rgba(107,142,127,.55) !important; box-shadow: 0 6px 20px rgba(31,41,52,.10); }
+
+    /* CTA arrow nudge */
+    .cta-arrow { display:inline-block; transition: transform .25s cubic-bezier(.2,.7,.2,1); }
+    .btn-cta:hover .cta-arrow { transform: translateX(4px); }
+    .btn-cta { transition: transform .2s, box-shadow .2s, filter .2s; }
+    .btn-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(31,41,52,.22); }
+
+    /* Greeting subtle shimmer on the accent word */
+    @keyframes shimmer { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+    .greeting-accent {
+      background: linear-gradient(90deg, #6b8e7f 0%, #c08570 50%, #6b8e7f 100%);
+      background-size: 200% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 8s ease-in-out infinite;
+    }
+
+    /* Journey timeline connector */
+    .journey-line { position: absolute; left: 13px; top: 0; bottom: 0; width: 2px;
+      background: linear-gradient(to bottom, var(--green) 0%, var(--green) var(--journey-progress, 0%), var(--border) var(--journey-progress, 0%), var(--border) 100%);
+      border-radius: 99px; }
+
+    /* Respect reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .fade-up, .pulse-soft, .welcome-orb, .greeting-accent { animation: none !important; }
+      .lift, .domain-tile, .btn-cta, .cta-arrow { transition: none !important; }
+      .fade-up { opacity: 1 !important; transform: none !important; }
+    }
   `}</style>
 )
 
@@ -576,78 +695,252 @@ function StatsCard({stats}) {
   const days = stats?.daysStudied?.length || 0
   if (days === 0 && !stats?.pretestsCompleted && !stats?.modulesPassed && !stats?.examAttempts) return null
   const streak = calculateStreak(stats?.daysStudied)
+  const showStreak = streak > 0
   return (
-    <div style={{marginBottom:20,background:'linear-gradient(135deg, #fef9ec 0%, #fef3c7 100%)',border:`1px solid ${C.accentBorder}`,borderRadius:14,padding:'16px 18px'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,gap:10,flexWrap:'wrap'}}>
-        <h3 style={{fontSize:14,fontWeight:800,color:C.accent,margin:0,fontFamily:'system-ui',textTransform:'uppercase',letterSpacing:'0.06em'}}>📊 Your Progress</h3>
-        {streak > 0 && (
-          <div style={{fontSize:12,fontWeight:800,color:C.accent,background:C.white,padding:'4px 11px',borderRadius:99,border:`1.5px solid ${C.accentBorder}`,whiteSpace:'nowrap'}}>
-            🔥 {streak}-day streak
+    <div style={{marginBottom:20,background:C.white,backdropFilter:'blur(14px)',WebkitBackdropFilter:'blur(14px)',border:`1px solid ${C.border}`,borderRadius:20,padding:'20px 22px',boxShadow:'var(--shadow)'}}>
+      {/* Header row with optional pulsing-flame streak hero */}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,gap:10,flexWrap:'wrap'}}>
+        <h3 style={{fontSize:11,fontWeight:700,color:C.muted,margin:0,textTransform:'uppercase',letterSpacing:'0.18em'}}>Your progress</h3>
+        {showStreak && (
+          <div style={{display:'flex',alignItems:'baseline',gap:8,padding:'6px 14px',borderRadius:99,background:'var(--accent-bg)',border:`1px solid ${C.accentBorder}`}}>
+            <span className="pulse-soft" style={{fontSize:18,lineHeight:1}}>🔥</span>
+            <span style={{fontSize:18,fontWeight:800,color:C.accent,letterSpacing:'-0.02em'}}>{streak}</span>
+            <span style={{fontSize:11,fontWeight:600,color:C.accent,textTransform:'uppercase',letterSpacing:'0.08em'}}>day streak</span>
           </div>
         )}
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px 14px',fontSize:13,color:C.text}}>
-        <div>📅 <strong>{days}</strong> day{days===1?'':'s'} studied</div>
-        <div>⏱️ Today: <strong>{formatDuration(stats?.todayMinutes||0)}</strong></div>
-        <div>✓ <strong>{stats?.modulesPassed||0}</strong> quiz{(stats?.modulesPassed||0)===1?'':'zes'} passed</div>
-        <div>🕐 Total: <strong>{formatDuration(stats?.totalMinutes||0)}</strong></div>
+      {/* Stat grid */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'14px'}}>
+        {[
+          { icon:'📅', label:'Days studied', value: days },
+          { icon:'⏱️', label:'Today',         value: formatDuration(stats?.todayMinutes||0) },
+          { icon:'✓',  label:'Quizzes passed', value: stats?.modulesPassed||0 },
+          { icon:'🕐', label:'Total time',     value: formatDuration(stats?.totalMinutes||0) },
+        ].map((s,i)=>(
+          <div key={i} style={{padding:'10px 12px',borderRadius:12,background:'var(--surface-alt)',border:`1px solid ${C.border}`}}>
+            <div style={{fontSize:11,color:C.muted,fontWeight:600,letterSpacing:'0.04em',display:'flex',alignItems:'center',gap:6}}>
+              <span>{s.icon}</span><span>{s.label}</span>
+            </div>
+            <div style={{fontSize:20,fontWeight:800,color:C.text,letterSpacing:'-0.02em',marginTop:2}}>{s.value}</div>
+          </div>
+        ))}
       </div>
       {((stats?.pretestsCompleted||0) > 0 || (stats?.examAttempts||0) > 0) && (
-        <div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.accentBorder}`,fontSize:12,color:C.muted}}>
-          {(stats?.pretestsCompleted||0) > 0 && <span style={{marginRight:14}}>📝 {stats.pretestsCompleted} pretest{stats.pretestsCompleted===1?'':'s'}</span>}
-          {(stats?.examAttempts||0) > 0 && <span>🏁 {stats.examAttempts} exam attempt{stats.examAttempts===1?'':'s'}</span>}
+        <div style={{marginTop:14,paddingTop:14,borderTop:`1px solid ${C.border}`,fontSize:12,color:C.muted,display:'flex',gap:14,flexWrap:'wrap'}}>
+          {(stats?.pretestsCompleted||0) > 0 && <span>📝 {stats.pretestsCompleted} pretest{stats.pretestsCompleted===1?'':'s'}</span>}
+          {(stats?.examAttempts||0) > 0 && <span>🏁 {stats.examAttempts} mock exam{stats.examAttempts===1?'':'s'}</span>}
         </div>
       )}
     </div>
   )
 }
 
-// ── WELCOME ──────────────────────────────────────────────
-function Welcome({onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpots,safmeds,onOpenSafmeds}) {
+// Earned + locked badges — earned ones bright, locked ones desaturated.
+function AchievementsRow({stats, safmeds, moduleStatuses, examScores}) {
+  const all = computeAchievements(stats, safmeds, moduleStatuses, examScores)
+  const earnedCount = all.filter(b => b.earned).length
+  if (earnedCount === 0) return null
+  // Sort earned first, then by id
+  const sorted = [...all].sort((a,b) => (a.earned===b.earned ? 0 : a.earned ? -1 : 1))
   return (
-    <div style={{maxWidth:660,margin:'0 auto',padding:'40px 20px',fontFamily:'Georgia,serif'}}>
-      <div style={{textAlign:'center',marginBottom:36}}>
-        <div style={{fontSize:52,marginBottom:12}}>🎓</div>
-        <h1 style={{fontSize:28,fontWeight:700,color:C.primary,margin:'0 0 8px',letterSpacing:'-0.5px'}}>BCBA Exam Prep</h1>
-        <p style={{fontSize:15,color:C.muted,margin:0,fontFamily:'system-ui'}}>6th Edition Task Content Outline · BACB Aligned · 522-Question Bank</p>
+    <div style={{marginBottom:20}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:10,padding:'0 4px'}}>
+        <h3 style={{fontSize:11,fontWeight:700,color:C.muted,margin:0,textTransform:'uppercase',letterSpacing:'0.18em'}}>Achievements</h3>
+        <span style={{fontSize:12,color:C.muted,fontWeight:600}}>{earnedCount} of {all.length}</span>
       </div>
-      <StatsCard stats={stats}/>
-      <WeakSpotsCard count={weakSpotsCount} onReview={onReviewWeakSpots}/>
-      <SafmedsCard safmeds={safmeds} onOpen={onOpenSafmeds}/>
-      <Card style={{marginBottom:20}}>
-        <h2 style={{fontSize:17,fontWeight:700,color:C.primary,margin:'0 0 16px',fontFamily:'system-ui'}}>Your Study Path</h2>
-        {[
-          ['1','Diagnostic Pretest','30 scenario-based questions across all 9 domains'],
-          ['2','Personalized Results','See exactly which domains fall below 70%'],
-          ['3','Targeted Modules','Deep-dive study with concept review — must pass 80% quiz to unlock exam'],
-          ['4','Full Mock Exam','185 questions (175 scored + 10 pilot), 4-hour timer, mirrors the real BCBA exam'],
-        ].map(([n,title,desc])=>(
-          <div key={n} style={{display:'flex',gap:14,marginBottom:14,alignItems:'flex-start'}}>
-            <div style={{width:28,height:28,borderRadius:'50%',background:C.primary,color:C.white,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,flexShrink:0,fontFamily:'system-ui'}}>{n}</div>
-            <div>
-              <div style={{fontSize:15,fontWeight:700,color:C.text,marginBottom:2,fontFamily:'system-ui'}}>{title}</div>
-              <div style={{fontSize:13,color:C.muted,fontFamily:'system-ui'}}>{desc}</div>
-            </div>
+      <div style={{display:'flex',gap:10,overflowX:'auto',paddingBottom:6,scrollbarWidth:'thin'}}>
+        {sorted.map(b => (
+          <div key={b.id} title={b.description} className="lift"
+            style={{
+              flexShrink:0, minWidth:84, padding:'12px 8px',
+              background: b.earned ? C.white : 'transparent',
+              border: `1px solid ${b.earned ? C.border : 'var(--border)'}`,
+              borderRadius:14,
+              textAlign:'center',
+              opacity: b.earned ? 1 : 0.45,
+              filter: b.earned ? 'none' : 'grayscale(0.8)',
+              backdropFilter: b.earned ? 'blur(14px)' : 'none',
+              WebkitBackdropFilter: b.earned ? 'blur(14px)' : 'none',
+              cursor: 'help',
+            }}>
+            <div style={{fontSize:24,lineHeight:1,marginBottom:4}}>{b.icon}</div>
+            <div style={{fontSize:10,fontWeight:700,color:C.text,letterSpacing:'0.02em'}}>{b.label}</div>
           </div>
         ))}
-      </Card>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:28}}>
-        {DOMAINS.map(d=>(
-          <Card key={d} style={{textAlign:'center',padding:14}}>
-            <div style={{fontSize:24,marginBottom:4}}>{MODULES[d].icon}</div>
-            <div style={{fontSize:11,fontWeight:700,color:C.primary,fontFamily:'system-ui',lineHeight:1.3}}>{d}</div>
-          </Card>
-        ))}
       </div>
-      <button onClick={onStart} style={{width:'100%',padding:'16px',background:C.primary,color:C.white,border:'none',borderRadius:12,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif',letterSpacing:'0.02em'}}>
-        Begin Diagnostic Pretest →
-      </button>
-      <button onClick={onSkipPretest} style={{width:'100%',marginTop:10,padding:'13px',background:'transparent',color:C.primary,border:`2px solid ${C.primary}`,borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'system-ui'}}>
-        Skip pretest — study all 9 modules →
-      </button>
-      <p style={{fontSize:12,color:C.muted,textAlign:'center',margin:'10px 0 0',fontFamily:'system-ui'}}>
-        Skipping the pretest gives you access to every module. You'll still need to pass each 80% quiz to unlock the full exam.
-      </p>
+    </div>
+  )
+}
+
+// Vertical journey timeline — each step has state: done | current | locked.
+function JourneyTimeline({steps}) {
+  // progress = % of dots that are 'done' OR 'current' (so the connecting line fills proportionally)
+  const reachedIdx = steps.findIndex(s => s.state === 'current')
+  const allDone = steps.every(s => s.state === 'done')
+  const progressPct = allDone ? 100
+    : reachedIdx === -1 ? (steps.filter(s => s.state === 'done').length / Math.max(1,steps.length-1)) * 100
+    : (reachedIdx / Math.max(1, steps.length - 1)) * 100
+  return (
+    <div style={{position:'relative',paddingLeft:8}}>
+      {/* Connecting line */}
+      <div className="journey-line" style={{'--journey-progress': `${progressPct}%`}}/>
+      {steps.map((s, i) => {
+        const dotBg  = s.state==='done' ? 'var(--green)' : s.state==='current' ? C.accent : 'transparent'
+        const dotBd  = s.state==='done' ? 'var(--green)' : s.state==='current' ? C.accent : C.border
+        const dotCol = s.state==='locked' ? C.muted : '#fff'
+        const dotIcn = s.state==='done' ? '✓' : s.state==='current' ? `${i+1}` : `${i+1}`
+        return (
+          <div key={i} style={{display:'flex',gap:14,marginBottom: i===steps.length-1?0:18,alignItems:'flex-start',position:'relative',zIndex:1}}>
+            <div style={{
+              width:28,height:28,borderRadius:'50%',
+              background:dotBg, border:`2px solid ${dotBd}`,
+              color:dotCol, display:'flex',alignItems:'center',justifyContent:'center',
+              fontSize:12,fontWeight:800,flexShrink:0,
+              boxShadow: s.state==='current' ? `0 0 0 4px var(--accent-bg)` : 'none',
+              transition:'all .25s'
+            }}>{dotIcn}</div>
+            <div style={{flex:1,paddingTop:2}}>
+              <div style={{fontSize:14,fontWeight:700,color: s.state==='locked'?C.muted:C.text,marginBottom:2,display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                {s.title}
+                {s.state==='current' && <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:99,background:'var(--accent-bg)',color:C.accent,textTransform:'uppercase',letterSpacing:'0.08em'}}>Now</span>}
+                {s.state==='done' && <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:99,background:'var(--green-bg)',color:'var(--green)',textTransform:'uppercase',letterSpacing:'0.08em'}}>Done</span>}
+              </div>
+              <div style={{fontSize:13,color:C.muted,lineHeight:1.55}}>{s.desc}</div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── WELCOME ──────────────────────────────────────────────
+function Welcome({st,onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpots,safmeds,onOpenSafmeds,onNav}) {
+  const { greeting, accent: greetingAccent } = getGreeting()
+  const focus = suggestNextFocus(st)
+  const hasStarted = !!(stats?.daysStudied?.length) || stats?.pretestsCompleted || stats?.modulesPassed
+
+  // Build study journey state from `st`
+  const passedAll = DOMAINS.every(d => st.moduleStatuses[d] === 'passed')
+  const journey = [
+    {
+      title: 'Diagnostic Pretest',
+      desc: '30 scenario questions across all 9 domains.',
+      state: st.pretestScores ? 'done' : st.skippedPretest ? 'done' : 'current',
+    },
+    {
+      title: 'Personalized Results',
+      desc: 'See which domains fall below 70%.',
+      state: st.pretestScores ? 'done' : 'locked',
+    },
+    {
+      title: 'Targeted Modules',
+      desc: `Deep-dive study with quizzes. ${stats?.modulesPassed||0} of ${DOMAINS.length} passed.`,
+      state: passedAll ? 'done' : (st.pretestScores || st.skippedPretest) ? 'current' : 'locked',
+    },
+    {
+      title: 'Full Mock Exam',
+      desc: '185 questions (175 scored + 10 pilot), 4-hour timer.',
+      state: st.examScores ? 'done' : passedAll ? 'current' : 'locked',
+    },
+  ]
+
+  return (
+    <div style={{position:'relative',overflow:'hidden'}}>
+      {/* Decorative atmospheric orbs */}
+      <div className="welcome-orb welcome-orb-1"/>
+      <div className="welcome-orb welcome-orb-2"/>
+      <div className="welcome-orb welcome-orb-3"/>
+
+      <div style={{maxWidth:680,margin:'0 auto',padding:'48px 20px 56px',position:'relative',zIndex:1}}>
+
+        {/* === GREETING === */}
+        <div className="fade-up fade-up-1" style={{marginBottom:32}}>
+          <div style={{fontSize:11,letterSpacing:'0.22em',textTransform:'uppercase',color:C.muted,fontWeight:600,marginBottom:10}}>
+            BCBA Exam Prep · 6th Edition TCO
+          </div>
+          <h1 style={{fontSize:34,fontWeight:800,color:C.text,margin:'0 0 6px',letterSpacing:'-0.025em',lineHeight:1.1}}>
+            {greeting} <span className="greeting-accent">{greetingAccent}</span>
+          </h1>
+          <p style={{fontSize:15,color:C.muted,margin:0,lineHeight:1.55}}>
+            {hasStarted ? 'Welcome back. Pick up where you left off.' : '522-question bank · 9 domains · Built around the BACB structure.'}
+          </p>
+        </div>
+
+        {/* === TODAY'S FOCUS (smart suggestion) === */}
+        <div className="fade-up fade-up-2 lift" onClick={()=>onNav?.(focus.go)}
+          style={{
+            marginBottom:20, padding:'22px 24px', borderRadius:20,
+            background:'linear-gradient(135deg, var(--accent-bg) 0%, var(--green-bg) 100%)',
+            border:`1px solid ${C.border}`, boxShadow:'var(--shadow)',
+            backdropFilter:'blur(14px)', WebkitBackdropFilter:'blur(14px)',
+            cursor:'pointer',
+            display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap'
+          }}>
+          <div style={{flex:'1 1 200px'}}>
+            <div style={{fontSize:11,letterSpacing:'0.22em',textTransform:'uppercase',color:C.accent,fontWeight:700,marginBottom:6}}>
+              ✨ Today's focus
+            </div>
+            <div style={{fontSize:18,fontWeight:800,color:C.text,letterSpacing:'-0.01em',marginBottom:4}}>{focus.title}</div>
+            <div style={{fontSize:13,color:C.muted,lineHeight:1.55}}>{focus.desc}</div>
+          </div>
+          <button className="btn-cta" onClick={(e)=>{e.stopPropagation(); onNav?.(focus.go)}}
+            style={{padding:'12px 22px',background:C.primary,color:'#fff',border:'none',borderRadius:99,fontSize:14,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:8}}>
+            {focus.cta} <span className="cta-arrow">→</span>
+          </button>
+        </div>
+
+        {/* === STATS === */}
+        <div className="fade-up fade-up-3"><StatsCard stats={stats}/></div>
+
+        {/* === ACHIEVEMENTS === */}
+        <div className="fade-up fade-up-4"><AchievementsRow stats={stats} safmeds={safmeds} moduleStatuses={st.moduleStatuses} examScores={st.examScores}/></div>
+
+        {/* === REVIEW QUEUES === */}
+        <div className="fade-up fade-up-4"><WeakSpotsCard count={weakSpotsCount} onReview={onReviewWeakSpots}/></div>
+        <div className="fade-up fade-up-5"><SafmedsCard safmeds={safmeds} onOpen={onOpenSafmeds}/></div>
+
+        {/* === STUDY JOURNEY === */}
+        <Card className="fade-up fade-up-5" style={{marginBottom:20}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:18}}>
+            <h2 style={{fontSize:11,fontWeight:700,color:C.muted,margin:0,textTransform:'uppercase',letterSpacing:'0.18em'}}>Your study path</h2>
+            <span style={{fontSize:12,color:C.muted,fontWeight:600}}>{journey.filter(s=>s.state==='done').length} of {journey.length}</span>
+          </div>
+          <JourneyTimeline steps={journey}/>
+        </Card>
+
+        {/* === DOMAIN GRID === */}
+        <div className="fade-up fade-up-6" style={{marginBottom:28}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:10,textTransform:'uppercase',letterSpacing:'0.18em',padding:'0 4px'}}>
+            Nine domains, A–I
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
+            {DOMAINS.map(d=>{
+              const passed = st.moduleStatuses[d] === 'passed'
+              return (
+                <div key={d} className="domain-tile" style={{textAlign:'center',padding:'14px 10px',background:C.white,backdropFilter:'blur(14px)',WebkitBackdropFilter:'blur(14px)',border:`1px solid ${C.border}`,borderRadius:14,position:'relative'}}>
+                  {passed && <div style={{position:'absolute',top:6,right:6,width:18,height:18,borderRadius:'50%',background:'var(--green)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800}}>✓</div>}
+                  <div style={{fontSize:24,marginBottom:4}}>{MODULES[d].icon}</div>
+                  <div style={{fontSize:10,fontWeight:700,color:C.text,lineHeight:1.3,letterSpacing:'0.02em'}}>{d}</div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* === CTAs === */}
+        <button onClick={onStart} className="btn-cta fade-up fade-up-7"
+          style={{width:'100%',padding:'16px',background:C.primary,color:'#fff',border:'none',borderRadius:14,fontSize:16,fontWeight:700,cursor:'pointer',letterSpacing:'0.02em',boxShadow:'0 4px 20px rgba(31,41,52,0.15)',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:10}}>
+          Begin Diagnostic Pretest <span className="cta-arrow">→</span>
+        </button>
+        <button onClick={onSkipPretest} className="btn-cta fade-up fade-up-7"
+          style={{width:'100%',marginTop:10,padding:'13px',background:'transparent',color:C.text,border:`1.5px solid ${C.border}`,borderRadius:14,fontSize:14,fontWeight:600,cursor:'pointer',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:8}}>
+          Skip pretest — study all 9 modules <span className="cta-arrow">→</span>
+        </button>
+        <p className="fade-up fade-up-7" style={{fontSize:12,color:C.muted,textAlign:'center',margin:'12px 0 0'}}>
+          Skipping the pretest unlocks every module. You'll still need to pass each 80% quiz before the mock exam.
+        </p>
+      </div>
     </div>
   )
 }
@@ -1938,7 +2231,9 @@ export default function App() {
     </>
   )
 
-  if(st.phase==='welcome') return <div>{nav}<Welcome stats={st.stats}
+  if(st.phase==='welcome') return <div>{nav}<Welcome
+    st={st}
+    stats={st.stats}
     weakSpotsCount={Object.keys(st.weakSpots||{}).length}
     onReviewWeakSpots={()=>{
       const items = Object.values(st.weakSpots||{})
@@ -1947,6 +2242,7 @@ export default function App() {
     }}
     safmeds={st.safmeds}
     onOpenSafmeds={()=>up({phase:'safmeds'})}
+    onNav={handleNav}
     onStart={()=>up({phase:'pretest',qIndex:0,pretestAnswers:{},pretestQuestions:shuffleQuestions(PRETEST_QUESTIONS)})}
     onSkipPretest={()=>up({phase:'modules',skippedPretest:true,weakDomains:DOMAINS,moduleStatuses:{}})}/></div>
 
