@@ -128,9 +128,12 @@ function updateWeakSpots(weakSpots, questions, answers) {
 // Color palette — surface/text/border colors come from CSS vars so they
 // switch between light and dark themes via [data-theme="dark"] on <html>.
 // Brand colors (primary, accent) stay literal for consistent identity.
+// Calm Gradient palette: dark "ink" replaces the old navy as the dominant
+// brand color, sage/terracotta-pink replace the gold accent. CSS-var refs
+// stay so the dark-mode overrides in GlobalStyles continue to apply.
 const C = {
-  primary:'#1a3a5c', primaryLight:'var(--primary-light)', primaryMid:'#2e5fa3',
-  accent:'#c47d0e', accentBg:'var(--accent-bg)', accentBorder:'var(--accent-border)',
+  primary:'#1f2934', primaryLight:'var(--primary-light)', primaryMid:'#5a6671',
+  accent:'#c08570', accentBg:'var(--accent-bg)', accentBorder:'var(--accent-border)',
   green:'var(--green)', greenBg:'var(--green-bg)', greenBorder:'var(--green-border)',
   red:'var(--red)', redBg:'var(--red-bg)', redBorder:'var(--red-border)',
   gray:'var(--gray)', grayLight:'var(--surface-alt)', border:'var(--border)',
@@ -231,8 +234,20 @@ const INITIAL = {
 }
 
 // ── UI PRIMITIVES ─────────────────────────────────────────
+// Glassmorphic surface — uses --surface (rgba) + backdrop-filter for the
+// frosted look; falls back to a translucent panel where backdrop-filter
+// isn't supported.
 const Card = ({children,style={}}) => (
-  <div style={{background:C.white,borderRadius:16,padding:28,boxShadow:'0 2px 16px rgba(0,0,0,0.07)',border:`1px solid ${C.border}`,...style}}>{children}</div>
+  <div style={{
+    background:C.white,
+    backdropFilter:'blur(14px)',
+    WebkitBackdropFilter:'blur(14px)',
+    borderRadius:20,
+    padding:28,
+    boxShadow:'var(--shadow)',
+    border:`1px solid ${C.border}`,
+    ...style
+  }}>{children}</div>
 )
 const Pill = ({text,color,bg}) => (
   <span style={{fontSize:11,fontWeight:700,color,background:bg,padding:'2px 10px',borderRadius:99,textTransform:'uppercase',letterSpacing:'0.06em'}}>{text}</span>
@@ -252,46 +267,83 @@ const ProgressBar = ({value,color=C.primary,label}) => (
 // ── GLOBAL STYLES (theme variables + keyframes) ──────────────────────────────
 const GlobalStyles = () => (
   <style>{`
+    /* "Calm Gradient" theme — pastel atmospheric bg, glassmorphic surfaces,
+       Plus Jakarta Sans typography, soft sage + terracotta accents. */
     :root {
-      --bg: #f8fafc;
-      --surface: #ffffff;
-      --surface-alt: #f1f5f9;
-      --text: #1e293b;
-      --muted: #64748b;
-      --border: #e2e8f0;
-      --gray: #475569;
-      --primary-light: #e8f0fb;
-      --accent-bg: #fef9ec;
-      --accent-border: #f5c842;
-      --green: #166534;
-      --green-bg: #dcfce7;
-      --green-border: #86efac;
-      --red: #991b1b;
-      --red-bg: #fee2e2;
-      --red-border: #fca5a5;
-      --shadow: 0 2px 16px rgba(0,0,0,0.07);
+      /* Calm Gradient anchors */
+      --bg-base: #f5f1ea;
+      --grad-mint:  #d4e4dc;
+      --grad-peach: #f5e0d3;
+      --grad-sky:   #d8e2ee;
+      --grad-blush: #ead5e0;
+
+      /* Aliases consumed by C palette + components */
+      --bg: var(--bg-base);
+      --surface: rgba(255, 255, 255, 0.72);
+      --surface-solid: #ffffff;
+      --surface-alt: rgba(255, 255, 255, 0.5);
+      --text: #1f2934;
+      --muted: #5a6671;
+      --border: rgba(31, 41, 52, 0.1);
+      --gray: #5a6671;
+
+      --primary-light: rgba(107, 142, 127, 0.18);
+      --accent-bg: rgba(192, 133, 112, 0.14);
+      --accent-border: rgba(192, 133, 112, 0.45);
+      --green: #6b8e7f;
+      --green-bg: rgba(107, 142, 127, 0.14);
+      --green-border: rgba(107, 142, 127, 0.45);
+      --red: #c47a6a;
+      --red-bg: rgba(196, 122, 106, 0.12);
+      --red-border: rgba(196, 122, 106, 0.45);
+      --shadow: 0 4px 24px rgba(31, 41, 52, 0.08);
     }
     :root[data-theme="dark"] {
-      --bg: #0f172a;
-      --surface: #1e293b;
-      --surface-alt: #0b1220;
-      --text: #f1f5f9;
-      --muted: #94a3b8;
-      --border: #334155;
-      --gray: #cbd5e1;
-      --primary-light: rgba(46,95,163,0.28);
-      --accent-bg: rgba(196,125,14,0.22);
-      --accent-border: #b45309;
-      --green: #4ade80;
-      --green-bg: rgba(22,101,52,0.28);
-      --green-border: #166534;
-      --red: #fca5a5;
-      --red-bg: rgba(153,27,27,0.28);
-      --red-border: #991b1b;
-      --shadow: 0 2px 16px rgba(0,0,0,0.4);
+      /* Warm "moonlit" calm-gradient variant */
+      --bg-base: #1a1820;
+      --grad-mint:  rgba(107, 142, 127, 0.28);
+      --grad-peach: rgba(192, 133, 112, 0.22);
+      --grad-sky:   rgba(122, 146, 173, 0.22);
+      --grad-blush: rgba(184, 127, 173, 0.18);
+
+      --bg: var(--bg-base);
+      --surface: rgba(35, 32, 45, 0.72);
+      --surface-solid: #232030;
+      --surface-alt: rgba(35, 32, 45, 0.5);
+      --text: #ece6dc;
+      --muted: #a39c91;
+      --border: rgba(255, 255, 255, 0.1);
+      --gray: #a39c91;
+
+      --primary-light: rgba(168, 200, 184, 0.18);
+      --accent-bg: rgba(232, 165, 184, 0.14);
+      --accent-border: rgba(232, 165, 184, 0.4);
+      --green: #a8c8b8;
+      --green-bg: rgba(168, 200, 184, 0.14);
+      --green-border: rgba(168, 200, 184, 0.4);
+      --red: #e8a597;
+      --red-bg: rgba(232, 165, 151, 0.14);
+      --red-border: rgba(232, 165, 151, 0.4);
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
     }
-    html, body { background: var(--bg); color: var(--text); }
-    body { transition: background .25s ease, color .25s ease; margin: 0; }
+
+    html, body {
+      background:
+        radial-gradient(ellipse 70% 60% at 80% 5%,  var(--grad-peach) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 50% at 5% 25%,  var(--grad-sky)   0%, transparent 55%),
+        radial-gradient(ellipse 50% 45% at 95% 80%, var(--grad-blush) 0%, transparent 55%),
+        radial-gradient(ellipse 80% 60% at 50% 100%, var(--grad-mint) 0%, transparent 60%),
+        var(--bg-base);
+      background-attachment: fixed;
+      color: var(--text);
+    }
+    body {
+      transition: background .3s ease, color .3s ease;
+      margin: 0;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
     @keyframes conceptIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     .concept-in{animation:conceptIn .32s ease forwards}
     .kt-card:hover{filter:brightness(.96)}
@@ -482,7 +534,7 @@ function NavBar({st,onNav,onReset,onConfirmReset,onCancelReset,onToggleTheme}) {
   const studyStarted = st.pretestScores || st.skippedPretest
   const examReady = studyStarted && (st.weakDomains.length===0 || st.weakDomains.every(d=>st.moduleStatuses[d]==='passed'))
   return (
-    <div style={{background:C.primary,position:'sticky',top:0,zIndex:200,boxShadow:'0 2px 8px rgba(0,0,0,0.25)'}}>
+    <div style={{background:C.primary,position:'sticky',top:0,zIndex:200,boxShadow:'0 2px 12px rgba(31,41,52,0.18)'}}>
       <div style={{maxWidth:760,margin:'0 auto',padding:'0 12px',display:'flex',alignItems:'center',justifyContent:'space-between',height:50}}>
         <div style={{display:'flex',gap:2,overflowX:'auto',scrollbarWidth:'none'}}>
           {NAV.map(item=>{
@@ -490,10 +542,10 @@ function NavBar({st,onNav,onReset,onConfirmReset,onCancelReset,onToggleTheme}) {
             const isActive = active===item.id
             return (
               <button key={item.id} onClick={()=>avail&&onNav(item.id)} disabled={!avail}
-                style={{padding:'5px 10px',borderRadius:7,border:'none',whiteSpace:'nowrap',
-                  background:isActive?C.white:'transparent',
-                  color:isActive?C.primary:avail?'#93c5fd':'#2d4a63',
-                  cursor:avail?'pointer':'default',fontSize:11,fontWeight:700,fontFamily:'system-ui',outline:'none'}}>
+                style={{padding:'5px 10px',borderRadius:99,border:'none',whiteSpace:'nowrap',
+                  background:isActive?'#fff':'transparent',
+                  color:isActive?C.primary:avail?'#ece6dc':'rgba(236,230,220,0.35)',
+                  cursor:avail?'pointer':'default',fontSize:11,fontWeight:700,outline:'none',transition:'all .2s'}}>
                 {item.emoji} {item.label}
               </button>
             )
@@ -502,16 +554,16 @@ function NavBar({st,onNav,onReset,onConfirmReset,onCancelReset,onToggleTheme}) {
         <div style={{flexShrink:0,marginLeft:8,display:'flex',gap:6,alignItems:'center'}}>
           {!st.confirmReset && (
             <button onClick={onToggleTheme} title={st.theme==='dark'?'Switch to light mode':'Switch to dark mode'}
-              style={{padding:'4px 9px',borderRadius:7,border:'1px solid #2d4a63',background:'transparent',color:'#cbd5e1',cursor:'pointer',fontSize:13,fontWeight:700,whiteSpace:'nowrap',lineHeight:1}}>
+              style={{padding:'4px 9px',borderRadius:99,border:'1px solid rgba(255,255,255,0.18)',background:'transparent',color:'#ece6dc',cursor:'pointer',fontSize:13,fontWeight:700,whiteSpace:'nowrap',lineHeight:1}}>
               {st.theme==='dark'?'☀️':'🌙'}
             </button>
           )}
           {!st.confirmReset
-            ?<button onClick={onReset} style={{padding:'4px 10px',borderRadius:7,border:'1px solid #2d4a63',background:'transparent',color:'#f87171',cursor:'pointer',fontSize:11,fontWeight:700,whiteSpace:'nowrap'}}>Reset</button>
+            ?<button onClick={onReset} style={{padding:'4px 10px',borderRadius:99,border:'1px solid rgba(255,255,255,0.18)',background:'transparent',color:'#e8a597',cursor:'pointer',fontSize:11,fontWeight:700,whiteSpace:'nowrap'}}>Reset</button>
             :<div style={{display:'flex',gap:4,alignItems:'center'}}>
-               <span style={{fontSize:10,color:'#fca5a5',whiteSpace:'nowrap'}}>Start over?</span>
-               <button onClick={onConfirmReset} style={{padding:'3px 8px',borderRadius:6,border:'none',background:'#dc2626',color:C.white,cursor:'pointer',fontSize:10,fontWeight:700}}>Yes</button>
-               <button onClick={onCancelReset} style={{padding:'3px 8px',borderRadius:6,border:'1px solid #2d4a63',background:'transparent',color:'#94a3b8',cursor:'pointer',fontSize:10,fontWeight:700}}>No</button>
+               <span style={{fontSize:10,color:'#e8a597',whiteSpace:'nowrap'}}>Start over?</span>
+               <button onClick={onConfirmReset} style={{padding:'3px 8px',borderRadius:99,border:'none',background:'#c47a6a',color:'#fff',cursor:'pointer',fontSize:10,fontWeight:700}}>Yes</button>
+               <button onClick={onCancelReset} style={{padding:'3px 8px',borderRadius:99,border:'1px solid rgba(255,255,255,0.18)',background:'transparent',color:'rgba(236,230,220,0.7)',cursor:'pointer',fontSize:10,fontWeight:700}}>No</button>
              </div>}
         </div>
       </div>
