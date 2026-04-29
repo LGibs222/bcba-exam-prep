@@ -181,16 +181,18 @@ function updateWeakSpots(weakSpots, questions, answers) {
 // Color palette — surface/text/border colors come from CSS vars so they
 // switch between light and dark themes via [data-theme="dark"] on <html>.
 // Brand colors (primary, accent) stay literal for consistent identity.
-// Calm Gradient palette: dark "ink" replaces the old navy as the dominant
-// brand color, sage/terracotta-pink replace the gold accent. CSS-var refs
-// stay so the dark-mode overrides in GlobalStyles continue to apply.
+// Sunrise palette: deep brown-black ink as primary, dusty rose as accent,
+// terracotta + sand + wine as additional warm colors. CSS-var refs stay
+// so the dark-mode overrides in GlobalStyles continue to apply.
 const C = {
-  primary:'#1f2934', primaryLight:'var(--primary-light)', primaryMid:'#5a6671',
-  accent:'#c08570', accentBg:'var(--accent-bg)', accentBorder:'var(--accent-border)',
+  primary:'#1f160d', primaryLight:'var(--primary-light)', primaryMid:'#564434',
+  accent:'#a64558', accentBg:'var(--accent-bg)', accentBorder:'var(--accent-border)',
   green:'var(--green)', greenBg:'var(--green-bg)', greenBorder:'var(--green-border)',
   red:'var(--red)', redBg:'var(--red-bg)', redBorder:'var(--red-border)',
   gray:'var(--gray)', grayLight:'var(--surface-alt)', border:'var(--border)',
   text:'var(--text)', muted:'var(--muted)', white:'var(--surface)',
+  // Sunrise-specific accents
+  peach:'#b96a3d', coral:'#a64558', gold:'#b18432', berry:'#6f3047', sage:'#5a7a52',
 }
 
 const CONCEPT_TYPES = [
@@ -320,75 +322,98 @@ const ProgressBar = ({value,color=C.primary,label}) => (
 // ── GLOBAL STYLES (theme variables + keyframes) ──────────────────────────────
 const GlobalStyles = () => (
   <style>{`
-    /* "Calm Gradient" theme — pastel atmospheric bg, glassmorphic surfaces,
-       Plus Jakarta Sans typography, soft sage + terracotta accents. */
+    /* "Sunrise" theme — warm ivory base, terracotta + dusty rose +
+       warm sand + deep wine, sage for success. Boutique-magazine warmth. */
     :root {
-      /* Calm Gradient anchors */
-      --bg-base: #f5f1ea;
-      --grad-mint:  #d4e4dc;
-      --grad-peach: #f5e0d3;
-      --grad-sky:   #d8e2ee;
-      --grad-blush: #ead5e0;
+      --bg-base: #faf6ef;
+      --paper-2: #f3ece0;
+
+      /* Sunrise palette anchors */
+      --peach:     #b96a3d;
+      --peach-2:   #d18555;
+      --peach-bg:  #f4e2d2;
+      --coral:     #a64558;
+      --coral-bg:  #f3dde2;
+      --gold:      #b18432;
+      --gold-bg:   #f3e8c8;
+      --berry:     #6f3047;
+      --berry-bg:  #ecd9df;
+      --sage:      #5a7a52;
+      --sage-bg:   #e2eadb;
 
       /* Aliases consumed by C palette + components */
       --bg: var(--bg-base);
-      --surface: rgba(255, 255, 255, 0.72);
+      --surface: rgba(255, 255, 255, 0.78);
       --surface-solid: #ffffff;
-      --surface-alt: rgba(255, 255, 255, 0.5);
-      --text: #1f2934;
-      --muted: #5a6671;
-      --border: rgba(31, 41, 52, 0.1);
-      --gray: #5a6671;
+      --surface-alt: rgba(255, 255, 255, 0.55);
+      --text: #1f160d;
+      --muted: #564434;
+      --border: #e6dcc9;
+      --gray: #8a7864;
 
-      --primary-light: rgba(107, 142, 127, 0.18);
-      --accent-bg: rgba(192, 133, 112, 0.14);
-      --accent-border: rgba(192, 133, 112, 0.45);
-      --green: #6b8e7f;
-      --green-bg: rgba(107, 142, 127, 0.14);
-      --green-border: rgba(107, 142, 127, 0.45);
-      --red: #c47a6a;
-      --red-bg: rgba(196, 122, 106, 0.12);
-      --red-border: rgba(196, 122, 106, 0.45);
-      --shadow: 0 4px 24px rgba(31, 41, 52, 0.08);
+      --primary-light: var(--peach-bg);
+      --accent-bg: var(--coral-bg);
+      --accent-border: rgba(166, 69, 88, 0.45);
+      --green: var(--sage);
+      --green-bg: var(--sage-bg);
+      --green-border: rgba(90, 122, 82, 0.45);
+      --red: var(--coral);
+      --red-bg: var(--coral-bg);
+      --red-border: rgba(166, 69, 88, 0.45);
+      --shadow: 0 4px 24px rgba(31, 22, 13, 0.08);
     }
     :root[data-theme="dark"] {
-      /* Warm "moonlit" calm-gradient variant */
-      --bg-base: #1a1820;
-      --grad-mint:  rgba(107, 142, 127, 0.28);
-      --grad-peach: rgba(192, 133, 112, 0.22);
-      --grad-sky:   rgba(122, 146, 173, 0.22);
-      --grad-blush: rgba(184, 127, 173, 0.18);
+      /* Warm "twilight" Sunrise variant — deep wine-brown with cream text */
+      --bg-base: #1a120c;
+      --paper-2: rgba(255, 246, 232, 0.06);
+      --peach:     #d18555;
+      --peach-2:   #e2a071;
+      --peach-bg:  rgba(209, 133, 85, 0.14);
+      --coral:     #d27086;
+      --coral-bg:  rgba(210, 112, 134, 0.14);
+      --gold:      #d8a754;
+      --gold-bg:   rgba(216, 167, 84, 0.14);
+      --berry:     #b07088;
+      --berry-bg:  rgba(176, 112, 136, 0.14);
+      --sage:      #a8c8a0;
+      --sage-bg:   rgba(168, 200, 160, 0.14);
 
       --bg: var(--bg-base);
-      --surface: rgba(35, 32, 45, 0.72);
-      --surface-solid: #232030;
-      --surface-alt: rgba(35, 32, 45, 0.5);
-      --text: #ece6dc;
-      --muted: #a39c91;
-      --border: rgba(255, 255, 255, 0.1);
-      --gray: #a39c91;
+      --surface: rgba(255, 246, 232, 0.06);
+      --surface-solid: #2a1c14;
+      --surface-alt: rgba(255, 246, 232, 0.04);
+      --text: #f3ece0;
+      --muted: #c9b89a;
+      --border: rgba(255, 246, 232, 0.1);
+      --gray: #c9b89a;
 
-      --primary-light: rgba(168, 200, 184, 0.18);
-      --accent-bg: rgba(232, 165, 184, 0.14);
-      --accent-border: rgba(232, 165, 184, 0.4);
-      --green: #a8c8b8;
-      --green-bg: rgba(168, 200, 184, 0.14);
-      --green-border: rgba(168, 200, 184, 0.4);
-      --red: #e8a597;
-      --red-bg: rgba(232, 165, 151, 0.14);
-      --red-border: rgba(232, 165, 151, 0.4);
-      --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      --primary-light: var(--peach-bg);
+      --accent-bg: var(--coral-bg);
+      --accent-border: rgba(210, 112, 134, 0.4);
+      --green: var(--sage);
+      --green-bg: var(--sage-bg);
+      --green-border: rgba(168, 200, 160, 0.4);
+      --red: var(--coral);
+      --red-bg: var(--coral-bg);
+      --red-border: rgba(210, 112, 134, 0.4);
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
     }
 
     html, body {
       background:
-        radial-gradient(ellipse 70% 60% at 80% 5%,  var(--grad-peach) 0%, transparent 55%),
-        radial-gradient(ellipse 60% 50% at 5% 25%,  var(--grad-sky)   0%, transparent 55%),
-        radial-gradient(ellipse 50% 45% at 95% 80%, var(--grad-blush) 0%, transparent 55%),
-        radial-gradient(ellipse 80% 60% at 50% 100%, var(--grad-mint) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 50% at 50% 0%,    rgba(177,132,50,0.14), transparent 70%),
+        radial-gradient(ellipse 60% 50% at 100% 30%,  rgba(185,106,61,0.14), transparent 70%),
+        radial-gradient(ellipse 60% 50% at 0% 100%,   rgba(166,69,88,0.10),  transparent 70%),
         var(--bg-base);
       background-attachment: fixed;
       color: var(--text);
+    }
+    :root[data-theme="dark"] html, :root[data-theme="dark"] body {
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%,    rgba(216,167,84,0.10), transparent 70%),
+        radial-gradient(ellipse 60% 50% at 100% 30%,  rgba(209,133,85,0.10), transparent 70%),
+        radial-gradient(ellipse 60% 50% at 0% 100%,   rgba(210,112,134,0.08), transparent 70%),
+        var(--bg-base);
     }
     body {
       transition: background .3s ease, color .3s ease;
@@ -424,12 +449,12 @@ const GlobalStyles = () => (
       animation: orbDrift 14s ease-in-out infinite;
     }
     .welcome-orb-1 { top: -80px; right: -60px; width: 280px; height: 280px;
-      background: radial-gradient(circle, rgba(192,133,112,.22) 0%, transparent 70%); }
+      background: radial-gradient(circle, rgba(185,106,61,.18) 0%, transparent 70%); }
     .welcome-orb-2 { top: 40%; left: -100px; width: 320px; height: 320px;
-      background: radial-gradient(circle, rgba(107,142,127,.18) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(177,132,50,.16) 0%, transparent 70%);
       animation-delay: -4s; animation-duration: 18s; }
     .welcome-orb-3 { bottom: -60px; right: 10%; width: 220px; height: 220px;
-      background: radial-gradient(circle, rgba(184,127,173,.18) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(166,69,88,.14) 0%, transparent 70%);
       animation-delay: -8s; animation-duration: 16s; }
 
     /* Hover lift for interactive cards / domain tiles */
@@ -449,7 +474,7 @@ const GlobalStyles = () => (
     /* Greeting subtle shimmer on the accent word */
     @keyframes shimmer { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
     .greeting-accent {
-      background: linear-gradient(90deg, #6b8e7f 0%, #c08570 50%, #6b8e7f 100%);
+      background: linear-gradient(90deg, var(--peach) 0%, var(--coral) 50%, var(--berry) 100%);
       background-size: 200% 100%;
       -webkit-background-clip: text;
       background-clip: text;
@@ -462,10 +487,404 @@ const GlobalStyles = () => (
       background: linear-gradient(to bottom, var(--green) 0%, var(--green) var(--journey-progress, 0%), var(--border) var(--journey-progress, 0%), var(--border) 100%);
       border-radius: 99px; }
 
+    /* === Sunrise hero orb (conic gradient ring with question count) === */
+    @keyframes orbDrift2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(8px,-12px); } }
+    .hero-orb {
+      position: relative;
+      width: 100%; aspect-ratio: 1;
+      max-width: 240px;
+      animation: orbDrift2 16s ease-in-out infinite;
+    }
+    .hero-orb .orb-bg {
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, var(--gold), var(--peach), var(--coral), var(--berry), var(--gold));
+      filter: blur(2px);
+      box-shadow: 0 12px 60px rgba(185,106,61,0.22);
+    }
+    .hero-orb .orb-inner {
+      position: absolute; inset: 18px;
+      border-radius: 50%;
+      background: var(--bg-base);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .hero-orb .orb-num {
+      font-size: clamp(2.4rem, 6vw, 3.5rem); font-weight: 800;
+      letter-spacing: -0.04em; line-height: 1;
+      background: linear-gradient(135deg, var(--peach), var(--coral));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .hero-orb .orb-lbl {
+      font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* === Today's Focus card === */
+    .focus-card {
+      background: linear-gradient(135deg, var(--gold-bg) 0%, var(--peach-bg) 100%);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 22px 28px;
+      display: flex; align-items: center; gap: 20px;
+      flex-wrap: wrap;
+      transition: transform .2s;
+      cursor: pointer;
+    }
+    .focus-card:hover { transform: translateY(-2px); }
+    .focus-icon {
+      width: 56px; height: 56px;
+      background: linear-gradient(135deg, var(--peach), var(--coral));
+      color: white;
+      border-radius: 16px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(185,106,61,0.25);
+    }
+    .focus-text { flex: 1; min-width: 200px; }
+    .focus-eyebrow {
+      font-size: 0.74rem; font-weight: 700;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--peach);
+      margin-bottom: 4px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .focus-title {
+      font-size: 1.18rem; font-weight: 800;
+      letter-spacing: -0.015em;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .focus-desc { font-size: 0.9rem; color: var(--muted); line-height: 1.55; }
+
+    /* === Achievement strip === */
+    .ach-card {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 18px; flex-wrap: wrap;
+    }
+    .ach-icons { display: flex; }
+    .ach-icons .badge {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 0.95rem;
+      border: 2px solid var(--surface-solid);
+      margin-left: -10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .ach-icons .badge:first-child { margin-left: 0; }
+    .ach-streak {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--coral-bg);
+      border: 1px solid var(--coral);
+      padding: 7px 14px; border-radius: 99px;
+      color: var(--coral);
+      font-weight: 700;
+    }
+    .ach-streak .num { font-size: 1.1rem; letter-spacing: -0.02em; }
+    .ach-streak .lbl { font-size: 0.74rem; letter-spacing: 0.06em; }
+
+    /* === Pretest snapshot bars === */
+    .pretest-card {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 26px 30px;
+    }
+    .pretest-bar-row {
+      display: grid;
+      grid-template-columns: 30px 1fr 56px;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 9px;
+      font-size: 0.84rem;
+    }
+    .pretest-bar-row .ltr {
+      width: 26px; height: 26px;
+      background: var(--paper-2); color: var(--text);
+      border-radius: 8px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 0.76rem;
+    }
+    .pretest-bar-track {
+      position: relative;
+      height: 22px;
+      background: var(--paper-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .pretest-bar-track::after {
+      content: '';
+      position: absolute; top: -2px; bottom: -2px;
+      left: 70%;
+      width: 0;
+      border-right: 1.5px dashed rgba(31,22,13,0.28);
+    }
+    .pretest-bar-fill {
+      height: 100%;
+      border-radius: 5px;
+      display: flex; align-items: center; padding-left: 10px;
+      font-size: 0.72rem; font-weight: 700;
+      color: white;
+      transition: width .6s cubic-bezier(.2,.7,.2,1);
+    }
+    .pretest-bar-fill.weak  { background: var(--coral); }
+    .pretest-bar-fill.mid   { background: var(--gold); color: var(--text); }
+    .pretest-bar-fill.strong{ background: var(--sage); }
+    .pretest-bar-row .score {
+      text-align: right;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--muted);
+    }
+    .pretest-bar-row .score.weak { color: var(--coral); }
+    .pretest-bar-row .score.strong { color: var(--sage); }
+
+    /* === Weekly calendar === */
+    .week-card {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 22px 26px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: center;
+    }
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+    .day {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 6px;
+    }
+    .day-bar {
+      width: 100%; height: 56px;
+      border-radius: 8px;
+      background: var(--paper-2);
+      position: relative;
+      display: flex; align-items: flex-end;
+      overflow: hidden;
+      transition: transform .2s;
+      border: 1px solid var(--border);
+    }
+    .day-bar:hover { transform: translateY(-2px); }
+    .day-fill {
+      width: 100%;
+      border-radius: 0 0 7px 7px;
+      background: linear-gradient(180deg, var(--peach-2), var(--peach));
+    }
+    .day-fill.today { background: linear-gradient(180deg, var(--coral), var(--berry)); }
+    .day-label {
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+    .day.is-today .day-label { color: var(--coral); }
+    .day-mins {
+      font-size: 0.64rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+    }
+    .week-totals {
+      text-align: right;
+      border-left: 1px solid var(--border);
+      padding-left: 22px;
+    }
+    .week-totals .num {
+      font-size: 2.1rem; font-weight: 800;
+      letter-spacing: -0.025em; line-height: 1;
+      background: linear-gradient(135deg, var(--peach), var(--coral));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .week-totals .lbl {
+      font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    @media (max-width: 720px) {
+      .week-card { grid-template-columns: 1fr; }
+      .week-totals { border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 14px; text-align: left; }
+    }
+
+    /* === Mode cards === */
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 920px) { .mode-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 600px) { .mode-grid { grid-template-columns: 1fr; } }
+    .mode {
+      position: relative;
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 24px 22px;
+      display: flex; flex-direction: column;
+      cursor: pointer;
+      transition: transform .25s, box-shadow .25s, border-color .25s;
+      overflow: hidden;
+      min-height: 220px;
+    }
+    .mode::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 140px; height: 140px;
+      border-radius: 50%; filter: blur(28px);
+      opacity: 0.7; pointer-events: none;
+    }
+    .mode:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(31,22,13,0.08); }
+    .mode-status {
+      position: absolute; top: 14px; right: 14px;
+      font-size: 0.66rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 99px;
+      background: var(--paper-2); color: var(--muted);
+    }
+    .mode-status.now { background: var(--peach); color: white; }
+    .mode-status.done { background: var(--sage); color: white; }
+    .mode-status.locked { background: transparent; border: 1px dashed rgba(31,22,13,0.18); color: var(--muted); }
+    .mode-icon {
+      width: 44px; height: 44px;
+      border-radius: 13px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      margin-bottom: 16px;
+      position: relative; z-index: 1;
+    }
+    .mode.pretest::before { background: var(--gold); }
+    .mode.pretest .mode-icon { background: var(--gold-bg); color: var(--gold); }
+    .mode.modules::before { background: var(--peach); }
+    .mode.modules .mode-icon { background: var(--peach-bg); color: var(--peach); }
+    .mode.mock::before { background: var(--berry); }
+    .mode.mock .mode-icon { background: var(--berry-bg); color: var(--berry); }
+    .mode.safmeds::before { background: var(--sage); }
+    .mode.safmeds .mode-icon { background: var(--sage-bg); color: var(--sage); }
+    .mode-name {
+      font-size: 1.08rem; font-weight: 800;
+      letter-spacing: -0.01em;
+      margin-bottom: 4px;
+      position: relative; z-index: 1;
+    }
+    .mode-meta {
+      font-size: 0.78rem; color: var(--muted);
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+      position: relative; z-index: 1;
+    }
+    .mode-desc {
+      font-size: 0.85rem; line-height: 1.55;
+      color: var(--muted);
+      margin-bottom: 18px;
+      position: relative; z-index: 1;
+      flex: 1;
+    }
+    .mode-cta {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.85rem; font-weight: 700;
+      color: var(--text);
+      position: relative; z-index: 1;
+      transition: gap .2s;
+    }
+    .mode:hover .mode-cta { gap: 10px; }
+    .mode-cta .arrow {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--text); color: var(--bg-base);
+      font-size: 0.7rem; font-weight: 800;
+    }
+
+    /* === Weak Spots callout === */
+    .weak-card {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--coral);
+      border-radius: 0 18px 18px 0;
+      padding: 18px 24px;
+      display: flex; align-items: center; gap: 20px;
+      flex-wrap: wrap;
+    }
+    .weak-icon {
+      width: 44px; height: 44px;
+      background: var(--coral-bg);
+      color: var(--coral);
+      border-radius: 12px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 1.15rem;
+      flex-shrink: 0;
+    }
+
+    /* === Domain spot-check rows === */
+    .dom-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+    .dom-row {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 12px;
+      transition: all .2s;
+    }
+    .dom-row:hover { transform: translateY(-1px); border-color: var(--peach); box-shadow: 0 4px 14px rgba(185,106,61,0.08); }
+    .dom-row .letter {
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg, var(--peach), var(--coral));
+      color: white;
+      border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 0.84rem;
+      flex-shrink: 0;
+    }
+    .dom-row .body { min-width: 0; }
+    .dom-row .name { font-weight: 600; font-size: 0.92rem; line-height: 1.2; color: var(--text); }
+    .dom-row .count { font-size: 0.72rem; color: var(--muted); font-weight: 500; margin-top: 2px; }
+    .dom-row .spot-btn {
+      font-family: inherit;
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 7px 12px;
+      background: var(--paper-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 99px;
+      font-size: 0.74rem; font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer; transition: all .15s;
+      white-space: nowrap;
+    }
+    .dom-row .spot-btn:hover { background: var(--peach); border-color: var(--peach); color: white; }
+
+    /* === Section heading === */
+    .section-head {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 14px; padding: 0 4px;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .section-head h2 {
+      font-size: 1.18rem; font-weight: 800;
+      letter-spacing: -0.015em;
+      color: var(--text);
+    }
+    .section-head .sub { font-size: 0.82rem; color: var(--muted); font-weight: 500; }
+
     /* Respect reduced motion */
     @media (prefers-reduced-motion: reduce) {
-      .fade-up, .pulse-soft, .welcome-orb, .greeting-accent { animation: none !important; }
-      .lift, .domain-tile, .btn-cta, .cta-arrow { transition: none !important; }
+      .fade-up, .pulse-soft, .welcome-orb, .greeting-accent, .hero-orb, .day-bar { animation: none !important; }
+      .lift, .domain-tile, .btn-cta, .cta-arrow, .mode, .focus-card, .dom-row { transition: none !important; }
       .fade-up { opacity: 1 !important; transform: none !important; }
     }
   `}</style>
@@ -815,35 +1234,161 @@ function JourneyTimeline({steps}) {
 }
 
 // ── WELCOME ──────────────────────────────────────────────
-function Welcome({st,onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpots,safmeds,onOpenSafmeds,onNav}) {
+// ── Pretest snapshot bars (per-domain pretest scores) ────────────────────────
+function PretestSnapshot({pretestScores}) {
+  if (!pretestScores) return null
+  const rows = DOMAINS.map(d => {
+    const s = pretestScores[d]
+    if (!s || !s.total) return null
+    const pct = Math.round((s.correct / s.total) * 100)
+    const tier = pct >= 80 ? 'strong' : pct >= 70 ? 'mid' : 'weak'
+    const letter = (d.match(/^([A-Z])\.?/) || [,d[0]])[1]
+    const shortName = d.replace(/^[A-Z]\.?\s*/, '')
+    return { letter, name: shortName, pct, tier, total: s.total }
+  }).filter(Boolean)
+  if (!rows.length) return null
+  const overall = Math.round(rows.reduce((a,r)=>a+r.pct,0) / rows.length)
+  return (
+    <div className="pretest-card">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:20,flexWrap:'wrap',gap:12}}>
+        <div style={{display:'flex',alignItems:'baseline',gap:14,flexWrap:'wrap'}}>
+          <h2 style={{fontSize:'1.18rem',fontWeight:800,letterSpacing:'-0.015em',color:C.text}}>Your pretest snapshot</h2>
+          <span style={{fontSize:'0.82rem',color:C.muted,fontWeight:500}}>{rows.length} domains tested</span>
+        </div>
+        <div style={{display:'inline-flex',alignItems:'baseline',gap:6,padding:'5px 12px',background:'var(--peach-bg)',border:'1px solid var(--peach)',borderRadius:99,color:'var(--peach)',fontSize:'0.82rem',fontWeight:700}}>
+          Overall <span style={{fontSize:'1rem'}}>{overall}%</span>
+        </div>
+      </div>
+      <div>
+        {rows.map(r => (
+          <div key={r.letter} className="pretest-bar-row">
+            <span className="ltr">{r.letter}</span>
+            <div className="pretest-bar-track">
+              <div className={`pretest-bar-fill ${r.tier}`} style={{width:`${r.pct}%`}}>{r.name}</div>
+            </div>
+            <span className={`score ${r.tier === 'strong' ? 'strong' : r.tier === 'weak' ? 'weak' : ''}`}>{r.pct}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Weekly study calendar (last 7 days) ──────────────────────────────────────
+function WeeklyCalendar({stats}) {
+  const days = []
+  const today = new Date()
+  const studied = new Set(stats?.daysStudied || [])
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today.getTime() - i * 86400000)
+    const iso = d.toISOString().slice(0, 10)
+    const lbl = ['SUN','MON','TUE','WED','THU','FRI','SAT'][d.getDay()]
+    const isToday = i === 0
+    const wasStudied = studied.has(iso)
+    let mins = 0
+    if (isToday) mins = stats?.todayMinutes || 0
+    else if (wasStudied) mins = 30
+    days.push({ iso, lbl, isToday, wasStudied, mins })
+  }
+  const maxMins = Math.max(30, ...days.map(d => d.mins))
+  const totalMins = days.reduce((a,d)=>a+d.mins, 0)
+  const fmtMins = (m) => m === 0 ? '—' : m < 60 ? `${m}m` : `${Math.floor(m/60)}h ${m%60}m`
+  return (
+    <div className="week-card">
+      <div style={{minWidth:0}}>
+        <div style={{fontSize:'0.74rem',fontWeight:700,letterSpacing:'0.16em',textTransform:'uppercase',color:C.muted,marginBottom:14}}>
+          This week's study time
+        </div>
+        <div className="week-grid">
+          {days.map(d => {
+            const heightPct = d.mins === 0 ? 0 : Math.max(20, Math.round((d.mins / maxMins) * 100))
+            return (
+              <div key={d.iso} className={`day ${d.isToday ? 'is-today' : ''}`}>
+                <div className="day-bar">
+                  <div className={`day-fill ${d.isToday ? 'today' : ''}`} style={{height:`${heightPct}%`}}/>
+                </div>
+                <div className="day-label">{d.lbl}</div>
+                <div className="day-mins">{fmtMins(d.mins)}</div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+      <div className="week-totals">
+        <div className="num">{fmtMins(totalMins)}</div>
+        <div className="lbl">This week</div>
+      </div>
+    </div>
+  )
+}
+
+// ── Mode card grid (Pretest / Modules / Mock / SAFMEDS) ──────────────────────
+function ModeCardGrid({st, stats, onStart, onNav}) {
+  const passedAll = DOMAINS.every(d => st.moduleStatuses?.[d] === 'passed')
+  const modulesPassed = stats?.modulesPassed || 0
+  const pretestDone = !!st.pretestScores
+  const examTaken = !!st.examScores
+  const modes = [
+    {
+      cls: 'pretest', icon: '📝', name: 'Pretest', meta: '30 questions, 9 domains',
+      desc: pretestDone ? 'Diagnostic complete. Review your weak domains.' : 'Diagnostic snapshot of your weak domains. Take it once before studying.',
+      cta: pretestDone ? 'Review results' : 'Begin pretest',
+      status: pretestDone ? { label: 'Done', cls: 'done' } : { label: 'Start here', cls: 'now' },
+      onClick: () => pretestDone ? onNav?.('pretest_results') : onStart?.(),
+    },
+    {
+      cls: 'modules', icon: '📚', name: 'Modules', meta: `9 domains, 5-Q quizzes`,
+      desc: `Concept content + key-term flip cards. ${modulesPassed} of ${DOMAINS.length} passed.`,
+      cta: modulesPassed > 0 ? 'Continue studying' : 'Open modules',
+      status: passedAll ? { label: 'Done', cls: 'done' } : (pretestDone || st.skippedPretest) ? { label: 'Now', cls: 'now' } : { label: 'After pretest', cls: 'locked' },
+      onClick: () => onNav?.('modules'),
+    },
+    {
+      cls: 'mock', icon: '🏁', name: 'Mock Exam', meta: '185 Q, 4 hours, 175 scored',
+      desc: 'Full 185-question simulation with 10 hidden field-test items. Pass all modules first.',
+      cta: examTaken ? 'View results' : passedAll ? 'Begin mock' : 'Unlocks soon',
+      status: examTaken ? { label: 'Done', cls: 'done' } : passedAll ? { label: 'Ready', cls: 'now' } : { label: 'Locked', cls: 'locked' },
+      onClick: () => examTaken ? onNav?.('final_results') : passedAll ? onNav?.('exam_intro') : null,
+    },
+    {
+      cls: 'safmeds', icon: '🎴', name: 'SAFMEDS', meta: '280 terms, 4 levels',
+      desc: 'Gamified fluency drill. Beat your per-minute rate. Earn tokens.',
+      cta: 'Start drill',
+      status: { label: 'Anytime', cls: '' },
+      onClick: () => onNav?.('safmeds'),
+    },
+  ]
+  return (
+    <div className="mode-grid">
+      {modes.map(m => (
+        <div key={m.cls} className={`mode ${m.cls}`} onClick={m.onClick}>
+          <span className={`mode-status ${m.status.cls}`}>{m.status.label}</span>
+          <div className="mode-icon">{m.icon}</div>
+          <div className="mode-name">{m.name}</div>
+          <div className="mode-meta">{m.meta}</div>
+          <div className="mode-desc">{m.desc}</div>
+          <span className="mode-cta">{m.cta} <span className="arrow">→</span></span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function Welcome({st,onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpots,safmeds,onOpenSafmeds,onNav,onSpotCheck}) {
   const { greeting, accent: greetingAccent } = getGreeting()
   const focus = suggestNextFocus(st)
   const hasStarted = !!(stats?.daysStudied?.length) || stats?.pretestsCompleted || stats?.modulesPassed
+  const earned = computeAchievements(stats, safmeds, st.moduleStatuses, st.examScores).filter(b => b.earned)
+  const earnedCount = earned.length
+  const allCount = computeAchievements(stats, safmeds, st.moduleStatuses, st.examScores).length
+  const streak = calculateStreak(stats?.daysStudied)
 
-  // Build study journey state from `st`
-  const passedAll = DOMAINS.every(d => st.moduleStatuses[d] === 'passed')
-  const journey = [
-    {
-      title: 'Diagnostic Pretest',
-      desc: '30 scenario questions across all 9 domains.',
-      state: st.pretestScores ? 'done' : st.skippedPretest ? 'done' : 'current',
-    },
-    {
-      title: 'Personalized Results',
-      desc: 'See which domains fall below 70%.',
-      state: st.pretestScores ? 'done' : 'locked',
-    },
-    {
-      title: 'Targeted Modules',
-      desc: `Deep-dive study with quizzes. ${stats?.modulesPassed||0} of ${DOMAINS.length} passed.`,
-      state: passedAll ? 'done' : (st.pretestScores || st.skippedPretest) ? 'current' : 'locked',
-    },
-    {
-      title: 'Full Mock Exam',
-      desc: '185 questions (175 scored + 10 pilot), 4-hour timer.',
-      state: st.examScores ? 'done' : passedAll ? 'current' : 'locked',
-    },
-  ]
+  // Count questions per domain from QUESTION_BANK for spot-check section
+  const domainCounts = {}
+  DOMAINS.forEach(d => { domainCounts[d] = QUESTION_BANK.filter(q => q.domain_name === d).length })
+  const bankTotal = QUESTION_BANK.length
+
+  const focusGo = (key) => key === 'exam' ? onNav?.('exam_intro') : onNav?.(key)
 
   return (
     <div style={{position:'relative',overflow:'hidden'}}>
@@ -852,95 +1397,164 @@ function Welcome({st,onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpot
       <div className="welcome-orb welcome-orb-2"/>
       <div className="welcome-orb welcome-orb-3"/>
 
-      <div style={{maxWidth:680,margin:'0 auto',padding:'48px 20px 56px',position:'relative',zIndex:1}}>
+      <div style={{maxWidth:1080,margin:'0 auto',padding:'40px 24px 56px',position:'relative',zIndex:1}}>
 
-        {/* === GREETING === */}
-        <div className="fade-up fade-up-1" style={{marginBottom:32}}>
-          <div style={{fontSize:11,letterSpacing:'0.22em',textTransform:'uppercase',color:C.muted,fontWeight:600,marginBottom:10}}>
-            BCBA Exam Prep · 6th Edition TCO
+        {/* HERO */}
+        <div className="fade-up fade-up-1 hero-grid" style={{display:'grid',gridTemplateColumns:'1fr 240px',gap:36,alignItems:'center',marginBottom:32}}>
+          <div>
+            <div style={{fontSize:11,letterSpacing:'0.22em',textTransform:'uppercase',color:C.muted,fontWeight:600,marginBottom:10}}>
+              BCBA Exam Prep
+            </div>
+            <h1 style={{fontSize:'clamp(2.2rem,5vw,3.4rem)',fontWeight:800,color:C.text,margin:'0 0 12px',letterSpacing:'-0.035em',lineHeight:1.05,maxWidth:'14ch'}}>
+              {greeting} <span className="greeting-accent">{greetingAccent}</span>
+            </h1>
+            <p style={{fontSize:'1.02rem',color:C.muted,margin:0,lineHeight:1.6,maxWidth:'52ch'}}>
+              {hasStarted
+                ? <>Welcome back. <b style={{color:C.text}}>Diagnostic pretest</b>, <b style={{color:C.text}}>targeted modules</b>, <b style={{color:C.text}}>full 185-question mock</b>, and <b style={{color:C.text}}>SAFMEDS fluency</b>. Built around the BACB structure.</>
+                : <>A complete BCBA prep system. <b style={{color:C.text}}>Diagnostic pretest</b>, <b style={{color:C.text}}>targeted study modules</b>, <b style={{color:C.text}}>full 185-question mock</b>, and <b style={{color:C.text}}>SAFMEDS fluency</b>.</>}
+            </p>
           </div>
-          <h1 style={{fontSize:34,fontWeight:800,color:C.text,margin:'0 0 6px',letterSpacing:'-0.025em',lineHeight:1.1}}>
-            {greeting} <span className="greeting-accent">{greetingAccent}</span>
-          </h1>
-          <p style={{fontSize:15,color:C.muted,margin:0,lineHeight:1.55}}>
-            {hasStarted ? 'Welcome back. Pick up where you left off.' : '522-question bank · 9 domains · Built around the BACB structure.'}
-          </p>
+          <div className="hero-orb" style={{justifySelf:'center'}}>
+            <div className="orb-bg"/>
+            <div className="orb-inner">
+              <div className="orb-num">{bankTotal}</div>
+              <div className="orb-lbl">Question Bank</div>
+            </div>
+          </div>
         </div>
 
-        {/* === TODAY'S FOCUS (smart suggestion) === */}
-        <div className="fade-up fade-up-2 lift" onClick={()=>onNav?.(focus.go)}
-          style={{
-            marginBottom:20, padding:'22px 24px', borderRadius:20,
-            background:'linear-gradient(135deg, var(--accent-bg) 0%, var(--green-bg) 100%)',
-            border:`1px solid ${C.border}`, boxShadow:'var(--shadow)',
-            backdropFilter:'blur(14px)', WebkitBackdropFilter:'blur(14px)',
-            cursor:'pointer',
-            display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap'
-          }}>
-          <div style={{flex:'1 1 200px'}}>
-            <div style={{fontSize:11,letterSpacing:'0.22em',textTransform:'uppercase',color:C.accent,fontWeight:700,marginBottom:6}}>
-              ✨ Today's focus
-            </div>
-            <div style={{fontSize:18,fontWeight:800,color:C.text,letterSpacing:'-0.01em',marginBottom:4}}>{focus.title}</div>
-            <div style={{fontSize:13,color:C.muted,lineHeight:1.55}}>{focus.desc}</div>
+        {/* TODAY'S FOCUS */}
+        <div className="fade-up fade-up-2 focus-card" onClick={()=>focusGo(focus.go)} style={{marginBottom:18}}>
+          <div className="focus-icon">{'✨'}</div>
+          <div className="focus-text">
+            <div className="focus-eyebrow">Today's focus</div>
+            <div className="focus-title">{focus.title}</div>
+            <div className="focus-desc">{focus.desc}</div>
           </div>
-          <button className="btn-cta" onClick={(e)=>{e.stopPropagation(); onNav?.(focus.go)}}
+          <button className="btn-cta" onClick={(e)=>{e.stopPropagation(); focusGo(focus.go)}}
             style={{padding:'12px 22px',background:C.primary,color:'#fff',border:'none',borderRadius:99,fontSize:14,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:8}}>
-            {focus.cta} <span className="cta-arrow">→</span>
+            {focus.cta} <span className="cta-arrow">{'→'}</span>
           </button>
         </div>
 
-        {/* === STATS === */}
-        <div className="fade-up fade-up-3"><StatsCard stats={stats}/></div>
-
-        {/* === ACHIEVEMENTS === */}
-        <div className="fade-up fade-up-4"><AchievementsRow stats={stats} safmeds={safmeds} moduleStatuses={st.moduleStatuses} examScores={st.examScores}/></div>
-
-        {/* === REVIEW QUEUES === */}
-        <div className="fade-up fade-up-4"><WeakSpotsCard count={weakSpotsCount} onReview={onReviewWeakSpots}/></div>
-        <div className="fade-up fade-up-5"><SafmedsCard safmeds={safmeds} onOpen={onOpenSafmeds}/></div>
-
-        {/* === STUDY JOURNEY === */}
-        <Card className="fade-up fade-up-5" style={{marginBottom:20}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:18}}>
-            <h2 style={{fontSize:11,fontWeight:700,color:C.muted,margin:0,textTransform:'uppercase',letterSpacing:'0.18em'}}>Your study path</h2>
-            <span style={{fontSize:12,color:C.muted,fontWeight:600}}>{journey.filter(s=>s.state==='done').length} of {journey.length}</span>
+        {/* ACHIEVEMENTS + STREAK */}
+        {(earnedCount > 0 || streak > 0) && (
+          <div className="fade-up fade-up-3 ach-card" style={{marginBottom:18}}>
+            <div style={{display:'flex',alignItems:'center',gap:16,flexWrap:'wrap'}}>
+              {earnedCount > 0 && (
+                <div className="ach-icons">
+                  {earned.slice(0, 4).map((b,i) => (
+                    <span key={b.id} className="badge" title={b.description}
+                      style={{background: ['var(--gold-bg)','var(--peach-bg)','var(--coral-bg)','var(--berry-bg)'][i % 4],
+                              color: ['var(--gold)','var(--peach)','var(--coral)','var(--berry)'][i % 4]}}>
+                      {b.icon}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div style={{fontSize:'0.92rem'}}>
+                <b>{earnedCount} of {allCount} badges earned.</b>
+                <div style={{color:C.muted,fontSize:'0.84rem'}}>
+                  {(stats?.modulesPassed||0)} modules passed, {(stats?.examAttempts||0)} mock attempts, {safmeds?.totalTokens || 0} SAFMEDS tokens
+                </div>
+              </div>
+            </div>
+            {streak > 0 && (
+              <div className="ach-streak">
+                <span className="pulse-soft">{'🔥'}</span>
+                <span className="num">{streak}</span>
+                <span className="lbl">DAY STREAK</span>
+              </div>
+            )}
           </div>
-          <JourneyTimeline steps={journey}/>
-        </Card>
+        )}
 
-        {/* === DOMAIN GRID === */}
-        <div className="fade-up fade-up-6" style={{marginBottom:28}}>
-          <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:10,textTransform:'uppercase',letterSpacing:'0.18em',padding:'0 4px'}}>
-            Nine domains, A–I
+        {/* PRETEST SNAPSHOT */}
+        {st.pretestScores && (
+          <div className="fade-up fade-up-3" style={{marginBottom:18}}>
+            <PretestSnapshot pretestScores={st.pretestScores}/>
           </div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
-            {DOMAINS.map(d=>{
-              const passed = st.moduleStatuses[d] === 'passed'
+        )}
+
+        {/* WEEKLY CALENDAR */}
+        {(stats?.daysStudied?.length > 0 || stats?.todayMinutes > 0) && (
+          <div className="fade-up fade-up-4" style={{marginBottom:18}}>
+            <WeeklyCalendar stats={stats}/>
+          </div>
+        )}
+
+        {/* MODE CARDS */}
+        <div className="fade-up fade-up-4" style={{marginTop:36,marginBottom:24}}>
+          <div className="section-head">
+            <h2>Pick your study mode</h2>
+            <span className="sub">4 modes, mapped to where you are in your prep</span>
+          </div>
+          <ModeCardGrid st={st} stats={stats} onStart={onStart} onNav={onNav}/>
+        </div>
+
+        {/* WEAK SPOTS */}
+        {weakSpotsCount > 0 && (
+          <div className="fade-up fade-up-5 weak-card" style={{marginBottom:18}}>
+            <div className="weak-icon">{'🔍'}</div>
+            <div style={{flex:1,minWidth:200,fontSize:'0.92rem'}}>
+              <b style={{color:'var(--coral)'}}>{weakSpotsCount} weak spot{weakSpotsCount===1?'':'s'} in your review queue.</b>
+              <div style={{color:C.muted,fontSize:'0.84rem'}}>Items you missed before. Get them right twice in a row to clear them.</div>
+            </div>
+            <button onClick={onReviewWeakSpots}
+              style={{padding:'9px 18px',background:'var(--coral)',color:'white',border:'none',borderRadius:99,fontFamily:'inherit',fontSize:'0.85rem',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>
+              Start Review {'→'}
+            </button>
+          </div>
+        )}
+
+        {/* DOMAIN SPOT-CHECK */}
+        <div className="fade-up fade-up-6" style={{marginTop:36,marginBottom:24}}>
+          <div className="section-head">
+            <h2>Bank coverage, 9 domains</h2>
+            <span className="sub">{bankTotal} questions, click <b>Spot-check 20Q</b> to run a quick targeted quiz</span>
+          </div>
+          <div className="dom-list">
+            {DOMAINS.map(d => {
+              const letter = (d.match(/^([A-Z])\.?/) || [,d[0]])[1]
+              const shortName = d.replace(/^[A-Z]\.?\s*/, '')
               return (
-                <div key={d} className="domain-tile" style={{textAlign:'center',padding:'14px 10px',background:C.white,backdropFilter:'blur(14px)',WebkitBackdropFilter:'blur(14px)',border:`1px solid ${C.border}`,borderRadius:14,position:'relative'}}>
-                  {passed && <div style={{position:'absolute',top:6,right:6,width:18,height:18,borderRadius:'50%',background:'var(--green)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800}}>✓</div>}
-                  <div style={{fontSize:24,marginBottom:4}}>{MODULES[d].icon}</div>
-                  <div style={{fontSize:10,fontWeight:700,color:C.text,lineHeight:1.3,letterSpacing:'0.02em'}}>{d}</div>
+                <div key={d} className="dom-row">
+                  <span className="letter">{letter}</span>
+                  <div className="body">
+                    <div className="name">{shortName}</div>
+                    <div className="count">{domainCounts[d]} in bank</div>
+                  </div>
+                  <button className="spot-btn" onClick={()=>onSpotCheck?.(d)}>{'▸'} Spot-check 20Q</button>
                 </div>
               )
             })}
           </div>
         </div>
 
-        {/* === CTAs === */}
-        <button onClick={onStart} className="btn-cta fade-up fade-up-7"
-          style={{width:'100%',padding:'16px',background:C.primary,color:'#fff',border:'none',borderRadius:14,fontSize:16,fontWeight:700,cursor:'pointer',letterSpacing:'0.02em',boxShadow:'0 4px 20px rgba(31,41,52,0.15)',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:10}}>
-          Begin Diagnostic Pretest <span className="cta-arrow">→</span>
-        </button>
-        <button onClick={onSkipPretest} className="btn-cta fade-up fade-up-7"
-          style={{width:'100%',marginTop:10,padding:'13px',background:'transparent',color:C.text,border:`1.5px solid ${C.border}`,borderRadius:14,fontSize:14,fontWeight:600,cursor:'pointer',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:8}}>
-          Skip pretest — study all 9 modules <span className="cta-arrow">→</span>
-        </button>
-        <p className="fade-up fade-up-7" style={{fontSize:12,color:C.muted,textAlign:'center',margin:'12px 0 0'}}>
-          Skipping the pretest unlocks every module. You'll still need to pass each 80% quiz before the mock exam.
-        </p>
+        {/* FIRST-TIME CTAs */}
+        {!st.pretestScores && !st.skippedPretest && (
+          <div className="fade-up fade-up-7" style={{marginTop:36}}>
+            <button onClick={onStart} className="btn-cta"
+              style={{width:'100%',padding:'16px',background:C.primary,color:'#fff',border:'none',borderRadius:14,fontSize:16,fontWeight:700,cursor:'pointer',letterSpacing:'0.02em',boxShadow:'0 4px 20px rgba(31,22,13,0.15)',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:10}}>
+              Begin Diagnostic Pretest <span className="cta-arrow">{'→'}</span>
+            </button>
+            <button onClick={onSkipPretest} className="btn-cta"
+              style={{width:'100%',marginTop:10,padding:'13px',background:'transparent',color:C.text,border:`1.5px solid ${C.border}`,borderRadius:14,fontSize:14,fontWeight:600,cursor:'pointer',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:8}}>
+              Skip pretest, study all 9 modules <span className="cta-arrow">{'→'}</span>
+            </button>
+            <p style={{fontSize:12,color:C.muted,textAlign:'center',margin:'12px 0 0'}}>
+              Skipping the pretest unlocks every module. You will still need to pass each 80% quiz before the mock exam.
+            </p>
+          </div>
+        )}
       </div>
+
+      <style>{`
+        @media (max-width: 720px) {
+          .hero-grid { grid-template-columns: 1fr !important; }
+          .hero-orb { max-width: 200px !important; }
+        }
+      `}</style>
     </div>
   )
 }
@@ -2244,7 +2858,11 @@ export default function App() {
     onOpenSafmeds={()=>up({phase:'safmeds'})}
     onNav={handleNav}
     onStart={()=>up({phase:'pretest',qIndex:0,pretestAnswers:{},pretestQuestions:shuffleQuestions(PRETEST_QUESTIONS)})}
-    onSkipPretest={()=>up({phase:'modules',skippedPretest:true,weakDomains:DOMAINS,moduleStatuses:{}})}/></div>
+    onSkipPretest={()=>up({phase:'modules',skippedPretest:true,weakDomains:DOMAINS,moduleStatuses:{}})}
+    onSpotCheck={d=>{
+      const qs = sampleDomainQuestions(d, 20, PRETEST_QUESTIONS.map(q=>q.stem))
+      up({phase:'domain_quiz', domainQuizDomain:d, domainQuizQuestions:qs, domainQuizAnswers:{}, domainQuizQIndex:0})
+    }}/></div>
 
   if(st.phase==='pretest') {
     const pqs = st.pretestQuestions.length ? st.pretestQuestions : PRETEST_QUESTIONS
