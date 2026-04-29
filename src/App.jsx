@@ -3006,7 +3006,13 @@ export default function App() {
         setSt(p=>({...p, moduleAnswers:newAns, weakSpots:updateWeakSpots(p.weakSpots, practice, newAns)}))
       } else {
         up({moduleAnswers:newAns})
-        if(i<practice.length-1) setTimeout(()=>up({moduleQIndex:i+1}),800)
+        // Auto-advance ONLY on correct answers (quick reinforcement, ~1.2s).
+        // On incorrect, never auto-advance — let the student read the
+        // correct answer and rationale, then click "Next Question →" themselves.
+        const isCorrect = a === practice[i].correct
+        if (isCorrect && i < practice.length - 1) {
+          setTimeout(()=>up({moduleQIndex:i+1}), 1200)
+        }
       }
     }}
     onBack={()=>up({phase:'modules'})}
