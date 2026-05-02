@@ -15,16 +15,46 @@ import { useEffect, useRef, useState } from 'react'
  *   3. Paste the resulting 64-char hex string into ACCESS_HASH below.
  *   4. Commit + push.
  *
+ * To ENABLE LOGIN TRACKING (Google Sheet):
+ *   1. Follow setup in repo README — deploy the Apps Script web app.
+ *   2. Paste the deployment URL into LOG_ENDPOINT below.
+ *   3. Commit + push. Each successful login will append a row.
+ *   If LOG_ENDPOINT stays as the placeholder, logging is silently disabled.
+ *
  * Access code is required on every page load — no "remember me", no
  * persisted session. Refreshing the tab returns the user to this gate.
  */
 const ACCESS_SALT = 'onelove-bcba'
 const ACCESS_HASH = '808db059f54ff2c19407024f7029b20519afff487be32f5639f53f2b0ddd0648' // sha256("onelove-bcba:onelove2026")
+const APP_NAME = 'BCBA'
+const LOG_ENDPOINT = 'PASTE_YOUR_APPS_SCRIPT_URL_HERE'
 
 async function sha256Hex(s) {
   const bytes = new TextEncoder().encode(s)
   const buf = await crypto.subtle.digest('SHA-256', bytes)
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+// Fire-and-forget login log. Uses no-cors so a failing endpoint never
+// blocks the user, and does NOT await — the gate proceeds regardless.
+function logLogin(name) {
+  if (!LOG_ENDPOINT || LOG_ENDPOINT.startsWith('PASTE_')) return
+  try {
+    const payload = {
+      app: APP_NAME,
+      name: name.trim(),
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent || '',
+      timezone: (Intl.DateTimeFormat().resolvedOptions().timeZone) || '',
+      referrer: document.referrer || '',
+      language: navigator.language || '',
+    }
+    // sendBeacon is best-effort and non-blocking on unload; fall back to fetch.
+    const body = new Blob([JSON.stringify(payload)], { type: 'text/plain' })
+    if (!navigator.sendBeacon || !navigator.sendBeacon(LOG_ENDPOINT, body)) {
+      fetch(LOG_ENDPOINT, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload), keepalive: true }).catch(() => {})
+    }
+  } catch { /* never block login on a logging failure */ }
 }
 
 function OneLoveGateLogo() {
@@ -41,20 +71,22 @@ function OneLoveGateLogo() {
 
 export default function Gate({ children }) {
   const [authed, setAuthed] = useState(false)
+  const [name, setName] = useState('')
   const [pw, setPw] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const inputRef = useRef(null)
+  const nameRef = useRef(null)
 
-  useEffect(() => { if (!authed) inputRef.current?.focus() }, [authed])
+  useEffect(() => { if (!authed) nameRef.current?.focus() }, [authed])
 
   async function onSubmit(e) {
     e.preventDefault()
-    if (!pw || busy) return
+    if (!name.trim() || !pw || busy) return
     setBusy(true); setError('')
     try {
       const candidate = await sha256Hex(`${ACCESS_SALT}:${pw}`)
       if (candidate === ACCESS_HASH) {
+        logLogin(name)
         setAuthed(true)
       } else {
         setError('That access code didn’t match. Check with your provider.')
@@ -67,6 +99,14 @@ export default function Gate({ children }) {
   }
 
   if (authed) return children
+
+  const fieldLabel = { display: 'block', fontSize: 11, fontWeight: 700, color: '#161210', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }
+  const fieldInput = (errored) => ({
+    width: '100%', padding: '12px 14px', fontSize: 15,
+    border: `1.5px solid ${errored ? '#a8302a' : 'rgba(22,18,16,0.18)'}`,
+    borderRadius: 10, background: '#fffdf6', color: '#161210',
+    fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
+  })
 
   return (
     <div style={{
@@ -88,28 +128,29 @@ export default function Gate({ children }) {
           BCBA Exam Prep
         </h1>
         <p style={{ fontSize: 13.5, color: '#5a4f44', margin: '0 0 22px', textAlign: 'center', lineHeight: 1.5 }}>
-          Enter your access code to continue.
+          Sign in to continue.
         </p>
         <form onSubmit={onSubmit}>
-          <label htmlFor="ol-pw" style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#161210', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
-            Access code
-          </label>
+          <label htmlFor="ol-name" style={fieldLabel}>Your name</label>
           <input
-            id="ol-pw" ref={inputRef} type="password" autoComplete="off" spellCheck={false}
+            id="ol-name" ref={nameRef} type="text" autoComplete="name" spellCheck={false}
+            value={name} onChange={e => setName(e.target.value)} disabled={busy}
+            placeholder="First and last name"
+            style={fieldInput(false)}
+          />
+          <label htmlFor="ol-pw" style={{ ...fieldLabel, marginTop: 14 }}>Access code</label>
+          <input
+            id="ol-pw" type="password" autoComplete="off" spellCheck={false}
             value={pw} onChange={e => setPw(e.target.value)} disabled={busy}
-            style={{
-              width: '100%', padding: '12px 14px', fontSize: 15,
-              border: `1.5px solid ${error ? '#a8302a' : 'rgba(22,18,16,0.18)'}`,
-              borderRadius: 10, background: '#fffdf6', color: '#161210',
-              fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
-            }}
+            style={fieldInput(!!error)}
           />
           {error && <div style={{ marginTop: 8, fontSize: 12.5, color: '#a8302a' }}>{error}</div>}
-          <button type="submit" disabled={busy || !pw}
+          <button type="submit" disabled={busy || !pw || !name.trim()}
             style={{
               width: '100%', marginTop: 16, padding: '13px', borderRadius: 10, border: 'none',
-              background: busy || !pw ? 'rgba(22,18,16,0.4)' : '#161210', color: '#faf6ec',
-              fontSize: 14.5, fontWeight: 700, letterSpacing: '0.02em', cursor: busy || !pw ? 'default' : 'pointer',
+              background: (busy || !pw || !name.trim()) ? 'rgba(22,18,16,0.4)' : '#161210', color: '#faf6ec',
+              fontSize: 14.5, fontWeight: 700, letterSpacing: '0.02em',
+              cursor: (busy || !pw || !name.trim()) ? 'default' : 'pointer',
               fontFamily: 'inherit',
             }}>
             {busy ? 'Verifying…' : 'Enter'}
