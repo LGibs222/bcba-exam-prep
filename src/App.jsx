@@ -1566,8 +1566,13 @@ function Welcome({st,onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpot
           </div>
           <div className="dom-list">
             {DOMAINS.map(d => {
-              const letter = (d.match(/^([A-Z])\.?/) || [,d[0]])[1]
-              const shortName = d.replace(/^[A-Z]\.?\s*/, '')
+              // Only strip a leading "X. " prefix (e.g., RBT-style "A. Measurement").
+              // BCBA domain names like "Behaviorism and Philosophical Foundations"
+              // have no such prefix, so the badge falls back to the first letter
+              // and the full name is preserved.
+              const prefixMatch = d.match(/^([A-Z])\.\s+/)
+              const letter = prefixMatch ? prefixMatch[1] : d[0]
+              const shortName = prefixMatch ? d.slice(prefixMatch[0].length) : d
               return (
                 <div key={d} className="dom-row">
                   <span className="letter">{letter}</span>
