@@ -1067,12 +1067,51 @@ const NAV = [
   {id:'final_results',label:'Report',emoji:'📈',needs:'examScores'},
 ]
 
+// ── ONE LOVE BRAND MARK ──────────────────────────────────
+function OneLoveLogo({ height = 26, dark = true }) {
+  const inkColor = dark ? '#fbf7ea' : '#161210'
+  const heartColor = dark ? '#c4493a' : '#a8302a'
+  return (
+    <svg height={height} viewBox="0 0 380 80" xmlns="http://www.w3.org/2000/svg" aria-label="One Love" style={{ display: 'block' }}>
+      <text x="170" y="60" textAnchor="end" fontFamily="Fraunces, Georgia, serif" fontWeight="900" fontSize="54" letterSpacing="-1.2" fill={inkColor}>One</text>
+      <g transform="translate(190, 35)">
+        <path d="M 10 4 C 10 -2, 4 -6, 0 -2 C -4 -6, -10 -2, -10 4 C -10 11, 0 17, 0 17 C 0 17, 10 11, 10 4 Z" fill={heartColor}/>
+      </g>
+      <text x="208" y="60" fontFamily="Fraunces, Georgia, serif" fontWeight="900" fontStyle="italic" fontSize="54" letterSpacing="-1.2" fill={inkColor}>Love</text>
+    </svg>
+  )
+}
+
+function OneLoveFooter() {
+  return (
+    <footer style={{
+      borderTop: `1px solid ${C.border}`,
+      background: 'var(--surface-alt)',
+      padding: '20px 18px 28px',
+      marginTop: 32,
+    }}>
+      <div style={{maxWidth: 760, margin: '0 auto', display:'flex', flexDirection:'column', alignItems:'center', gap:10, textAlign:'center'}}>
+        <OneLoveLogo height={22} dark={false}/>
+        <div style={{fontSize:9, fontWeight:700, color:C.muted, letterSpacing:'0.18em', textTransform:'uppercase'}}>
+          Licensed Behavior Analysts PLLC
+        </div>
+        <p style={{fontSize:11, lineHeight:1.55, color:C.muted, margin:0, maxWidth:620}}>
+          One Love (Love Over Licensed Behavior Analysts, PLLC) is not affiliated with, endorsed by, or sponsored by the Behavior Analyst Certification Board (BACB®). BCBA® and RBT® are registered trademarks of the BACB. This practice tool is provided for educational purposes only and does not guarantee passage of the BACB examination.
+        </p>
+      </div>
+    </footer>
+  )
+}
+
 function NavBar({st,onNav,onReset,onConfirmReset,onCancelReset,onToggleTheme}) {
   const active = ['module'].includes(st.phase)?'modules':['safmeds_session','safmeds_results'].includes(st.phase)?'safmeds':st.phase
   const studyStarted = st.pretestScores || st.skippedPretest
   const examReady = studyStarted && (st.weakDomains.length===0 || st.weakDomains.every(d=>st.moduleStatuses[d]==='passed'))
   return (
     <div style={{background:C.primary,position:'sticky',top:0,zIndex:200,boxShadow:'0 2px 12px rgba(31,41,52,0.18)'}}>
+      <div style={{maxWidth:760,margin:'0 auto',padding:'10px 14px 8px',borderBottom:'1px solid rgba(251,247,234,0.10)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <OneLoveLogo height={26} dark={true}/>
+      </div>
       <div style={{maxWidth:760,margin:'0 auto',padding:'0 12px',display:'flex',alignItems:'center',justifyContent:'space-between',height:50}}>
         <div style={{display:'flex',gap:2,overflowX:'auto',scrollbarWidth:'none'}}>
           {NAV.map(item=>{
@@ -2862,7 +2901,7 @@ export default function App() {
     onSpotCheck={d=>{
       const qs = sampleDomainQuestions(d, 20, PRETEST_QUESTIONS.map(q=>q.stem))
       up({phase:'domain_quiz', domainQuizDomain:d, domainQuizQuestions:qs, domainQuizAnswers:{}, domainQuizQIndex:0})
-    }}/></div>
+    }}/><OneLoveFooter/></div>
 
   if(st.phase==='pretest') {
     const pqs = st.pretestQuestions.length ? st.pretestQuestions : PRETEST_QUESTIONS
@@ -2877,13 +2916,13 @@ export default function App() {
           weakSpots:updateWeakSpots(p.weakSpots, pqs, p.pretestAnswers),
           stats:bumpStat(p.stats,'pretestsCompleted')}))
       }}
-      label="Pretest"/></div>
+      label="Pretest"/><OneLoveFooter/></div>
   }
 
   if(st.phase==='pretest_results') return <div>{nav}<PretestResults
     scores={st.pretestScores} weakDomains={st.weakDomains}
     onStudy={()=>up({phase:'modules'})}
-    onSkip={()=>up({phase:'exam_intro'})}/></div>
+    onSkip={()=>up({phase:'exam_intro'})}/><OneLoveFooter/></div>
 
   if(st.phase==='modules') return <div>{nav}<ModuleHub
     weakDomains={st.weakDomains} moduleStatuses={st.moduleStatuses}
@@ -2892,7 +2931,7 @@ export default function App() {
     onSpotCheck={d=>{
       const qs = sampleDomainQuestions(d, 20, PRETEST_QUESTIONS.map(q=>q.stem))
       up({phase:'domain_quiz', domainQuizDomain:d, domainQuizQuestions:qs, domainQuizAnswers:{}, domainQuizQIndex:0})
-    }}/></div>
+    }}/><OneLoveFooter/></div>
 
   if(st.phase==='domain_quiz') {
     const dqs = st.domainQuizQuestions
@@ -2901,7 +2940,7 @@ export default function App() {
       onAnswer={(i,a)=>up({domainQuizAnswers:{...st.domainQuizAnswers,[i]:a}})}
       onNav={d=>up({domainQuizQIndex:Math.max(0,Math.min(dqs.length-1,st.domainQuizQIndex+d))})}
       onSubmit={()=>setSt(p=>({...p, phase:'domain_quiz_results', weakSpots:updateWeakSpots(p.weakSpots, p.domainQuizQuestions, p.domainQuizAnswers)}))}
-      label="Spot-Check"/></div>
+      label="Spot-Check"/><OneLoveFooter/></div>
   }
 
   if(st.phase==='domain_quiz_results') return <div>{nav}<DomainQuizResults
@@ -2911,11 +2950,11 @@ export default function App() {
       const qs = sampleDomainQuestions(st.domainQuizDomain, 20, PRETEST_QUESTIONS.map(q=>q.stem))
       up({phase:'domain_quiz', domainQuizQuestions:qs, domainQuizAnswers:{}, domainQuizQIndex:0})
     }}
-    onBack={()=>up({phase:'modules'})}/></div>
+    onBack={()=>up({phase:'modules'})}/><OneLoveFooter/></div>
 
   if(st.phase==='domain_quiz_review') return <div>{nav}<ExamReview
     questions={st.domainQuizQuestions} answers={st.domainQuizAnswers}
-    onBack={()=>up({phase:'domain_quiz_results'})}/></div>
+    onBack={()=>up({phase:'domain_quiz_results'})}/><OneLoveFooter/></div>
 
   if(st.phase==='weak_review') return <div>{nav}<WeakSpotReview
     queue={st.weakReviewQueue} idx={st.weakReviewIdx} answers={st.weakReviewAnswers}
@@ -2941,7 +2980,7 @@ export default function App() {
       if (st.weakReviewIdx < st.weakReviewQueue.length - 1) up({weakReviewIdx: st.weakReviewIdx + 1})
       else up({phase:'weak_review_summary'})
     }}
-    onQuit={()=>up({phase:'welcome'})}/></div>
+    onQuit={()=>up({phase:'welcome'})}/><OneLoveFooter/></div>
 
   if(st.phase==='safmeds') return <div>{nav}<SafmedsHub
     safmeds={st.safmeds}
@@ -2952,7 +2991,7 @@ export default function App() {
       up({phase:'safmeds_session', sfxDeckId:deckId, sfxMode:mode, sfxTimer:timer,
         sfxCards:cards, sfxCardIdx:0, sfxRevealed:false, sfxCorrect:0, sfxMissed:0,
         sfxRemaining: mode==='timed' ? timer : 0, sfxResults:null})
-    }}/></div>
+    }}/><OneLoveFooter/></div>
 
   if(st.phase==='safmeds_session') return <div>{nav}<SafmedsSession
     deckId={st.sfxDeckId} mode={st.sfxMode} timer={st.sfxTimer}
@@ -2971,7 +3010,7 @@ export default function App() {
       }))
       // practice mode never auto-finishes
     }}
-    onQuit={finishSafmedsSession}/></div>
+    onQuit={finishSafmedsSession}/><OneLoveFooter/></div>
 
   if(st.phase==='safmeds_results') return <div>{nav}<SafmedsResults
     results={st.sfxResults} safmeds={st.safmeds}
@@ -2981,7 +3020,7 @@ export default function App() {
         sfxCorrect:0, sfxMissed:0, sfxRemaining:st.sfxMode==='timed'?st.sfxTimer:0, sfxResults:null})
     }}
     onPickAnother={()=>up({phase:'safmeds'})}
-    onDone={()=>up({phase:'welcome'})}/></div>
+    onDone={()=>up({phase:'welcome'})}/><OneLoveFooter/></div>
 
   if(st.phase==='weak_review_summary') return <div>{nav}<WeakSpotSummary
     queue={st.weakReviewQueue} answers={st.weakReviewAnswers} startCount={st.weakReviewStartCount}
@@ -2991,7 +3030,7 @@ export default function App() {
       const queue = [...items].sort(()=>Math.random()-0.5)
       up({phase:'weak_review', weakReviewQueue:queue, weakReviewIdx:0, weakReviewAnswers:{}, weakReviewStartCount:queue.length})
     }}
-    onDone={()=>up({phase:'welcome'})}/></div>
+    onDone={()=>up({phase:'welcome'})}/><OneLoveFooter/></div>
 
   if(st.phase==='module') return <div>{nav}<LearningModule
     domain={st.activeModule} phase={st.modulePhase}
@@ -3024,13 +3063,13 @@ export default function App() {
       moduleStatuses:{...p.moduleStatuses,[p.activeModule]:status},
       modulePhase:'content',
       ...(status==='passed' ? {stats:bumpStat(p.stats,'modulesPassed')} : {}),
-    }))}/></div>
+    }))}/><OneLoveFooter/></div>
 
   if(st.phase==='exam_intro') return <div>{nav}<ExamIntro onStart={()=>{
     const qs=sampleExamQuestions(PRETEST_QUESTIONS,BCBA_TOTAL_QUESTIONS).map(shuffleQuestion)
     up({phase:'fullexam',examQuestions:qs,examAnswers:{},qIndex:0,timerSeconds:14400,timerActive:true})
     setFlagged(new Set())
-  }}/></div>
+  }}/><OneLoveFooter/></div>
 
   if(st.phase==='fullexam') return <div>{nav}<ExamScreen
     questions={st.examQuestions} answers={st.examAnswers} qIndex={st.qIndex}
@@ -3044,16 +3083,16 @@ export default function App() {
       setSt(p=>({...p, phase:'final_results', examScores:scores, timerActive:false,
         weakSpots:updateWeakSpots(p.weakSpots, p.examQuestions, p.examAnswers),
         stats:bumpStat(p.stats,'examAttempts')}))
-    }}/></div>
+    }}/><OneLoveFooter/></div>
 
   if(st.phase==='final_results') return <div>{nav}<FinalResults
     examScores={st.examScores} pretestScores={st.pretestScores}
     onReview={()=>up({phase:'exam_review'})}
-    onReset={()=>{clearInterval(timerRef.current);clearPersisted();setFlagged(new Set());setSt({...INITIAL})}}/></div>
+    onReset={()=>{clearInterval(timerRef.current);clearPersisted();setFlagged(new Set());setSt({...INITIAL})}}/><OneLoveFooter/></div>
 
   if(st.phase==='exam_review') return <div>{nav}<ExamReview
     questions={st.examQuestions} answers={st.examAnswers}
-    onBack={()=>up({phase:'final_results'})}/></div>
+    onBack={()=>up({phase:'final_results'})}/><OneLoveFooter/></div>
 
   return null
 }
