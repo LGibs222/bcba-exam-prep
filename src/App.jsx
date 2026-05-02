@@ -12,7 +12,19 @@ const loadPersisted = () => {
     const r = localStorage.getItem(STORAGE_KEY)
     if (!r) return null
     const p = JSON.parse(r)
-    if (p?.st) p.st.confirmReset = false  // never restore mid-reset confirm
+    if (!p || typeof p !== 'object') return null
+    // Defensive: coerce shapes so corrupt/older localStorage can't crash the app.
+    if (p.st && typeof p.st === 'object') {
+      p.st.confirmReset = false  // never restore mid-reset confirm
+      // Ensure expected nested objects are present
+      if (!p.st.safmeds || typeof p.st.safmeds !== 'object') p.st.safmeds = undefined
+      else if (!p.st.safmeds.decks || typeof p.st.safmeds.decks !== 'object') p.st.safmeds.decks = {}
+      if (!p.st.stats || typeof p.st.stats !== 'object') p.st.stats = undefined
+    } else {
+      p.st = undefined
+    }
+    // flagged must be an iterable array of indexes
+    if (!Array.isArray(p.flagged)) p.flagged = []
     return p
   } catch { return null }
 }
@@ -2684,10 +2696,15 @@ function ExamReview({questions, answers, onBack}) {
 
 function FinalResults({examScores,pretestScores,onReset,onReview}) {
   const domains = Object.keys(examScores)
-  const overall = Math.round(domains.reduce((a,d)=>{
-    const s=examScores[d]||{correct:0,total:1}
-    return a+pct(s.correct,s.total)
-  },0)/domains.length)
+  // Score by total correct / total questions (NOT by averaging domain percentages —
+  // domains have unequal question counts so averaging would misrepresent the score).
+  const totals = domains.reduce((acc,d)=>{
+    const s = examScores[d] || {correct:0,total:0}
+    acc.correct += s.correct
+    acc.total += s.total
+    return acc
+  }, {correct:0,total:0})
+  const overall = pct(totals.correct, totals.total)
   const passed = overall>=70
   return (
     <div style={{maxWidth:680,margin:'0 auto',padding:'32px 20px',fontFamily:'system-ui'}}>
@@ -2922,7 +2939,7 @@ export default function App() {
   if(st.phase==='pretest_results') return <div>{nav}<PretestResults
     scores={st.pretestScores} weakDomains={st.weakDomains}
     onStudy={()=>up({phase:'modules'})}
-    onSkip={()=>up({phase:'exam_intro'})}/><OneLoveFooter/></div>
+    onSkip={()=>up({phase: st.weakDomains.length>0 ? 'modules' : 'exam_intro'})}/><OneLoveFooter/></div>
 
   if(st.phase==='modules') return <div>{nav}<ModuleHub
     weakDomains={st.weakDomains} moduleStatuses={st.moduleStatuses}
