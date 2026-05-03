@@ -122,6 +122,22 @@ function getSafmedsCards(deckId) {
   if (deckId === 'all') {
     return [...(SAFMEDS_DECKS.beginner||[]), ...(SAFMEDS_DECKS.intermediate||[]), ...(SAFMEDS_DECKS.advanced||[]), ...(SAFMEDS_DECKS.master||[])]
   }
+  // Mega deck — every term across base levels AND every domain deck, deduped by term.
+  if (deckId === 'mega') {
+    const base = [...(SAFMEDS_DECKS.beginner||[]), ...(SAFMEDS_DECKS.intermediate||[]), ...(SAFMEDS_DECKS.advanced||[]), ...(SAFMEDS_DECKS.master||[])]
+    const domain = Object.keys(MODULE_ENHANCEMENTS).flatMap(d => {
+      const enh = MODULE_ENHANCEMENTS[d] || []
+      return enh.flatMap(c => (c?.keyTerms || []).map(kt => ({term: kt.term, def: kt.def})))
+    })
+    const seen = new Set()
+    const out = []
+    for (const c of [...base, ...domain]) {
+      const key = (c.term||'').trim().toLowerCase()
+      if (!key || seen.has(key)) continue
+      seen.add(key); out.push(c)
+    }
+    return out
+  }
   if (SAFMEDS_DECKS[deckId]) return SAFMEDS_DECKS[deckId]
   // domain deck — sourced from MODULE_ENHANCEMENTS keyTerms
   if (deckId.startsWith('domain:')) {
@@ -130,6 +146,17 @@ function getSafmedsCards(deckId) {
     return enh.flatMap(c => (c?.keyTerms || []).map(kt => ({term: kt.term, def: kt.def})))
   }
   return []
+}
+
+// Resolve a deck id to a human label for charts/CSVs/UI.
+function safmedsDeckLabel(deckId) {
+  if (!deckId) return ''
+  if (deckId === 'all') return 'All Terms'
+  if (deckId === 'mega') return 'Mega Deck'
+  const lvl = SAFMEDS_LEVELS.find(l => l.id === deckId)
+  if (lvl) return lvl.label
+  if (deckId.startsWith('domain:')) return deckId.slice(7)
+  return deckId
 }
 
 function shuffleCards(arr) { return [...arr].sort(()=>Math.random()-0.5) }
@@ -2189,7 +2216,227 @@ function SafmedsCard({safmeds, onOpen}) {
 }
 
 // ── SAFMEDS HUB (deck + mode picker) ──────────────────────
-function SafmedsHub({safmeds, onStart, onBack}) {
+// ── SAFMEDS PROGRESS (data + chart + CSV) ───────────────
+// Filterable line chart of correct counts per session over time, with a 7-day
+// rolling average overlay. Mirrors how a behavior analyst would visualize
+// SAFMEDS frequency data (this is the simple/linear view; SCC view is Phase 2).
+function SafmedsProgress({safmeds, onBack}) {
+  const history = safmeds?.history || []
+  const [filter, setFilter] = useState('mega-or-all')   // 'mega-or-all' | deckId
+  const [metric, setMetric] = useState('correct')       // 'correct' | 'rate'
+
+  // Build the filter dropdown options. Group by category.
+  const baseLevelOptions = SAFMEDS_LEVELS.map(l => ({ id: l.id, label: l.label, group: 'Levels' }))
+  const domainOptions = Object.keys(MODULE_ENHANCEMENTS).map(d => ({ id: `domain:${d}`, label: d, group: 'Per-Domain' }))
+  const allOptions = [
+    { id: 'mega-or-all', label: '◆ All sessions (every deck)', group: 'Combined' },
+    { id: 'mega', label: '🧠 Mega Deck only', group: 'Combined' },
+    { id: 'all', label: '🎯 All Terms only', group: 'Combined' },
+    ...baseLevelOptions,
+    ...domainOptions,
+  ]
+  const grouped = allOptions.reduce((acc, o) => { (acc[o.group] = acc[o.group] || []).push(o); return acc }, {})
+
+  // Apply filter
+  const filtered = filter === 'mega-or-all'
+    ? history
+    : history.filter(h => h.deck === filter)
+
+  // Group sessions by date and compute per-day series. Multiple sessions on the
+  // same day get summed (correct) or averaged (rate).
+  const byDate = new Map()
+  filtered.forEach(h => {
+    if (!h?.date) return
+    const cur = byDate.get(h.date) || { date: h.date, correctSum: 0, rateSum: 0, rateCount: 0, sessions: 0 }
+    cur.correctSum += (h.correct || 0)
+    if (h.rate) { cur.rateSum += h.rate; cur.rateCount++ }
+    cur.sessions++
+    byDate.set(h.date, cur)
+  })
+  const dailySeries = [...byDate.values()].sort((a, b) => a.date < b.date ? -1 : 1)
+    .map(d => ({
+      date: d.date,
+      correct: d.correctSum,
+      rate: d.rateCount ? Math.round((d.rateSum / d.rateCount) * 10) / 10 : 0,
+      sessions: d.sessions,
+    }))
+
+  // 7-day rolling average — for each point, average the prior 7 days' values
+  // including the current day (windowed back).
+  const withRoll = dailySeries.map((d, i) => {
+    const window = dailySeries.slice(Math.max(0, i - 6), i + 1)
+    const avg = window.reduce((s, w) => s + (w[metric] || 0), 0) / window.length
+    return { ...d, roll: Math.round(avg * 10) / 10 }
+  })
+
+  // Stats summary
+  const totalSessions = filtered.length
+  const totalCorrect = filtered.reduce((s, h) => s + (h.correct || 0), 0)
+  const avgRate = filtered.length
+    ? Math.round((filtered.reduce((s, h) => s + (h.rate || 0), 0) / filtered.length) * 10) / 10
+    : 0
+  const bestSession = filtered.reduce((best, h) => (h.correct > (best?.correct || 0) ? h : best), null)
+
+  function exportCSV() {
+    const rows = [['date', 'deck', 'deck_label', 'mode', 'timer', 'correct', 'missed', 'rate_per_min']]
+    history.forEach(h => {
+      rows.push([h.date, h.deck, safmedsDeckLabel(h.deck), h.mode, h.timer, h.correct, h.missed, h.rate])
+    })
+    const csv = rows.map(r => r.map(v => {
+      const s = String(v ?? '')
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+    }).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `safmeds-history-${todayISO()}.csv`
+    document.body.appendChild(a); a.click(); document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  // SVG chart geometry
+  const W = 720, H = 280, padL = 44, padR = 16, padT = 18, padB = 38
+  const innerW = W - padL - padR
+  const innerH = H - padT - padB
+  const yMax = Math.max(...withRoll.map(d => Math.max(d[metric] || 0, d.roll || 0)), metric === 'correct' ? 10 : 5)
+  const yTicks = 5
+  const xFor = i => withRoll.length <= 1 ? padL + innerW / 2 : padL + (i / (withRoll.length - 1)) * innerW
+  const yFor = v => padT + (1 - (v / yMax)) * innerH
+
+  const lineColor = '#5b21b6'
+  const rollColor = '#a16207'
+  const dotColor = '#5b21b6'
+  const fmtDate = s => { const [y, m, d] = (s || '').split('-'); return `${m}/${d}` }
+
+  return (
+    <div style={{maxWidth:920,margin:'0 auto',padding:'24px 20px',fontFamily:'system-ui'}}>
+      <button onClick={onBack} style={{background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:14,marginBottom:14,padding:0}}>← Back to SAFMEDS</button>
+      <h2 style={{fontSize:22,fontWeight:700,color:'#5b21b6',margin:'0 0 6px',fontFamily:'Georgia,serif'}}>📈 SAFMEDS Progress</h2>
+      <p style={{fontSize:14,color:C.muted,margin:'0 0 18px'}}>Frequency correct over time, by deck, with 7-day rolling average.</p>
+
+      {/* Filters */}
+      <div style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:12,padding:14,marginBottom:18,display:'flex',gap:14,flexWrap:'wrap',alignItems:'center'}}>
+        <div style={{display:'flex',flexDirection:'column',gap:4,flex:'1 1 240px'}}>
+          <label style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:'uppercase',letterSpacing:'0.07em'}} htmlFor="sfx-filter">Deck</label>
+          <select id="sfx-filter" value={filter} onChange={e=>setFilter(e.target.value)}
+            style={{padding:'8px 10px',borderRadius:8,border:`1px solid ${C.border}`,background:C.white,fontSize:13,fontFamily:'inherit'}}>
+            {Object.entries(grouped).map(([group, opts]) => (
+              <optgroup key={group} label={group}>
+                {opts.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:4}}>
+          <label style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:'uppercase',letterSpacing:'0.07em'}}>Metric</label>
+          <div style={{display:'flex',gap:6}}>
+            {[{id:'correct',label:'Correct (count)'},{id:'rate',label:'Correct/min'}].map(m=>(
+              <button key={m.id} onClick={()=>setMetric(m.id)}
+                style={{padding:'7px 12px',borderRadius:8,border:`1.5px solid ${metric===m.id?'#5b21b6':C.border}`,background:metric===m.id?'#5b21b6':C.white,color:metric===m.id?C.white:'#5b21b6',cursor:'pointer',fontSize:12,fontWeight:700,fontFamily:'inherit'}}>
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{flex:'1 0 auto',display:'flex',justifyContent:'flex-end'}}>
+          <button onClick={exportCSV} disabled={history.length===0}
+            style={{padding:'8px 14px',borderRadius:8,border:`1px solid ${C.border}`,background:C.white,color:history.length===0?C.muted:C.primary,cursor:history.length===0?'default':'pointer',fontSize:12,fontWeight:700,fontFamily:'inherit'}}>
+            ⬇ Export CSV
+          </button>
+        </div>
+      </div>
+
+      {/* Summary stats */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))',gap:10,marginBottom:18}}>
+        {[
+          {label:'Sessions', value: totalSessions},
+          {label:'Total correct', value: totalCorrect},
+          {label:'Avg correct/min', value: avgRate || '—'},
+          {label:'Best session', value: bestSession ? `${bestSession.correct} (${bestSession.timer}s)` : '—'},
+        ].map((s,i)=>(
+          <div key={i} style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:10,padding:'10px 12px'}}>
+            <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:'0.07em',textTransform:'uppercase'}}>{s.label}</div>
+            <div style={{fontSize:18,fontWeight:800,color:C.text}}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Chart */}
+      <div style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:12,padding:'18px 18px 12px'}}>
+        {withRoll.length === 0 ? (
+          <div style={{textAlign:'center',padding:'48px 12px',fontSize:13,color:C.muted,fontStyle:'italic'}}>
+            📊 No sessions match this filter yet. Run a SAFMEDS drill to start your data.
+          </div>
+        ) : (
+          <>
+            <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',display:'block'}}>
+              {/* Grid + Y-axis ticks */}
+              {Array.from({length: yTicks+1}).map((_,i) => {
+                const v = (yMax / yTicks) * i
+                const y = yFor(v)
+                return (
+                  <g key={i}>
+                    <line x1={padL} y1={y} x2={W-padR} y2={y} stroke="#e2e8f0" strokeWidth={1}/>
+                    <text x={padL-6} y={y+3} textAnchor="end" fontSize={9} fill="#64748b">{Math.round(v*10)/10}</text>
+                  </g>
+                )
+              })}
+              {/* X-axis date ticks (sample evenly) */}
+              {withRoll.map((d, i) => {
+                const showLabel = withRoll.length <= 8 || i === 0 || i === withRoll.length - 1 || (i % Math.ceil(withRoll.length/8) === 0)
+                if (!showLabel) return null
+                return (
+                  <text key={d.date} x={xFor(i)} y={H-padB+14} textAnchor="middle" fontSize={9} fill="#64748b">{fmtDate(d.date)}</text>
+                )
+              })}
+              {/* Axis labels */}
+              <text x={padL-32} y={padT+innerH/2} fontSize={10} fill="#64748b" transform={`rotate(-90 ${padL-32} ${padT+innerH/2})`} textAnchor="middle">
+                {metric==='correct' ? 'Correct (count per day)' : 'Correct per minute'}
+              </text>
+              <text x={padL+innerW/2} y={H-6} fontSize={10} fill="#64748b" textAnchor="middle">Date</text>
+              {/* Daily value line */}
+              {withRoll.length > 1 && (
+                <polyline
+                  fill="none" stroke={lineColor} strokeWidth={2}
+                  points={withRoll.map((d,i) => `${xFor(i)},${yFor(d[metric]||0)}`).join(' ')}
+                />
+              )}
+              {/* 7-day rolling average line */}
+              {withRoll.length > 1 && (
+                <polyline
+                  fill="none" stroke={rollColor} strokeWidth={2} strokeDasharray="5 4"
+                  points={withRoll.map((d,i) => `${xFor(i)},${yFor(d.roll||0)}`).join(' ')}
+                />
+              )}
+              {/* Daily dots */}
+              {withRoll.map((d,i) => (
+                <circle key={d.date} cx={xFor(i)} cy={yFor(d[metric]||0)} r={3.5} fill={dotColor}>
+                  <title>{`${d.date} • ${d[metric]} ${metric==='correct'?'correct':'cpm'} • ${d.sessions} session${d.sessions===1?'':'s'}`}</title>
+                </circle>
+              ))}
+            </svg>
+            {/* Legend */}
+            <div style={{display:'flex',gap:18,justifyContent:'center',marginTop:6,fontSize:11,color:C.muted,flexWrap:'wrap'}}>
+              <span style={{display:'inline-flex',alignItems:'center',gap:6}}>
+                <span style={{width:18,height:2,background:lineColor,display:'inline-block'}}/> Daily {metric==='correct'?'correct count':'correct/min'}
+              </span>
+              <span style={{display:'inline-flex',alignItems:'center',gap:6}}>
+                <span style={{width:18,height:2,background:rollColor,display:'inline-block',borderTop:`2px dashed ${rollColor}`}}/> 7-day rolling average
+              </span>
+            </div>
+          </>
+        )}
+      </div>
+
+      <p style={{fontSize:11,color:C.muted,margin:'14px 0 0',textAlign:'center'}}>
+        Standard Celeration Chart view (semi-log) coming next. CSV export includes all session data.
+      </p>
+    </div>
+  )
+}
+
+function SafmedsHub({safmeds, onStart, onBack, onProgress}) {
   const tokens = safmeds?.totalTokens || 0
   const [mode, setMode] = useState(safmeds?.lastMode || 'timed')
   const [timer, setTimer] = useState(safmeds?.lastTimer || 60)
@@ -2267,16 +2514,34 @@ function SafmedsHub({safmeds, onStart, onBack}) {
         })}
       </div>
 
-      {/* Mega deck */}
+      {/* Mega deck — every term across base levels + every domain deck */}
       <h3 style={{fontSize:13,fontWeight:800,color:C.muted,textTransform:'uppercase',letterSpacing:'0.07em',margin:'0 0 10px'}}>Mega Deck</h3>
-      <button onClick={()=>startDeck('all')}
-        style={{width:'100%',textAlign:'left',padding:'14px 16px',borderRadius:12,border:`2px solid ${C.accent}`,background:C.accentBg,marginBottom:24,cursor:'pointer',fontFamily:'inherit'}}>
-        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
-          <span style={{fontSize:18}}>🎯</span>
-          <span style={{fontSize:14,fontWeight:800,color:C.accent}}>All Terms</span>
-        </div>
-        <div style={{fontSize:11,color:C.accent,opacity:0.8}}>{getSafmedsCards('all').length} cards · every level mixed</div>
-      </button>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:24}}>
+        <button onClick={()=>startDeck('mega')}
+          style={{textAlign:'left',padding:'14px 16px',borderRadius:12,border:`2px solid #5b21b6`,background:'linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%)',cursor:'pointer',fontFamily:'inherit'}}>
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+            <span style={{fontSize:18}}>🧠</span>
+            <span style={{fontSize:14,fontWeight:800,color:'#5b21b6'}}>Mega Deck</span>
+          </div>
+          <div style={{fontSize:11,color:'#5b21b6',opacity:0.8}}>{getSafmedsCards('mega').length} cards · everything mixed (levels + domains)</div>
+        </button>
+        <button onClick={()=>startDeck('all')}
+          style={{textAlign:'left',padding:'14px 16px',borderRadius:12,border:`2px solid ${C.accent}`,background:C.accentBg,cursor:'pointer',fontFamily:'inherit'}}>
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+            <span style={{fontSize:18}}>🎯</span>
+            <span style={{fontSize:14,fontWeight:800,color:C.accent}}>All Terms</span>
+          </div>
+          <div style={{fontSize:11,color:C.accent,opacity:0.8}}>{getSafmedsCards('all').length} cards · every level mixed</div>
+        </button>
+      </div>
+
+      {/* View progress button */}
+      {(safmeds?.history?.length || 0) > 0 && (
+        <button onClick={onProgress}
+          style={{width:'100%',padding:'12px 16px',borderRadius:10,border:`1px solid #5b21b6`,background:C.white,color:'#5b21b6',cursor:'pointer',fontSize:13,fontWeight:700,fontFamily:'inherit',marginBottom:24,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+          📈 View Progress Chart →
+        </button>
+      )}
 
       {/* Per-domain decks */}
       <h3 style={{fontSize:13,fontWeight:800,color:C.muted,textTransform:'uppercase',letterSpacing:'0.07em',margin:'0 0 10px'}}>Per-Domain Decks</h3>
@@ -2799,7 +3064,7 @@ export default function App() {
         history: [...(sf.history||[]), {
           date: todayISO(), deck: deckId, mode: p.sfxMode, timer, correct, missed,
           rate: isTimed ? Math.round((correct/timer)*60*10)/10 : 0,
-        }].slice(-100),
+        }].slice(-1000),
         lastDeckId: deckId, lastTimer: timer, lastMode: p.sfxMode,
       }
       const deckLabel = SAFMEDS_LEVELS.find(l=>l.id===deckId)?.label || (deckId==='all'?'All Terms':deckId.startsWith('domain:')?deckId.slice(7):deckId)
@@ -3007,6 +3272,7 @@ export default function App() {
   if(st.phase==='safmeds') return <div>{nav}<SafmedsHub
     safmeds={st.safmeds}
     onBack={()=>up({phase:'welcome'})}
+    onProgress={()=>up({phase:'safmeds_progress'})}
     onStart={({deckId, mode, timer})=>{
       const cards = shuffleCards(getSafmedsCards(deckId))
       if (cards.length === 0) return
@@ -3014,6 +3280,10 @@ export default function App() {
         sfxCards:cards, sfxCardIdx:0, sfxRevealed:false, sfxCorrect:0, sfxMissed:0,
         sfxRemaining: mode==='timed' ? timer : 0, sfxResults:null})
     }}/><OneLoveFooter/></div>
+
+  if(st.phase==='safmeds_progress') return <div>{nav}<SafmedsProgress
+    safmeds={st.safmeds}
+    onBack={()=>up({phase:'safmeds'})}/><OneLoveFooter/></div>
 
   if(st.phase==='safmeds_session') return <div>{nav}<SafmedsSession
     deckId={st.sfxDeckId} mode={st.sfxMode} timer={st.sfxTimer}
