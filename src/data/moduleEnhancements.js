@@ -8,7 +8,12 @@ export const MODULE_ENHANCEMENTS = {
         { term: "Prediction", def: "Forecasting when behavior will occur based on known functional relationships." },
         { term: "Control", def: "Demonstrating causation by systematically manipulating an independent variable." },
         { term: "Functional relationship", def: "Reliable, replicable connection between an independent variable and behavior change." }
-      ]
+      ],
+      quickCheck: {
+        prompt: "A teacher reports that her student 'is more aggressive on rainy days.' Which goal of behavior analysis has she demonstrated, and what's still missing?",
+        answer: "She has only demonstrated DESCRIPTION (and possibly weak prediction). She's missing CONTROL — she'd need to systematically manipulate a variable (e.g., remove indoor recess, change schedule) and show aggression reliably changes as a function of that manipulation.",
+        hint: "There are three goals — description, prediction, and control. Which one requires you to actually intervene?"
+      }
     },
     {
       // concept[1]: Philosophical Assumptions: Determinism, Empiricism, Parsimony, and Philosophic Doubt
@@ -18,7 +23,53 @@ export const MODULE_ENHANCEMENTS = {
         { term: "Parsimony", def: "Accept the simplest scientifically adequate explanation before invoking complex ones." },
         { term: "Philosophic doubt", def: "Ongoing willingness to revise conclusions when new evidence conflicts with current views." },
         { term: "Empiricism", def: "Knowledge must be grounded in systematic, objective observation, not tradition or authority." }
-      ]
+      ],
+      quickCheck: {
+        prompt: "A new study contradicts a finding you've used in practice for 5 years. Which philosophical assumption tells you how to respond, and what does it require?",
+        answer: "Philosophic doubt — the willingness to continually revise conclusions when new evidence conflicts. It requires you to take the new data seriously, evaluate the methodology, and update practice if the evidence is sound, even when it's uncomfortable.",
+        hint: "It's not about rejecting old findings outright — it's about your stance toward your own knowledge."
+      },
+      categorize: {
+        title: "Match each statement to the philosophical assumption it best illustrates.",
+        categories: [
+          { id: 'determinism',  label: 'Determinism',     color: '#2563eb' },
+          { id: 'parsimony',    label: 'Parsimony',       color: '#16a34a' },
+          { id: 'doubt',        label: 'Philosophic Doubt',color: '#7c3aed' },
+          { id: 'empiricism',   label: 'Empiricism',      color: '#dc2626' },
+        ],
+        items: [
+          {
+            text: "Before concluding the child has 'low motivation,' the BCBA collects ABC data to identify environmental triggers and consequences.",
+            correct: 'parsimony',
+            explanation: "Parsimony: rule out the simpler environmental explanation before invoking an internal trait.",
+          },
+          {
+            text: "The clinician refuses to recommend essential oils as treatment because no peer-reviewed studies have demonstrated efficacy for this client population.",
+            correct: 'empiricism',
+            explanation: "Empiricism: knowledge claims must rest on systematic, objective observation — not tradition or anecdote.",
+          },
+          {
+            text: "The supervisor accepts that her preferred prompting hierarchy may be wrong and reads two new studies that suggest a different approach.",
+            correct: 'doubt',
+            explanation: "Philosophic doubt: continual willingness to revise conclusions in light of new evidence.",
+          },
+          {
+            text: "The behavior analyst assumes that even seemingly random aggression has identifiable antecedents and consequences if observation is precise enough.",
+            correct: 'determinism',
+            explanation: "Determinism: behavior has lawful, identifiable causes — there is no truly random or 'free' behavior.",
+          },
+          {
+            text: "Rather than calling the student 'oppositional,' the team identifies that escape from non-preferred tasks reliably follows refusal.",
+            correct: 'parsimony',
+            explanation: "Parsimony: explain behavior by the most direct functional relationship, not a personality construct.",
+          },
+          {
+            text: "When a long-standing intervention stops working, the team treats their previous understanding of the case as tentative and re-runs the FBA.",
+            correct: 'doubt',
+            explanation: "Philosophic doubt: previous conclusions are always provisional; reassess when data conflict.",
+          },
+        ],
+      },
     },
     {
       // concept[2]: Radical Behaviorism and Private Events
@@ -28,7 +79,12 @@ export const MODULE_ENHANCEMENTS = {
         { term: "Methodological behaviorism", def: "Earlier view that dismissed private events entirely as outside scientific study." },
         { term: "Mentalistic explanation", def: "Explaining behavior by hypothetical internal constructs like 'will' or 'trait' — rejected in radical behaviorism." },
         { term: "Radical behaviorism", def: "Skinner's framework accepting private events as behavior subject to the same environmental principles." }
-      ]
+      ],
+      quickCheck: {
+        prompt: "How does radical behaviorism handle a client's report of 'feeling angry' — and how does this differ from a mentalistic account?",
+        answer: "Radical behaviorism treats 'feeling angry' as a private behavior — real, but caused by environmental and biological history, not a free-floating internal state that 'causes' aggression. A mentalistic account would treat anger as the cause of behavior. Radical behaviorism asks: what environmental contingencies generate both the private feeling and the public response?",
+        hint: "Think about whether anger is treated as a CAUSE or as another BEHAVIOR to explain."
+      }
     },
     {
       // concept[3]: The Seven Dimensions of ABA (Baer, Wolf, and Risley, 1968)
@@ -38,7 +94,55 @@ export const MODULE_ENHANCEMENTS = {
         { term: "Conceptually systematic", def: "Procedures explained by and derived from established behavioral principles." },
         { term: "Generality", def: "Behavior change persists across time, settings, people, and untrained behaviors." },
         { term: "Applied", def: "Targets behaviors of genuine social significance to the individual and community." }
-      ]
+      ],
+      quickCheck: {
+        prompt: "A protocol says: 'Use whatever prompt the client needs to be successful.' Which TWO of the seven dimensions does this violate, and why?",
+        answer: "It violates TECHNOLOGICAL (procedures must be described precisely enough for another practitioner to replicate — 'whatever prompt' isn't replicable) and CONCEPTUALLY SYSTEMATIC (it doesn't ground prompt selection in established stimulus-control principles like prompt fading or least-to-most hierarchy).",
+        hint: "Both have to do with HOW the procedure is documented and justified."
+      },
+      categorize: {
+        title: "Sort each procedural detail by which of the seven dimensions of ABA it best demonstrates.",
+        categories: [
+          { id: 'applied',          label: 'Applied',         color: '#dc2626' },
+          { id: 'behavioral',       label: 'Behavioral',      color: '#2563eb' },
+          { id: 'technological',    label: 'Technological',   color: '#16a34a' },
+          { id: 'concept-systematic', label: 'Conceptually Systematic', color: '#7c3aed' },
+          { id: 'effective',        label: 'Effective',       color: '#ea580c' },
+          { id: 'generality',       label: 'Generality',      color: '#0891b2' },
+        ],
+        items: [
+          {
+            text: "Targeting tantrums in the cafeteria because they keep the student from eating with peers — a meaningful, socially significant problem.",
+            correct: 'applied',
+            explanation: "Applied: the target must matter to the individual and the community, not just be researchable.",
+          },
+          {
+            text: "The protocol specifies 'deliver verbal praise within 2 seconds of compliance' rather than 'reinforce after compliance.'",
+            correct: 'technological',
+            explanation: "Technological: another practitioner could read it and execute it identically.",
+          },
+          {
+            text: "After the child masters tooth brushing in clinic, the program tests whether it generalizes to home with parents.",
+            correct: 'generality',
+            explanation: "Generality: change persists across time, settings, people, and untrained behaviors.",
+          },
+          {
+            text: "Frequency of tantrums is measured directly — not 'frustration' or 'mood,' which can't be observed.",
+            correct: 'behavioral',
+            explanation: "Behavioral: targets must be precisely measurable behaviors, not constructs.",
+          },
+          {
+            text: "The intervention is grounded in differential reinforcement of alternative behavior (DRA) and stimulus control transfer principles.",
+            correct: 'concept-systematic',
+            explanation: "Conceptually systematic: derived from established behavioral principles, not intuition.",
+          },
+          {
+            text: "The plan is judged successful only after data show a clinically significant 75% reduction in self-injury.",
+            correct: 'effective',
+            explanation: "Effective: behavior change must be of practical, not just statistical, significance.",
+          },
+        ],
+      },
     }
   ],
 
@@ -56,7 +160,13 @@ export const MODULE_ENHANCEMENTS = {
     {
       // concept[1]: Reinforcement Schedules and Their Behavioral Characteristics
       visual: "schedule_graph",
+      animatedVisual: "schedule_compare",
       example: "Kezia, a 14-year-old, earns tokens for completing math problems. On a fixed-ratio 5 schedule (FR5), her BCBA, Dr. Webb, notices she blazes through sets of five problems then stops and stares out the window — the textbook post-reinforcement pause. When Dr. Webb switches to a variable-ratio schedule averaging 5 (VR5), Kezia works at a steady, rapid clip throughout the session with almost no pausing, because she cannot predict exactly which response will produce the token.",
+      quickCheck: {
+        prompt: "A client works hard for the first 4 minutes of a 5-minute interval, then slows dramatically. Which schedule is this and why does the pattern look the way it does?",
+        answer: "Fixed-Interval (FI). Under FI, the first response after a fixed time produces reinforcement. Responding is low right after reinforcement and accelerates as the interval ends — the classic 'FI scallop.' VI schedules produce steady moderate responding with no scallop.",
+        hint: "The pause-then-acceleration pattern only happens when the time-to-reinforcement is predictable."
+      },
       keyTerms: [
         { term: "Post-reinforcement pause", def: "Temporary cessation of responding immediately after reinforcement on ratio schedules." },
         { term: "Scalloped pattern", def: "FI response pattern: slow start after reinforcement, acceleration as interval end nears." },

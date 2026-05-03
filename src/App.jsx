@@ -5,6 +5,7 @@ import { QUESTION_BANK } from './data/questions.js'
 import { MODULE_ENHANCEMENTS } from './data/moduleEnhancements.js'
 import { SAFMEDS_DECKS } from './data/safmedsDecks.js'
 import { TTSButton } from './TTS.jsx'
+import { QuickCheck, CategorizeGame, AnimatedVisual, MasteryMap } from './Engagement.jsx'
 
 // ── LOCAL STORAGE PERSISTENCE ────────────────────────────
 const STORAGE_KEY = 'bcba-exam-prep-v1'
@@ -315,6 +316,8 @@ const INITIAL = {
   pretestAnswers:{}, pretestScores:null, weakDomains:[], skippedPretest:false,
   moduleStatuses:{}, activeModule:null, modulePhase:'content',
   moduleQIndex:0, moduleAnswers:{},
+  // Per-concept progress: { [domain]: { [conceptIdx]: { viewed, rating } } }
+  conceptProgress:{},
   examAnswers:{}, examQuestions:[], examScores:null,
   domainQuizDomain:null, domainQuizQuestions:[], domainQuizAnswers:{}, domainQuizQIndex:0,
   weakSpots:{}, weakReviewQueue:[], weakReviewIdx:0, weakReviewAnswers:{}, weakReviewStartCount:0,
@@ -1845,10 +1848,12 @@ function MissedQuestionCard({q}) {
   )
 }
 
-function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz,onFinish,onReviewConcepts}) {
+function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz,onFinish,onReviewConcepts,conceptProgress,onConceptView,onConceptRate}) {
   const mod = MODULES[domain]
   const [conceptIdx, setConceptIdx] = useState(0)
+  const [showMap, setShowMap] = useState(false)
   useEffect(()=>{ setConceptIdx(0) }, [domain])
+  useEffect(()=>{ if (phase==='content') onConceptView?.(conceptIdx) }, [phase, conceptIdx])
 
   const pq = mod.practice[qIndex]
   const selected = answers[qIndex]
@@ -1873,16 +1878,31 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
           <h2 style={{fontSize:20,fontWeight:700,color:C.primary,margin:0,fontFamily:'Georgia,serif'}}>{domain}</h2>
         </div>
 
-        {/* Progress dots */}
-        <div style={{display:'flex',gap:6,marginBottom:18,alignItems:'center'}}>
+        {/* Progress dots + Map toggle */}
+        <div style={{display:'flex',gap:6,marginBottom:14,alignItems:'center'}}>
           {mod.concepts.map((_,i)=>(
             <div key={i} onClick={()=>setConceptIdx(i)} style={{height:8,borderRadius:99,cursor:'pointer',flexShrink:0,
               width:i===conceptIdx?28:8,
               background:i<=conceptIdx?ctype.color:C.border,
               transition:'all .3s ease'}}/>
           ))}
-          <span style={{fontSize:12,color:C.muted,marginLeft:6}}>{conceptIdx+1} / {mod.concepts.length}</span>
+          <span style={{fontSize:12,color:C.muted,marginLeft:6,flex:1}}>{conceptIdx+1} / {mod.concepts.length}</span>
+          <button onClick={()=>setShowMap(s=>!s)}
+            style={{padding:'5px 11px',borderRadius:99,border:`1px solid ${C.border}`,background:showMap?ctype.color:C.white,color:showMap?C.white:ctype.color,cursor:'pointer',fontSize:11,fontWeight:700,fontFamily:'inherit'}}>
+            🗺️ Map
+          </button>
         </div>
+        {showMap && (
+          <div style={{marginBottom:18}}>
+            <MasteryMap
+              domain={domain}
+              concepts={mod.concepts}
+              progress={conceptProgress}
+              onJumpTo={(i)=>{setConceptIdx(i); setShowMap(false)}}
+              color={ctype.color}
+            />
+          </div>
+        )}
 
         {/* Animated concept card */}
         <div key={`${domain}-${conceptIdx}`} className="concept-in"
@@ -1926,6 +1946,13 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
               </div>
             )}
 
+            {/* Animated visual (optional) */}
+            {concept.animatedVisual && (
+              <div style={{marginTop:20,background:C.grayLight,borderRadius:12,padding:'12px 14px'}}>
+                <AnimatedVisual kind={concept.animatedVisual} color={ctype.color}/>
+              </div>
+            )}
+
             {/* Key term flip cards */}
             {concept.keyTerms && concept.keyTerms.length > 0 && (
               <div style={{marginTop:20}}>
@@ -1938,6 +1965,24 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
                   ))}
                 </div>
               </div>
+            )}
+
+            {/* Quick Check (active recall prompt) */}
+            {concept.quickCheck && (
+              <QuickCheck
+                quickCheck={concept.quickCheck}
+                color={ctype.color}
+                onRate={(rating)=>onConceptRate?.(conceptIdx, rating)}
+              />
+            )}
+
+            {/* Tap-to-categorize sort game */}
+            {concept.categorize && (
+              <CategorizeGame
+                categorize={concept.categorize}
+                color={ctype.color}
+                onComplete={(r)=>{ if (r.correct === r.total) onConceptRate?.(conceptIdx, 'got-it') }}
+              />
             )}
           </div>
         </div>
@@ -3513,6 +3558,18 @@ export default function App() {
   if(st.phase==='module') return <div>{nav}<LearningModule
     domain={st.activeModule} phase={st.modulePhase}
     qIndex={st.moduleQIndex} answers={st.moduleAnswers}
+    conceptProgress={st.conceptProgress?.[st.activeModule] || {}}
+    onConceptView={(idx)=>setSt(p=>{
+      const dom = p.activeModule
+      const cur = p.conceptProgress?.[dom] || {}
+      if (cur[idx]?.viewed) return p
+      return { ...p, conceptProgress: { ...p.conceptProgress, [dom]: { ...cur, [idx]: { ...(cur[idx]||{}), viewed: true } } } }
+    })}
+    onConceptRate={(idx, rating)=>setSt(p=>{
+      const dom = p.activeModule
+      const cur = p.conceptProgress?.[dom] || {}
+      return { ...p, conceptProgress: { ...p.conceptProgress, [dom]: { ...cur, [idx]: { ...(cur[idx]||{}), viewed: true, rating } } } }
+    })}
     onAnswer={(i,a)=>{
       if(i==='reset'){up({moduleAnswers:{},moduleQIndex:0});return}
       if(i==='next'){up({moduleQIndex:st.moduleQIndex+1});return}
