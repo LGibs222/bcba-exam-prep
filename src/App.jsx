@@ -2224,6 +2224,7 @@ function SafmedsProgress({safmeds, onBack}) {
   const history = safmeds?.history || []
   const [filter, setFilter] = useState('mega-or-all')   // 'mega-or-all' | deckId
   const [metric, setMetric] = useState('correct')       // 'correct' | 'rate'
+  const [chartType, setChartType] = useState('linear')  // 'linear' | 'scc'
 
   // Build the filter dropdown options. Group by category.
   const baseLevelOptions = SAFMEDS_LEVELS.map(l => ({ id: l.id, label: l.label, group: 'Levels' }))
@@ -2329,16 +2330,29 @@ function SafmedsProgress({safmeds, onBack}) {
           </select>
         </div>
         <div style={{display:'flex',flexDirection:'column',gap:4}}>
-          <label style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:'uppercase',letterSpacing:'0.07em'}}>Metric</label>
+          <label style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:'uppercase',letterSpacing:'0.07em'}}>Chart</label>
           <div style={{display:'flex',gap:6}}>
-            {[{id:'correct',label:'Correct (count)'},{id:'rate',label:'Correct/min'}].map(m=>(
-              <button key={m.id} onClick={()=>setMetric(m.id)}
-                style={{padding:'7px 12px',borderRadius:8,border:`1.5px solid ${metric===m.id?'#5b21b6':C.border}`,background:metric===m.id?'#5b21b6':C.white,color:metric===m.id?C.white:'#5b21b6',cursor:'pointer',fontSize:12,fontWeight:700,fontFamily:'inherit'}}>
-                {m.label}
+            {[{id:'linear',label:'Linear'},{id:'scc',label:'Standard Celeration'}].map(c=>(
+              <button key={c.id} onClick={()=>setChartType(c.id)}
+                style={{padding:'7px 12px',borderRadius:8,border:`1.5px solid ${chartType===c.id?'#5b21b6':C.border}`,background:chartType===c.id?'#5b21b6':C.white,color:chartType===c.id?C.white:'#5b21b6',cursor:'pointer',fontSize:12,fontWeight:700,fontFamily:'inherit'}}>
+                {c.label}
               </button>
             ))}
           </div>
         </div>
+        {chartType === 'linear' && (
+          <div style={{display:'flex',flexDirection:'column',gap:4}}>
+            <label style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:'uppercase',letterSpacing:'0.07em'}}>Metric</label>
+            <div style={{display:'flex',gap:6}}>
+              {[{id:'correct',label:'Correct (count)'},{id:'rate',label:'Correct/min'}].map(m=>(
+                <button key={m.id} onClick={()=>setMetric(m.id)}
+                  style={{padding:'7px 12px',borderRadius:8,border:`1.5px solid ${metric===m.id?'#5b21b6':C.border}`,background:metric===m.id?'#5b21b6':C.white,color:metric===m.id?C.white:'#5b21b6',cursor:'pointer',fontSize:12,fontWeight:700,fontFamily:'inherit'}}>
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div style={{flex:'1 0 auto',display:'flex',justifyContent:'flex-end'}}>
           <button onClick={exportCSV} disabled={history.length===0}
             style={{padding:'8px 14px',borderRadius:8,border:`1px solid ${C.border}`,background:C.white,color:history.length===0?C.muted:C.primary,cursor:history.length===0?'default':'pointer',fontSize:12,fontWeight:700,fontFamily:'inherit'}}>
@@ -2364,10 +2378,12 @@ function SafmedsProgress({safmeds, onBack}) {
 
       {/* Chart */}
       <div style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:12,padding:'18px 18px 12px'}}>
-        {withRoll.length === 0 ? (
+        {filtered.length === 0 ? (
           <div style={{textAlign:'center',padding:'48px 12px',fontSize:13,color:C.muted,fontStyle:'italic'}}>
             📊 No sessions match this filter yet. Run a SAFMEDS drill to start your data.
           </div>
+        ) : chartType === 'scc' ? (
+          <SCCChart filtered={filtered}/>
         ) : (
           <>
             <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',display:'block'}}>
@@ -2430,9 +2446,147 @@ function SafmedsProgress({safmeds, onBack}) {
       </div>
 
       <p style={{fontSize:11,color:C.muted,margin:'14px 0 0',textAlign:'center'}}>
-        Standard Celeration Chart view (semi-log) coming next. CSV export includes all session data.
+        {chartType === 'scc'
+          ? 'Standard Celeration Chart · semi-log · 4 decades (0.1–1000/min) · • = correct/min · ✕ = errors/min · — — aim line at 30/min'
+          : 'Linear chart · per-day aggregation · solid line = daily, dashed = 7-day rolling average. CSV export includes all session data.'}
       </p>
     </div>
+  )
+}
+
+// Standard Celeration Chart — canonical ABA chart for fluency data.
+// Semi-log y-axis, 4 decades (0.1 to 1000/min). Linear x-axis spanning the
+// data range (capped at 140 days from latest entry). Plots one filled dot
+// per timed session at correct/min and one × at error/min, with an aim line
+// at 30/min (typical SAFMEDS fluency target). Untimed sessions are excluded
+// because rate is undefined for them.
+function SCCChart({ filtered }) {
+  const W = 720, H = 360, padL = 52, padR = 16, padT = 18, padB = 42
+  const innerW = W - padL - padR
+  const innerH = H - padT - padB
+  const Y_MIN = 0.1, Y_MAX = 1000   // 4 decades
+  const LOG_MIN = Math.log10(Y_MIN)
+  const LOG_MAX = Math.log10(Y_MAX)
+  const LOG_RANGE = LOG_MAX - LOG_MIN
+  const AIM_RATE = 30
+
+  const timed = filtered.filter(h => h.mode === 'timed' && h.timer > 0)
+  if (timed.length === 0) {
+    return (
+      <div style={{textAlign:'center',padding:'48px 12px',fontSize:13,color:'#64748b',fontStyle:'italic'}}>
+        📊 No timed sessions yet. The Standard Celeration Chart only displays timed (rate-based) data. Switch to a timed sprint and grade some cards.
+      </div>
+    )
+  }
+
+  // Build session points with computed correct/min and error/min
+  const points = timed.map(h => {
+    const correctRate = h.timer ? (h.correct / h.timer) * 60 : 0
+    const errorRate = h.timer ? ((h.missed || 0) / h.timer) * 60 : 0
+    return { date: h.date, deck: h.deck, timer: h.timer, correctRate, errorRate, correct: h.correct, missed: h.missed || 0 }
+  })
+
+  // Date range — earliest data to today, capped at 140 days
+  const dates = points.map(p => p.date).sort()
+  const latestStr = dates[dates.length - 1]
+  const earliestStr = dates[0]
+  const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)) }
+  const dayMs = 86400000
+  const latest = parse(latestStr)
+  const earliest = parse(earliestStr)
+  const span = Math.max(28, Math.min(140, Math.ceil((latest - earliest) / dayMs) + 1))
+  const startDate = new Date(latest.getTime() - (span - 1) * dayMs)
+  const totalDays = span
+
+  const dayIdx = dStr => Math.round((parse(dStr) - startDate) / dayMs)
+  const xFor = idx => padL + (idx / Math.max(1, totalDays - 1)) * innerW
+  const yFor = rate => {
+    const r = Math.max(Y_MIN, rate || Y_MIN / 10)
+    return padT + (1 - (Math.log10(r) - LOG_MIN) / LOG_RANGE) * innerH
+  }
+  const fmtDate = d => `${d.getUTCMonth() + 1}/${d.getUTCDate()}`
+
+  // Decade major lines + sub-decade minor lines (logarithmic gridlines)
+  const decades = [0.1, 1, 10, 100, 1000]
+  const subValues = [2, 3, 4, 5, 6, 7, 8, 9]   // for minor lines within each decade
+
+  // Sunday vertical lines (slightly darker than weekday gridlines)
+  const dayLines = Array.from({ length: totalDays }).map((_, i) => {
+    const d = new Date(startDate.getTime() + i * dayMs)
+    const isSunday = d.getUTCDay() === 0
+    return { i, isSunday, isFirstOfMonth: d.getUTCDate() === 1, label: i === 0 || d.getUTCDate() === 1 || i === totalDays - 1, dateLabel: fmtDate(d) }
+  })
+
+  return (
+    <>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block' }}>
+        {/* Day-of-month vertical gridlines */}
+        {dayLines.map(({ i, isSunday, isFirstOfMonth }) => (
+          <line key={`v${i}`} x1={xFor(i)} y1={padT} x2={xFor(i)} y2={H - padB}
+            stroke={isFirstOfMonth ? '#94a3b8' : isSunday ? '#cbd5e1' : '#eef2f6'}
+            strokeWidth={isFirstOfMonth ? 1.2 : 0.8} />
+        ))}
+        {/* Sub-decade horizontal gridlines (light) */}
+        {decades.slice(0, -1).flatMap((dec, di) =>
+          subValues.map(s => {
+            const v = dec * s
+            if (v >= Y_MAX) return null
+            return <line key={`sub${di}-${s}`} x1={padL} y1={yFor(v)} x2={W - padR} y2={yFor(v)} stroke="#f1f5f9" strokeWidth={0.7} />
+          })
+        )}
+        {/* Decade horizontal gridlines (dark) + labels */}
+        {decades.map(d => (
+          <g key={`dec${d}`}>
+            <line x1={padL} y1={yFor(d)} x2={W - padR} y2={yFor(d)} stroke="#94a3b8" strokeWidth={1} />
+            <text x={padL - 8} y={yFor(d) + 3} textAnchor="end" fontSize={10} fill="#475569" fontWeight={700}>{d}</text>
+          </g>
+        ))}
+        {/* Aim line at 30/min */}
+        <line x1={padL} y1={yFor(AIM_RATE)} x2={W - padR} y2={yFor(AIM_RATE)} stroke="#16a34a" strokeWidth={1.5} strokeDasharray="6 4" />
+        <text x={W - padR - 4} y={yFor(AIM_RATE) - 4} textAnchor="end" fontSize={10} fill="#16a34a" fontWeight={700}>AIM 30/min</text>
+        {/* X-axis date labels */}
+        {dayLines.filter(d => d.label).map(({ i, dateLabel }) => (
+          <text key={`xl${i}`} x={xFor(i)} y={H - padB + 14} textAnchor="middle" fontSize={9} fill="#64748b">{dateLabel}</text>
+        ))}
+        {/* Axis labels */}
+        <text x={padL - 38} y={padT + innerH / 2} fontSize={11} fill="#475569" fontWeight={700}
+          transform={`rotate(-90 ${padL - 38} ${padT + innerH / 2})`} textAnchor="middle">
+          Count / minute (log scale)
+        </text>
+        <text x={padL + innerW / 2} y={H - 6} fontSize={10} fill="#64748b" textAnchor="middle">Date · {totalDays} days</text>
+        {/* Data: filled dots = correct rate, X marks = error rate */}
+        {points.map((p, i) => {
+          const idx = dayIdx(p.date)
+          if (idx < 0 || idx >= totalDays) return null
+          const x = xFor(idx)
+          return (
+            <g key={`p${i}`}>
+              {p.errorRate > 0 && (
+                <g stroke="#dc2626" strokeWidth={1.5}>
+                  <line x1={x - 4} y1={yFor(p.errorRate) - 4} x2={x + 4} y2={yFor(p.errorRate) + 4} />
+                  <line x1={x - 4} y1={yFor(p.errorRate) + 4} x2={x + 4} y2={yFor(p.errorRate) - 4} />
+                </g>
+              )}
+              <circle cx={x} cy={yFor(p.correctRate)} r={3.8} fill="#16a34a" stroke="#fff" strokeWidth={0.8}>
+                <title>{`${p.date} · ${safmedsDeckLabel(p.deck)} · ${Math.round(p.correctRate*10)/10}/min correct · ${Math.round(p.errorRate*10)/10}/min errors`}</title>
+              </circle>
+            </g>
+          )
+        })}
+      </svg>
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 18, justifyContent: 'center', marginTop: 8, fontSize: 11, color: '#64748b', flexWrap: 'wrap' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} /> Correct/min
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#dc2626' }}>
+          ✕ Errors/min
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#16a34a' }}>
+          <span style={{ width: 18, height: 0, borderTop: '2px dashed #16a34a', display: 'inline-block' }} /> Aim line
+        </span>
+      </div>
+    </>
   )
 }
 
