@@ -1853,7 +1853,10 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
   const [conceptIdx, setConceptIdx] = useState(0)
   const [showMap, setShowMap] = useState(false)
   useEffect(()=>{ setConceptIdx(0) }, [domain])
-  useEffect(()=>{ if (phase==='content') onConceptView?.(conceptIdx) }, [phase, conceptIdx])
+  // Track concept views across domain switches too — depending only on
+  // [phase, conceptIdx] would miss the case where a new domain re-enters
+  // at index 0 with the same phase.
+  useEffect(()=>{ if (phase==='content') onConceptView?.(conceptIdx) }, [phase, conceptIdx, domain])
 
   const pq = mod.practice[qIndex]
   const selected = answers[qIndex]

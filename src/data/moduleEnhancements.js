@@ -163,8 +163,8 @@ export const MODULE_ENHANCEMENTS = {
       animatedVisual: "schedule_compare",
       example: "Kezia, a 14-year-old, earns tokens for completing math problems. On a fixed-ratio 5 schedule (FR5), her BCBA, Dr. Webb, notices she blazes through sets of five problems then stops and stares out the window — the textbook post-reinforcement pause. When Dr. Webb switches to a variable-ratio schedule averaging 5 (VR5), Kezia works at a steady, rapid clip throughout the session with almost no pausing, because she cannot predict exactly which response will produce the token.",
       quickCheck: {
-        prompt: "A client works hard for the first 4 minutes of a 5-minute interval, then slows dramatically. Which schedule is this and why does the pattern look the way it does?",
-        answer: "Fixed-Interval (FI). Under FI, the first response after a fixed time produces reinforcement. Responding is low right after reinforcement and accelerates as the interval ends — the classic 'FI scallop.' VI schedules produce steady moderate responding with no scallop.",
+        prompt: "A client responds slowly right after each reinforcer is delivered, then accelerates rapidly as the next reinforcement time approaches. Which schedule is this and why does the pattern look this way?",
+        answer: "Fixed-Interval (FI). Under FI, the first response after a fixed time produces reinforcement. Right after a reinforcer the client \"knows\" the next one is far off, so responding is low; as the interval-end approaches, responding accelerates — the classic 'FI scallop.' VI schedules produce steady moderate responding with no scallop because the time-to-reinforcement is unpredictable.",
         hint: "The pause-then-acceleration pattern only happens when the time-to-reinforcement is predictable."
       },
       keyTerms: [

@@ -161,6 +161,15 @@ export function CategorizeGame({ categorize, onComplete, color = '#5b21b6' }) {
       </div>
       <h4 style={{ fontSize: 15, fontWeight: 700, color: '#1f2937', margin: '0 0 14px' }}>{title}</h4>
 
+      {/* aria-live status — announces selection changes for screen readers */}
+      <div role="status" aria-live="polite" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>
+        {!submitted && picked !== null
+          ? `Item ${picked + 1} selected. Choose a category.`
+          : !submitted && picked === null
+            ? 'No item selected. Tap an item to begin.'
+            : `Submitted. ${items.filter((it, i) => assignments[i] === it.correct).length} of ${items.length} correct.`}
+      </div>
+
       {/* Items pool */}
       <div style={{
         display: 'grid', gap: 6, marginBottom: 14,
@@ -170,12 +179,27 @@ export function CategorizeGame({ categorize, onComplete, color = '#5b21b6' }) {
           const cat = categories.find(c => c.id === assignments[i])
           const isPicked = picked === i
           const isCorrect = submitted && assignments[i] === item.correct
-          const isWrong = submitted && assignments[i] !== item.correct
           const border = submitted ? (isCorrect ? '#86efac' : '#fca5a5') : isPicked ? color : (cat?.color || '#cbd5e1')
           const bg = submitted ? (isCorrect ? '#f0fdf4' : '#fef2f2') : isPicked ? `${color}15` : (cat ? `${cat.color}15` : '#fff')
+          // Smart short-label for the assignment badge: prefer cat.short, else
+          // use word-initials for multi-word labels, else the full label.
+          const badge = cat
+            ? (cat.short
+              || (cat.label.includes(' ')
+                ? cat.label.split(/\s+/).filter(Boolean).map(w => w[0].toUpperCase()).join('')
+                : cat.label))
+            : ''
           return (
             <div key={i}>
               <button onClick={() => togglePick(i)} disabled={submitted}
+                aria-pressed={isPicked}
+                aria-label={
+                  submitted
+                    ? `${item.text} — ${isCorrect ? 'correct' : 'incorrect'}, you placed in ${cat?.label || 'no category'}`
+                    : cat
+                      ? `${item.text} — currently in ${cat.label}. Tap to re-pick.`
+                      : `${item.text} — unassigned. Tap to select.`
+                }
                 style={{
                   width: '100%', textAlign: 'left', padding: '10px 12px',
                   border: `2px solid ${border}`, borderRadius: 10, background: bg,
@@ -185,13 +209,13 @@ export function CategorizeGame({ categorize, onComplete, color = '#5b21b6' }) {
                 }}>
                 <span style={{ flex: 1 }}>{item.text}</span>
                 {submitted && (
-                  <span style={{ fontSize: 14, fontWeight: 800, color: isCorrect ? '#15803d' : '#991b1b' }}>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: isCorrect ? '#15803d' : '#991b1b' }} aria-hidden="true">
                     {isCorrect ? '✓' : '✗'}
                   </span>
                 )}
                 {!submitted && cat && (
-                  <span style={{ fontSize: 10, fontWeight: 700, color: cat.color, whiteSpace: 'nowrap' }}>
-                    {cat.label.split(' ')[0]}
+                  <span style={{ fontSize: 10, fontWeight: 700, color: cat.color, whiteSpace: 'nowrap' }} aria-hidden="true" title={cat.label}>
+                    {badge}
                   </span>
                 )}
               </button>
@@ -405,11 +429,11 @@ export function MasteryMap({ domain, concepts, progress, onJumpTo, color = '#5b2
 
   const getNodeStyle = (i) => {
     const p = progress?.[i]
-    if (p?.rating === 'got-it') return { bg: '#16a34a', fg: '#fff', border: '#15803d', label: '✓' }
-    if (p?.rating === 'almost')  return { bg: '#eab308', fg: '#fff', border: '#ca8a04', label: '~' }
-    if (p?.rating === 'review')  return { bg: '#dc2626', fg: '#fff', border: '#b91c1c', label: '↻' }
-    if (p?.viewed)               return { bg: '#fff',    fg: color,  border: color,    label: '•' }
-    return                       { bg: '#f3f4f6', fg: '#9ca3af', border: '#d1d5db', label: '' }
+    if (p?.rating === 'got-it') return { bg: '#16a34a', fg: '#fff', border: '#15803d', label: '✓', status: 'mastered' }
+    if (p?.rating === 'almost')  return { bg: '#eab308', fg: '#fff', border: '#ca8a04', label: '~', status: 'almost' }
+    if (p?.rating === 'review')  return { bg: '#dc2626', fg: '#fff', border: '#b91c1c', label: '↻', status: 'review needed' }
+    if (p?.viewed)               return { bg: '#fff',    fg: color,  border: color,    label: '•', status: 'viewed' }
+    return                       { bg: '#f3f4f6', fg: '#9ca3af', border: '#d1d5db', label: '',  status: 'not yet started' }
   }
 
   return (
@@ -436,6 +460,7 @@ export function MasteryMap({ domain, concepts, progress, onJumpTo, color = '#5b2
           const s = getNodeStyle(i)
           return (
             <button key={i} onClick={() => onJumpTo?.(i)} title={c.title}
+              aria-label={`Concept ${i+1}: ${c.title}. Status: ${s.status}.`}
               style={{
                 aspectRatio: '1', borderRadius: 10, border: `2px solid ${s.border}`,
                 background: s.bg, color: s.fg, cursor: 'pointer',
@@ -445,8 +470,8 @@ export function MasteryMap({ domain, concepts, progress, onJumpTo, color = '#5b2
               }}
               onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
               onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
-              <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.7 }}>{i+1}</div>
-              <div style={{ fontSize: 12 }}>{s.label}</div>
+              <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.7 }} aria-hidden="true">{i+1}</div>
+              <div style={{ fontSize: 12 }} aria-hidden="true">{s.label}</div>
             </button>
           )
         })}
