@@ -4,6 +4,7 @@ import { MODULES } from './data/modules.js'
 import { QUESTION_BANK } from './data/questions.js'
 import { MODULE_ENHANCEMENTS } from './data/moduleEnhancements.js'
 import { SAFMEDS_DECKS } from './data/safmedsDecks.js'
+import { TTSButton } from './TTS.jsx'
 
 // ── LOCAL STORAGE PERSISTENCE ────────────────────────────
 const STORAGE_KEY = 'bcba-exam-prep-v1'
@@ -1687,7 +1688,10 @@ function QuestionScreen({questions,answers,qIndex,onAnswer,onNav,onSubmit,label,
       </div>
       {showFeedback&&selected!==undefined&&(
         <Card style={{background:C.grayLight,marginBottom:16}}>
-          <p style={{fontSize:13,color:C.text,margin:0,lineHeight:1.6}}><strong>Explanation:</strong> {q.rationale}</p>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10}}>
+            <p style={{fontSize:13,color:C.text,margin:0,lineHeight:1.6,flex:1}}><strong>Explanation:</strong> {q.rationale}</p>
+            <TTSButton token={`rat:pretest:${qIndex}`} text={q.rationale} label="" size="xs"/>
+          </div>
         </Card>
       )}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
@@ -1830,8 +1834,9 @@ function MissedQuestionCard({q}) {
             <strong>✓ Correct:</strong> {['A','B','C','D'][q.correct]}. {q.options[q.correct]}
           </div>
           {q.rationale && (
-            <div style={{padding:'10px 12px',background:C.grayLight,borderRadius:8,fontSize:12.5,color:C.text,lineHeight:1.65}}>
-              <strong style={{color:C.primary}}>📘 Why:</strong> {q.rationale}
+            <div style={{padding:'10px 12px',background:C.grayLight,borderRadius:8,fontSize:12.5,color:C.text,lineHeight:1.65,display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10}}>
+              <span style={{flex:1}}><strong style={{color:C.primary}}>📘 Why:</strong> {q.rationale}</span>
+              <TTSButton token={`rat:review:${q.id||q.stem?.slice(0,30)}`} text={q.rationale} label="" size="xs"/>
             </div>
           )}
         </div>
@@ -1893,7 +1898,15 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
           </div>
 
           <div style={{background:C.white,padding:'22px 22px 20px'}}>
-            <h3 style={{fontSize:17,fontWeight:800,color:ctype.color,margin:'0 0 14px',lineHeight:1.35}}>{concept.title}</h3>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12,marginBottom:14}}>
+              <h3 style={{fontSize:17,fontWeight:800,color:ctype.color,margin:0,lineHeight:1.35,flex:1}}>{concept.title}</h3>
+              <TTSButton
+                token={`mod:${domain}:${conceptIdx}`}
+                text={`${concept.title}. ${concept.body}${concept.example ? '. Example: ' + concept.example : ''}`}
+                label="Read"
+                size="xs"
+              />
+            </div>
             <p style={{fontSize:14,lineHeight:1.82,color:C.text,margin:0}}>{concept.body}</p>
 
             {/* Applied example */}
@@ -2028,7 +2041,10 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
       {selected!==undefined&&(
         <>
           <Card style={{background:C.grayLight,marginBottom:14}}>
-            <p style={{fontSize:13,color:C.text,margin:0,lineHeight:1.6}}><strong>Explanation:</strong> {pq.rationale}</p>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10}}>
+              <p style={{fontSize:13,color:C.text,margin:0,lineHeight:1.6,flex:1}}><strong>Explanation:</strong> {pq.rationale}</p>
+              <TTSButton token={`rat:mod:${qIndex}`} text={pq.rationale} label="" size="xs"/>
+            </div>
           </Card>
           {qIndex<mod.practice.length-1&&(
             <button onClick={()=>onAnswer('next')} style={{width:'100%',padding:'13px',background:C.primary,color:C.white,border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer'}}>Next Question →</button>
@@ -2745,7 +2761,7 @@ function SafmedsSession({deckId, mode, timer, cards, cardIdx, revealed, correct,
       </div>
 
       {/* Card */}
-      <div style={{minHeight:280,background:C.white,border:`2px solid ${revealed?C.greenBorder:'#a78bfa'}`,borderRadius:18,padding:'30px 26px',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',marginBottom:18,boxShadow:'0 6px 24px rgba(91,33,182,0.12)'}}>
+      <div style={{minHeight:280,background:C.white,border:`2px solid ${revealed?C.greenBorder:'#a78bfa'}`,borderRadius:18,padding:'30px 26px',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',marginBottom:10,boxShadow:'0 6px 24px rgba(91,33,182,0.12)'}}>
         <div style={{fontSize:11,fontWeight:800,color:revealed?C.green:'#5b21b6',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:14}}>
           {revealed?'✓ Term':'Definition'}
         </div>
@@ -2757,6 +2773,16 @@ function SafmedsSession({deckId, mode, timer, cards, cardIdx, revealed, correct,
             <p style={{fontSize:13,lineHeight:1.55,color:C.muted,margin:0,fontStyle:'italic'}}>{card.def}</p>
           </div>
         )}
+      </div>
+
+      {/* TTS button — reads the visible side of the card */}
+      <div style={{display:'flex',justifyContent:'center',marginBottom:18}}>
+        <TTSButton
+          token={`sfx:${cardIdx}:${revealed?'back':'front'}`}
+          text={revealed ? `${card.term}. ${card.def}` : card.def}
+          label="Read aloud"
+          size="sm"
+        />
       </div>
 
       {/* Action buttons */}
@@ -2901,7 +2927,10 @@ function WeakSpotReview({queue, idx, answers, onAnswer, onNext, onQuit, startCou
             {isCorrect ? `✓ Right! ${(item.consecutiveCorrect||0)+1 >= 2 ? 'Graduated 🎓' : `One more in a row to graduate`}` : '✗ Stays in queue — try again next time'}
           </div>
           <Card style={{background:C.grayLight,marginBottom:14}}>
-            <div style={{fontSize:11,fontWeight:800,color:C.primary,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:6}}>📘 Rationale</div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+              <div style={{fontSize:11,fontWeight:800,color:C.primary,textTransform:'uppercase',letterSpacing:'0.07em'}}>📘 Rationale</div>
+              <TTSButton token={`rat:weak:${idx}`} text={q.rationale} label="" size="xs"/>
+            </div>
             <p style={{fontSize:13.5,color:C.text,margin:0,lineHeight:1.7}}>{q.rationale}</p>
           </Card>
           <button onClick={onNext}
@@ -3082,7 +3111,10 @@ function ExamReview({questions, answers, onBack}) {
 
           {/* Rationale */}
           <Card style={{background:C.grayLight,marginBottom:16}}>
-            <div style={{fontSize:11,fontWeight:800,color:C.primary,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:6}}>📘 Rationale</div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+              <div style={{fontSize:11,fontWeight:800,color:C.primary,textTransform:'uppercase',letterSpacing:'0.07em'}}>📘 Rationale</div>
+              <TTSButton token={`rat:exam:${q.id||q.stem?.slice(0,30)}`} text={q.rationale} label="" size="xs"/>
+            </div>
             <p style={{fontSize:13.5,color:C.text,margin:0,lineHeight:1.7}}>{q.rationale}</p>
           </Card>
 
