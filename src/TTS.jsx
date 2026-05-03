@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
  * Until that's set, all 🔊 buttons render disabled with a tooltip explaining
  * setup is incomplete (no errors, no broken UI).
  */
-const TTS_ENDPOINT = 'PASTE_YOUR_CLOUDFLARE_WORKER_URL_HERE'
+const TTS_ENDPOINT = 'https://onelove-tts.lenwoodjr.workers.dev/'
 
 const isConfigured = () => !!TTS_ENDPOINT && !TTS_ENDPOINT.startsWith('PASTE_')
 
