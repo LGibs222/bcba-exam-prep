@@ -6,6 +6,8 @@ import { MODULE_ENHANCEMENTS } from './data/moduleEnhancements.js'
 import { SAFMEDS_DECKS } from './data/safmedsDecks.js'
 import { TTSButton } from './TTS.jsx'
 import { QuickCheck, CategorizeGame, AnimatedVisual, MasteryMap } from './Engagement.jsx'
+import { track } from './tracking.js'
+import MyProgressScreen from './MyProgress.jsx'
 
 // ── LOCAL STORAGE PERSISTENCE ────────────────────────────
 const STORAGE_KEY = 'bcba-exam-prep-v1'
@@ -245,6 +247,7 @@ const CONCEPT_TYPES = [
 
 const DOMAINS = Object.keys(MODULES)
 const pct = (c,t) => t===0?0:Math.round((c/t)*100)
+const ovPct = sc => { if (!sc) return null; let c = 0, t = 0; Object.values(sc).forEach(x => { c += x.correct; t += x.total }); return t ? Math.round(c / t * 100) : null }
 
 function calcScores(questions, answers) {
   const byDomain = {}
@@ -1106,6 +1109,7 @@ const NAV = [
   {id:'pretest_results',label:'Results',emoji:'📊',needs:'pretestScores'},
   {id:'modules',label:'Study',emoji:'📚',needs:'studyStarted'},
   {id:'safmeds',label:'SAFMEDS',emoji:'🎴',always:true},
+  {id:'progress',label:'My Progress',emoji:'🧭',always:true},
   {id:'exam_intro',label:'Exam',emoji:'🏁',needs:'examReady'},
   {id:'final_results',label:'Report',emoji:'📈',needs:'examScores'},
 ]
@@ -3274,6 +3278,14 @@ export default function App() {
     return p?.st ? {...INITIAL, ...p.st} : {...INITIAL}
   })
   const up = patch => setSt(p=>({...p,...patch}))
+  const teleRef = useRef(null)
+  if (teleRef.current === null) teleRef.current = { pre: !!st.pretestScores, exam: !!st.examScores, mods: new Set(Object.entries(st.moduleStatuses || {}).filter(([, x]) => x === 'passed').map(([d]) => d)) }
+  useEffect(() => {
+    const r = teleRef.current
+    if (!r.pre && st.pretestScores) { r.pre = true; track('pretest_completed', { overallPct: ovPct(st.pretestScores), weak: st.weakDomains || [] }) }
+    if (!r.exam && st.examScores) { r.exam = true; const a = ovPct(st.pretestScores), b = ovPct(st.examScores); track('posttest_completed', { overallPct: b, prePct: a, growth: (a != null && b != null) ? b - a : null }) }
+    Object.entries(st.moduleStatuses || {}).forEach(([d, x]) => { if (x === 'passed' && !r.mods.has(d)) { r.mods.add(d); track('module_completed', { domain: d }) } })
+  }, [st.pretestScores, st.examScores, st.moduleStatuses])
   const timerRef = useRef(null)
   const sfxTimerRef = useRef(null)
 
@@ -3390,6 +3402,7 @@ export default function App() {
       exam_intro:()=>up({phase:'exam_intro',confirmReset:false}),
       final_results:()=>st.examScores&&up({phase:'final_results',confirmReset:false}),
       safmeds:()=>up({phase:'safmeds',confirmReset:false}),
+    progress:()=>up({phase:'progress',confirmReset:false}),
     }
     map[id]?.()
   }
@@ -3405,6 +3418,12 @@ export default function App() {
     </>
   )
 
+  if(st.phase==='progress'){
+    const best=st.examScores||st.pretestScores
+    const dsc=DOMAINS.map(d=>({name:d, pct: best&&best[d]?pct(best[d].correct,best[d].total):null}))
+    const a=ovPct(st.pretestScores), b=ovPct(st.examScores), hist=(st.safmeds&&st.safmeds.history)||[]
+    return <div>{nav}<MyProgressScreen name={(()=>{try{return localStorage.getItem('ol-user')||''}catch{return ''}})()} accent="#a64558" theme={st.theme} overall={b!=null?b:a} pre={a} post={b} growth={(a!=null&&b!=null)?b-a:null} domains={dsc} modulesPassed={Object.values(st.moduleStatuses||{}).filter(x=>x==='passed').length} modulesTotal={DOMAINS.length} safmeds={{tokens:(st.safmeds&&st.safmeds.totalTokens)||0, sessions:hist.length, bestRate:hist.reduce((m,h)=>Math.max(m,h.rate||0),0)}} examTaken={!!st.examScores} onHome={()=>up({phase:'welcome'})}/><OneLoveFooter/></div>
+  }
   if(st.phase==='welcome') return <div>{nav}<Welcome
     st={st}
     stats={st.stats}
