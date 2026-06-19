@@ -8,6 +8,7 @@ import { TTSButton } from './TTS.jsx'
 import { QuickCheck, CategorizeGame, AnimatedVisual, MasteryMap } from './Engagement.jsx'
 import { track } from './tracking.js'
 import MyProgressScreen from './MyProgress.jsx'
+import { scoreExam, tallyByDomain, overallPctFromMap } from './scoring.js'
 
 // ── LOCAL STORAGE PERSISTENCE ────────────────────────────
 const STORAGE_KEY = 'bcba-exam-prep-v1'
@@ -247,17 +248,13 @@ const CONCEPT_TYPES = [
 
 const DOMAINS = Object.keys(MODULES)
 const pct = (c,t) => t===0?0:Math.round((c/t)*100)
-const ovPct = sc => { if (!sc) return null; let c = 0, t = 0; Object.values(sc).forEach(x => { c += x.correct; t += x.total }); return t ? Math.round(c / t * 100) : null }
+const ovPct = sc => overallPctFromMap(sc)
 
+// Per-domain breakdown for the results screen, via the shared scoring engine.
+// Scored items only — pilots (scored:false) are excluded, so domain totals sum
+// to the 175 scored items, not 185.
 function calcScores(questions, answers) {
-  const byDomain = {}
-  questions.forEach((q,i) => {
-    const d = q.domain_name
-    if (!byDomain[d]) byDomain[d] = {correct:0,total:0}
-    byDomain[d].total++
-    if (answers[i] === q.correct) byDomain[d].correct++
-  })
-  return byDomain
+  return tallyByDomain(questions, answers, q => q.domain_name, true)
 }
 
 function shuffleQuestion(q) {
@@ -292,6 +289,10 @@ const BCBA_OFFICIAL_DOMAIN_COUNTS = {
 const BCBA_TOTAL_QUESTIONS = 185
 const BCBA_SCORED_QUESTIONS = 175
 const BCBA_PILOT_QUESTIONS = 10  // unscored
+// Mock-exam scoring form. rawCut = summed modified-Angoff probabilities (the
+// minimally-competent-candidate cut); tunable per form. raw->scaled is anchored
+// so rawCut always maps to scaleCut (the equating step). See scoring.js.
+const BCBA_FORM = { rawCut: 133, scoredCount: 175, scaleMin: 0, scaleMax: 500, scaleCut: 400 } // 0.76 × 175
 
 function sampleExamQuestions(pretestQs, count=BCBA_TOTAL_QUESTIONS) {
   const pretestStems = new Set(pretestQs.map(q=>q.stem.substring(0,60)))
@@ -303,12 +304,13 @@ function sampleExamQuestions(pretestQs, count=BCBA_TOTAL_QUESTIONS) {
     const dPool = pool.filter(q => q.domain_name === domain && !used.has(q))
     const shuffled = [...dPool].sort(()=>Math.random()-0.5).slice(0, n)
     shuffled.forEach(q => used.add(q))
-    sampled.push(...shuffled)
+    sampled.push(...shuffled.map(q => ({...q, scored:true})))
   })
   // Fill remaining slots (pilot questions) with random items from any domain
   const remaining = pool.filter(q => !used.has(q))
   const shuffledRemaining = [...remaining].sort(()=>Math.random()-0.5)
-  sampled.push(...shuffledRemaining.slice(0, Math.max(0, count - sampled.length)))
+  // Pilot/unscored fillers — tagged so the scoring engine ignores them.
+  sampled.push(...shuffledRemaining.slice(0, Math.max(0, count - sampled.length)).map(q => ({...q, scored:false})))
   // Final shuffle so domain blocks are interleaved
   return sampled.slice(0, count).sort(()=>Math.random()-0.5)
 }
@@ -321,7 +323,7 @@ const INITIAL = {
   moduleQIndex:0, moduleAnswers:{},
   // Per-concept progress: { [domain]: { [conceptIdx]: { viewed, rating } } }
   conceptProgress:{},
-  examAnswers:{}, examQuestions:[], examScores:null,
+  examAnswers:{}, examQuestions:[], examScores:null, examResult:null,
   domainQuizDomain:null, domainQuizQuestions:[], domainQuizAnswers:{}, domainQuizQIndex:0,
   weakSpots:{}, weakReviewQueue:[], weakReviewIdx:0, weakReviewAnswers:{}, weakReviewStartCount:0,
   // SAFMEDS persistent state
@@ -2114,12 +2116,12 @@ function ExamIntro({onStart}) {
       <div style={{fontSize:52,marginBottom:12}}>🏁</div>
       <h2 style={{fontSize:24,fontWeight:700,color:C.primary,fontFamily:'Georgia,serif',marginBottom:8}}>Full BCBA Mock Exam</h2>
       <p style={{fontSize:15,color:C.muted,marginBottom:28,lineHeight:1.6}}>
-        185 questions (175 scored + 10 pilot) · 4-hour timer · All 9 domains<br/>
+        185 questions (175 scored + 10 unscored pilot) · 4-hour timer · All 9 domains<br/>
         Mirrors the BCBA® 6th Edition Test Content Outline (2025+).<br/>
-        Passing score: <strong>~70%</strong>
+        Reported as a scaled score (0–500); estimated pass mark <strong>400</strong>
       </p>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:32}}>
-        {[['185','Questions'],['4 hrs','Time Limit'],['~70%','Passing Score']].map(([v,l])=>(
+        {[['185','Questions'],['4 hrs','Time Limit'],['400 / 500','Pass Mark']].map(([v,l])=>(
           <Card key={l} style={{padding:16,textAlign:'center'}}>
             <div style={{fontSize:22,fontWeight:800,color:C.primary}}>{v}</div>
             <div style={{fontSize:12,color:C.muted,marginTop:2}}>{l}</div>
@@ -3202,18 +3204,23 @@ function ExamReview({questions, answers, onBack}) {
   )
 }
 
-function FinalResults({examScores,pretestScores,onReset,onReview}) {
+function FinalResults({examScores,examResult,examQuestions,examAnswers,pretestScores,onReset,onReview}) {
   const domains = Object.keys(examScores)
-  // Score by total correct / total questions (NOT by averaging domain percentages —
-  // domains have unequal question counts so averaging would misrepresent the score).
   const totals = domains.reduce((acc,d)=>{
     const s = examScores[d] || {correct:0,total:0}
     acc.correct += s.correct
     acc.total += s.total
     return acc
   }, {correct:0,total:0})
-  const overall = pct(totals.correct, totals.total)
-  const passed = overall>=70
+  // Pass/fail is driven by the SCALED score against the fixed pass mark — never
+  // by percent correct. examResult is computed at submit; recompute as a fallback
+  // for legacy saved attempts that predate scaled scoring.
+  const result = examResult || (examQuestions && examQuestions.length ? scoreExam(examQuestions, examAnswers||{}, BCBA_FORM) : null)
+  const scaled = result ? result.scaledScore : null
+  const passed = result ? result.passed : (pct(totals.correct, totals.total) >= 70)
+  const rawScore = result ? result.rawScore : totals.correct
+  const scoredCount = result ? result.scoredCount : totals.total
+  const percentCorrect = result ? result.percentCorrect : pct(totals.correct, totals.total)
   return (
     <div style={{maxWidth:680,margin:'0 auto',padding:'32px 20px',fontFamily:'system-ui'}}>
       <div style={{textAlign:'center',marginBottom:28}}>
@@ -3221,9 +3228,20 @@ function FinalResults({examScores,pretestScores,onReset,onReview}) {
         <h2 style={{fontSize:24,fontWeight:700,color:passed?C.green:C.red,margin:'0 0 4px',fontFamily:'Georgia,serif'}}>
           {passed?'Exam Passed!':'Keep Studying'}
         </h2>
-        <p style={{fontSize:16,color:C.muted,margin:0}}>
-          Overall Score: <strong style={{color:passed?C.green:C.red,fontSize:20}}>{overall}%</strong>
-          <span style={{marginLeft:8,fontSize:13}}>{passed?'✓ Above 70% passing threshold':'✗ Below 70% passing threshold'}</span>
+        {scaled!=null && (
+          <p style={{fontSize:15,color:C.muted,margin:'0 0 2px'}}>
+            Scaled score: <strong style={{color:passed?C.green:C.red,fontSize:30,fontFamily:'Georgia,serif'}}>{scaled}</strong>
+            <span style={{fontSize:14,marginLeft:4}}>/ {BCBA_FORM.scaleMax}</span>
+          </p>
+        )}
+        <p style={{fontSize:13,color:passed?C.green:C.red,margin:'0 0 10px',fontWeight:600}}>
+          {passed?`✓ At or above the ${BCBA_FORM.scaleCut} pass mark`:`✗ Below the ${BCBA_FORM.scaleCut} pass mark`}
+        </p>
+        <p style={{fontSize:12,color:C.muted,margin:'0 0 6px'}}>
+          Diagnostic: {rawScore}/{scoredCount} scored items correct ({percentCorrect}%)
+        </p>
+        <p style={{fontSize:11,color:C.muted,opacity:.72,margin:'0 auto',maxWidth:520,lineHeight:1.5}}>
+          Scaled scoring approximates BACB methodology (Angoff cut, raw→scaled conversion, equating). The BACB does not publish its conversion tables or cut scores, so this is a practice estimate, not a prediction of your real exam result.
         </p>
       </div>
       <Card style={{marginBottom:20}}>
@@ -3283,7 +3301,7 @@ export default function App() {
   useEffect(() => {
     const r = teleRef.current
     if (!r.pre && st.pretestScores) { r.pre = true; track('pretest_completed', { overallPct: ovPct(st.pretestScores), weak: st.weakDomains || [] }) }
-    if (!r.exam && st.examScores) { r.exam = true; const a = ovPct(st.pretestScores), b = ovPct(st.examScores); track('posttest_completed', { overallPct: b, prePct: a, growth: (a != null && b != null) ? b - a : null }) }
+    if (!r.exam && st.examScores) { r.exam = true; const a = ovPct(st.pretestScores), b = ovPct(st.examScores); const er = st.examResult || {}; track('posttest_completed', { overallPct: b, prePct: a, growth: (a != null && b != null) ? b - a : null, scaledScore: er.scaledScore ?? null, passed: er.passed ?? null }) }
     Object.entries(st.moduleStatuses || {}).forEach(([d, x]) => { if (x === 'passed' && !r.mods.has(d)) { r.mods.add(d); track('module_completed', { domain: d }) } })
   }, [st.pretestScores, st.examScores, st.moduleStatuses])
   const timerRef = useRef(null)
@@ -3325,7 +3343,8 @@ export default function App() {
           if(p.timerSeconds<=1) {
             clearInterval(timerRef.current)
             const scores = calcScores(p.examQuestions, p.examAnswers)
-            return {...p, timerSeconds:0, timerActive:false, phase:'final_results', examScores:scores,
+            const examResult = scoreExam(p.examQuestions, p.examAnswers, BCBA_FORM)
+            return {...p, timerSeconds:0, timerActive:false, phase:'final_results', examScores:scores, examResult,
               weakSpots:updateWeakSpots(p.weakSpots, p.examQuestions, p.examAnswers),
               stats:bumpStat(p.stats,'examAttempts')}
           }
@@ -3637,13 +3656,15 @@ export default function App() {
     onSubmit={()=>{
       clearInterval(timerRef.current)
       const scores=calcScores(st.examQuestions,st.examAnswers)
-      setSt(p=>({...p, phase:'final_results', examScores:scores, timerActive:false,
+      const examResult=scoreExam(st.examQuestions,st.examAnswers,BCBA_FORM)
+      setSt(p=>({...p, phase:'final_results', examScores:scores, examResult, timerActive:false,
         weakSpots:updateWeakSpots(p.weakSpots, p.examQuestions, p.examAnswers),
         stats:bumpStat(p.stats,'examAttempts')}))
     }}/><OneLoveFooter/></div>
 
   if(st.phase==='final_results') return <div>{nav}<FinalResults
-    examScores={st.examScores} pretestScores={st.pretestScores}
+    examScores={st.examScores} examResult={st.examResult}
+    examQuestions={st.examQuestions} examAnswers={st.examAnswers} pretestScores={st.pretestScores}
     onReview={()=>up({phase:'exam_review'})}
     onReset={()=>{clearInterval(timerRef.current);clearPersisted();setFlagged(new Set());setSt({...INITIAL})}}/><OneLoveFooter/></div>
 
