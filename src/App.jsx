@@ -943,6 +943,9 @@ function KeyTermCard({term,def,color,bg,border}) {
   const [flipped,setFlipped] = useState(false)
   return (
     <div className="kt-card" onClick={()=>setFlipped(f=>!f)}
+      role="button" tabIndex={0} aria-pressed={flipped}
+      aria-label={flipped ? `${term}: ${def}` : `${term} — press to reveal definition`}
+      onKeyDown={e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); setFlipped(f=>!f) } }}
       style={{cursor:'pointer',minHeight:72,perspective:800,userSelect:'none'}}>
       <div style={{position:'relative',width:'100%',minHeight:72,transformStyle:'preserve-3d',
         transition:'transform .45s cubic-bezier(.4,0,.2,1)',
@@ -1449,7 +1452,9 @@ function ModeCardGrid({st, stats, onStart, onNav}) {
   return (
     <div className="mode-grid">
       {modes.map(m => (
-        <div key={m.cls} className={`mode ${m.cls}`} onClick={m.onClick}>
+        <div key={m.cls} className={`mode ${m.cls}`} onClick={m.onClick}
+          role="button" tabIndex={0} aria-label={`${m.name}: ${m.cta}`}
+          onKeyDown={e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); m.onClick?.() } }}>
           <span className={`mode-status ${m.status.cls}`}>{m.status.label}</span>
           <div className="mode-icon">{m.icon}</div>
           <div className="mode-name">{m.name}</div>
@@ -1683,7 +1688,7 @@ function QuestionScreen({questions,answers,qIndex,onAnswer,onNav,onSubmit,label,
           else if(showFb&&isSel&&!isCorrect){bg=C.redBg;border=C.redBorder}
           else if(isSel){bg=C.primaryLight;border=C.primary}
           return (
-            <button key={i} onClick={()=>(!showFb||!selected)&&onAnswer(qIndex,i)}
+            <button key={i} onClick={()=>!showFb&&onAnswer(qIndex,i)}
               style={{textAlign:'left',padding:'13px 16px',borderRadius:12,border:`2px solid ${border}`,background:bg,cursor:'pointer',fontSize:14,color:C.text,display:'flex',alignItems:'center',gap:12}}>
               <span style={{width:26,height:26,borderRadius:'50%',border:`2px solid ${isSel&&!showFb?C.primary:border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:isSel?C.primary:C.muted,flexShrink:0,background:isSel&&!showFb?C.white:'transparent'}}>
                 {['A','B','C','D'][i]}
@@ -3331,7 +3336,7 @@ export default function App() {
         }].slice(-1000),
         lastDeckId: deckId, lastTimer: timer, lastMode: p.sfxMode,
       }
-      const deckLabel = SAFMEDS_LEVELS.find(l=>l.id===deckId)?.label || (deckId==='all'?'All Terms':deckId.startsWith('domain:')?deckId.slice(7):deckId)
+      const deckLabel = safmedsDeckLabel(deckId)  // handles levels, all, mega, domain:* uniformly
       return { ...p, phase:'safmeds_results', safmeds:newSf, sfxResults:{ correct, missed, mode:p.sfxMode, timer, deckId, deckLabel, isPB, tokensEarned, prevHigh } }
     })
   }
@@ -3415,7 +3420,11 @@ export default function App() {
   const handleNav = id => {
     const map = {
       welcome:()=>up({phase:'welcome',confirmReset:false}),
-      pretest:()=>up({phase:'pretest',confirmReset:false}),
+      // qIndex is shared with the full exam — clamp it when entering the
+      // pretest so a stale exam index (e.g., 120) can't run past the 30-item
+      // pretest array and crash on questions[qIndex].domain_name.
+      pretest:()=>up({phase:'pretest',confirmReset:false,
+        qIndex: Math.min(st.qIndex, Math.max(0,(st.pretestQuestions.length||PRETEST_QUESTIONS.length)-1))}),
       pretest_results:()=>st.pretestScores&&up({phase:'pretest_results',confirmReset:false}),
       modules:()=>(st.pretestScores||st.skippedPretest)&&up({phase:'modules',confirmReset:false}),
       exam_intro:()=>up({phase:'exam_intro',confirmReset:false}),
@@ -3638,7 +3647,9 @@ export default function App() {
       phase:'modules',
       moduleStatuses:{...p.moduleStatuses,[p.activeModule]:status},
       modulePhase:'content',
-      ...(status==='passed' ? {stats:bumpStat(p.stats,'modulesPassed')} : {}),
+      // Only count the FIRST pass per module — re-passing a reviewed module
+      // must not inflate modulesPassed (drives badges + welcome stats).
+      ...(status==='passed' && p.moduleStatuses[p.activeModule]!=='passed' ? {stats:bumpStat(p.stats,'modulesPassed')} : {}),
     }))}/><OneLoveFooter/></div>
 
   if(st.phase==='exam_intro') return <div>{nav}<ExamIntro onStart={()=>{
