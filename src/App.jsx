@@ -9,6 +9,7 @@ import { QuickCheck, CategorizeGame, AnimatedVisual, MasteryMap } from './Engage
 import { track } from './tracking.js'
 import MyProgressScreen from './MyProgress.jsx'
 import { scoreExam, tallyByDomain, overallPctFromMap } from './scoring.js'
+import { pctToScaled, projectReadiness, recordDomainEvent, aggregateDomains, weakestDomains } from './analysis.js'
 
 // ── LOCAL STORAGE PERSISTENCE ────────────────────────────
 const STORAGE_KEY = 'bcba-exam-prep-v1'
@@ -25,6 +26,10 @@ const loadPersisted = () => {
       if (!p.st.safmeds || typeof p.st.safmeds !== 'object') p.st.safmeds = undefined
       else if (!p.st.safmeds.decks || typeof p.st.safmeds.decks !== 'object') p.st.safmeds.decks = {}
       if (!p.st.stats || typeof p.st.stats !== 'object') p.st.stats = undefined
+      // Analysis state must be well-shaped arrays/numbers
+      if (!Array.isArray(p.st.attempts)) p.st.attempts = []
+      if (!Array.isArray(p.st.domainEvents)) p.st.domainEvents = []
+      if (typeof p.st.missesRetired !== 'number') p.st.missesRetired = 0
     } else {
       p.st = undefined
     }
@@ -187,9 +192,14 @@ function isLevelUnlocked(levelId, totalTokens) {
 
 // ── WEAK SPOTS (spaced-mastery review queue) ──────────────
 const weakSpotId = q => q.id || `stem:${(q.stem||'').substring(0,80)}`
+// Each entry (spec contract): { id, domain, missCount, correctStreak(=consecutiveCorrect),
+// lastMissed } plus the embedded question + legacy timesAttempted/timesCorrect
+// fields. A question retires after 2 consecutive correct answers; retirements
+// are counted in the persistent st.missesRetired counter (via `graduated`).
 function updateWeakSpots(weakSpots, questions, answers) {
   const updated = {...(weakSpots||{})}
   const now = Date.now()
+  let graduated = 0
   questions.forEach((q, i) => {
     const id = weakSpotId(q)
     const userAns = answers[i]
@@ -198,16 +208,21 @@ function updateWeakSpots(weakSpots, questions, answers) {
     const existing = updated[id]
     if (!isCorrect) {
       updated[id] = {
+        id,
+        domain: q.domain_name,
         question: { stem:q.stem, options:q.options, correct:q.correct, rationale:q.rationale, domain_name:q.domain_name },
         consecutiveCorrect: 0,
         lastSeen: now,
+        missCount: (existing?.missCount || 0) + 1,
+        lastMissed: now,
         timesAttempted: (existing?.timesAttempted || 0) + 1,
         timesCorrect: existing?.timesCorrect || 0,
       }
     } else if (existing) {
       const newStreak = (existing.consecutiveCorrect || 0) + 1
       if (newStreak >= 2) {
-        delete updated[id]  // graduated
+        delete updated[id]  // graduated (retired from the miss bank)
+        graduated++
       } else {
         updated[id] = {
           ...existing,
@@ -219,7 +234,17 @@ function updateWeakSpots(weakSpots, questions, answers) {
       }
     }
   })
-  return updated
+  return { spots: updated, graduated }
+}
+// Convenience: the state patch for one graded question set — miss bank +
+// retired counter + domain-event log (feeds the My Progress heat map).
+function gradedPatch(p, questions, answers, src, fallbackDomain) {
+  const r = updateWeakSpots(p.weakSpots, questions, answers)
+  return {
+    weakSpots: r.spots,
+    missesRetired: (p.missesRetired || 0) + r.graduated,
+    domainEvents: recordDomainEvent(p.domainEvents, src, tallyByDomain(questions, answers, q => q.domain_name ?? fallbackDomain, true)),
+  }
 }
 
 // Color palette — surface/text/border colors come from CSS vars so they
@@ -249,6 +274,10 @@ const CONCEPT_TYPES = [
 const DOMAINS = Object.keys(MODULES)
 const pct = (c,t) => t===0?0:Math.round((c/t)*100)
 const ovPct = sc => overallPctFromMap(sc)
+// {domain:{correct,total}} -> {domain: pct} for the telemetry byDomain field.
+const domPct = m => Object.fromEntries(Object.entries(m||{}).map(([k,v])=>[k, pct(v.correct,v.total)]))
+// Missed count within one graded set (answered-but-wrong).
+const missedIn = (qs, ans) => qs.reduce((n,q,i)=> n + (ans[i]!==undefined && ans[i]!==q.correct ? 1:0), 0)
 
 // Per-domain breakdown for the results screen, via the shared scoring engine.
 // Scored items only — pilots (scored:false) are excluded, so domain totals sum
@@ -326,6 +355,11 @@ const INITIAL = {
   examAnswers:{}, examQuestions:[], examScores:null, examResult:null,
   domainQuizDomain:null, domainQuizQuestions:[], domainQuizAnswers:{}, domainQuizQIndex:0,
   weakSpots:{}, weakReviewQueue:[], weakReviewIdx:0, weakReviewAnswers:{}, weakReviewStartCount:0,
+  // Error-analysis + readiness state (persisted under the same STORAGE_KEY):
+  // attempts: scored attempts [{type:'pretest'|'exam', pct, scaled, ts}]
+  // domainEvents: per-graded-set answer log [{src, ts, d:{domain:[c,t]}}]
+  // missesRetired: lifetime count of questions retired from the miss bank
+  attempts:[], domainEvents:[], missesRetired:0, analysisSeeded:false,
   // SAFMEDS persistent state
   safmeds: { totalTokens:0, decks:{}, history:[], dailyStreak:0, lastSafmedsDate:'', lastDeckId:'beginner', lastTimer:60, lastMode:'timed' },
   // SAFMEDS transient session
@@ -334,6 +368,40 @@ const INITIAL = {
   theme: 'light',
   confirmReset:false, timerSeconds:14400, timerActive:false,
   stats: {daysStudied:[], todayDate:'', todayMinutes:0, totalMinutes:0, modulesPassed:0, pretestsCompleted:0, examAttempts:0},
+}
+
+// One-time backfill for users updating from a pre-analysis version. Seeds the
+// attempts list + domain-event log from state that is actually recoverable
+// (pretestScores / examScores / examResult / weakSpots) — never fabricated.
+function migrateAnalysis(s) {
+  if (s.analysisSeeded) return s
+  const out = { ...s, analysisSeeded: true, attempts: s.attempts || [], domainEvents: s.domainEvents || [], missesRetired: s.missesRetired || 0 }
+  const now = Date.now()
+  if (s.pretestScores && !out.attempts.some(a => a.type === 'pretest')) {
+    const p = overallPctFromMap(s.pretestScores)
+    if (p != null) out.attempts = [...out.attempts, { type: 'pretest', pct: p, scaled: pctToScaled(p, BCBA_FORM), ts: now }]
+    out.domainEvents = recordDomainEvent(out.domainEvents, 'pretest', s.pretestScores)
+  }
+  if (s.examScores && !out.attempts.some(a => a.type === 'exam')) {
+    const p = overallPctFromMap(s.examScores)
+    const scaled = s.examResult?.scaledScore ?? (p != null ? pctToScaled(p, BCBA_FORM) : null)
+    if (p != null && scaled != null) out.attempts = [...out.attempts, { type: 'exam', pct: p, scaled, ts: now }]
+    out.domainEvents = recordDomainEvent(out.domainEvents, 'exam', s.examScores)
+  }
+  // Seed spec fields on existing miss-bank entries from their recorded history.
+  if (s.weakSpots && Object.keys(s.weakSpots).length) {
+    const ws = {}
+    Object.entries(s.weakSpots).forEach(([id, e]) => {
+      ws[id] = {
+        ...e, id,
+        domain: e.domain || e.question?.domain_name,
+        missCount: e.missCount || Math.max(1, (e.timesAttempted || 1) - (e.timesCorrect || 0)),
+        lastMissed: e.lastMissed || e.lastSeen || now,
+      }
+    })
+    out.weakSpots = ws
+  }
+  return out
 }
 
 // ── UI PRIMITIVES ─────────────────────────────────────────
@@ -3298,17 +3366,23 @@ function FinalResults({examScores,examResult,examQuestions,examAnswers,pretestSc
 export default function App() {
   const [st,setSt] = useState(() => {
     const p = loadPersisted()
-    return p?.st ? {...INITIAL, ...p.st} : {...INITIAL}
+    return p?.st ? migrateAnalysis({...INITIAL, ...p.st}) : {...INITIAL, analysisSeeded:true}
   })
   const up = patch => setSt(p=>({...p,...patch}))
   const teleRef = useRef(null)
   if (teleRef.current === null) teleRef.current = { pre: !!st.pretestScores, exam: !!st.examScores, mods: new Set(Object.entries(st.moduleStatuses || {}).filter(([, x]) => x === 'passed').map(([d]) => d)) }
   useEffect(() => {
     const r = teleRef.current
-    if (!r.pre && st.pretestScores) { r.pre = true; track('pretest_completed', { overallPct: ovPct(st.pretestScores), weak: st.weakDomains || [] }) }
-    if (!r.exam && st.examScores) { r.exam = true; const a = ovPct(st.pretestScores), b = ovPct(st.examScores); const er = st.examResult || {}; track('posttest_completed', { overallPct: b, prePct: a, growth: (a != null && b != null) ? b - a : null, scaledScore: er.scaledScore ?? null, passed: er.passed ?? null }) }
+    if (!r.pre && st.pretestScores) { r.pre = true; track('pretest_completed', { overallPct: ovPct(st.pretestScores), weak: st.weakDomains || [], byDomain: domPct(st.pretestScores) }) }
+    if (!r.exam && st.examScores) { r.exam = true; const a = ovPct(st.pretestScores), b = ovPct(st.examScores); const er = st.examResult || {}; track('posttest_completed', { overallPct: b, prePct: a, growth: (a != null && b != null) ? b - a : null, scaledScore: er.scaledScore ?? null, passed: er.passed ?? null, byDomain: domPct(st.examScores) }) }
     Object.entries(st.moduleStatuses || {}).forEach(([d, x]) => { if (x === 'passed' && !r.mods.has(d)) { r.mods.add(d); track('module_completed', { domain: d }) } })
   }, [st.pretestScores, st.examScores, st.moduleStatuses])
+  // Telemetry: fire `readiness` each time My Progress renders a projection.
+  useEffect(() => {
+    if (st.phase !== 'progress') return
+    const proj = projectReadiness(st.attempts, BCBA_FORM)
+    if (proj) track('readiness', { projected: proj.projected, bar: proj.bar, verdict: proj.verdict })
+  }, [st.phase])
   const timerRef = useRef(null)
   const sfxTimerRef = useRef(null)
 
@@ -3349,8 +3423,11 @@ export default function App() {
             clearInterval(timerRef.current)
             const scores = calcScores(p.examQuestions, p.examAnswers)
             const examResult = scoreExam(p.examQuestions, p.examAnswers, BCBA_FORM)
+            // Fire-and-forget telemetry outside the updater tick.
+            setTimeout(()=>track('exam_completed', { scaled: examResult.scaledScore, pass: examResult.passed, overallPct: examResult.percentCorrect, byDomain: domPct(scores) }), 0)
             return {...p, timerSeconds:0, timerActive:false, phase:'final_results', examScores:scores, examResult,
-              weakSpots:updateWeakSpots(p.weakSpots, p.examQuestions, p.examAnswers),
+              ...gradedPatch(p, p.examQuestions, p.examAnswers, 'exam'),
+              attempts:[...(p.attempts||[]), {type:'exam', pct:examResult.percentCorrect, scaled:examResult.scaledScore, ts:Date.now()}],
               stats:bumpStat(p.stats,'examAttempts')}
           }
           return {...p, timerSeconds:p.timerSeconds-1}
@@ -3450,7 +3527,19 @@ export default function App() {
     const best=st.examScores||st.pretestScores
     const dsc=DOMAINS.map(d=>({name:d, pct: best&&best[d]?pct(best[d].correct,best[d].total):null}))
     const a=ovPct(st.pretestScores), b=ovPct(st.examScores), hist=(st.safmeds&&st.safmeds.history)||[]
-    return <div>{nav}<MyProgressScreen name={(()=>{try{return localStorage.getItem('ol-user')||''}catch{return ''}})()} accent="#a64558" theme={st.theme} overall={b!=null?b:a} pre={a} post={b} growth={(a!=null&&b!=null)?b-a:null} domains={dsc} modulesPassed={Object.values(st.moduleStatuses||{}).filter(x=>x==='passed').length} modulesTotal={DOMAINS.length} safmeds={{tokens:(st.safmeds&&st.safmeds.totalTokens)||0, sessions:hist.length, bestRate:hist.reduce((m,h)=>Math.max(m,h.rate||0),0)}} examTaken={!!st.examScores} onHome={()=>up({phase:'welcome'})}/><OneLoveFooter/></div>
+    const heatRows=aggregateDomains(st.domainEvents, DOMAINS)
+    const projection=projectReadiness(st.attempts, BCBA_FORM)
+    return <div>{nav}<MyProgressScreen name={(()=>{try{return localStorage.getItem('ol-user')||''}catch{return ''}})()} accent="#a64558" theme={st.theme} overall={b!=null?b:a} pre={a} post={b} growth={(a!=null&&b!=null)?b-a:null} domains={dsc} modulesPassed={Object.values(st.moduleStatuses||{}).filter(x=>x==='passed').length} modulesTotal={DOMAINS.length} safmeds={{tokens:(st.safmeds&&st.safmeds.totalTokens)||0, sessions:hist.length, bestRate:hist.reduce((m,h)=>Math.max(m,h.rate||0),0)}} examTaken={!!st.examScores} onHome={()=>up({phase:'welcome'})}
+      projection={projection} scaleMax={500}
+      heatDomains={heatRows} weakest={weakestDomains(heatRows,3)}
+      missBank={{active:Object.keys(st.weakSpots||{}).length, retired:st.missesRetired||0}}
+      onStudyDomain={d=>up({phase:'module',activeModule:d,modulePhase:'content',moduleQIndex:0,moduleAnswers:{}})}
+      onReviewMisses={()=>{
+        const items=Object.values(st.weakSpots||{})
+        if(!items.length) return
+        const queue=[...items].sort(()=>Math.random()-0.5)
+        up({phase:'weak_review', weakReviewQueue:queue, weakReviewIdx:0, weakReviewAnswers:{}, weakReviewStartCount:queue.length})
+      }}/><OneLoveFooter/></div>
   }
   if(st.phase==='welcome') return <div>{nav}<Welcome
     st={st}
@@ -3480,8 +3569,10 @@ export default function App() {
       onSubmit={()=>{
         const scores=calcScores(pqs,st.pretestAnswers)
         const weak=DOMAINS.filter(d=>scores[d]&&pct(scores[d].correct,scores[d].total)<70)
+        const prePct=ovPct(scores)
         setSt(p=>({...p, phase:'pretest_results', pretestScores:scores, weakDomains:weak,
-          weakSpots:updateWeakSpots(p.weakSpots, pqs, p.pretestAnswers),
+          ...gradedPatch(p, pqs, p.pretestAnswers, 'pretest'),
+          attempts:[...(p.attempts||[]), {type:'pretest', pct:prePct, scaled:pctToScaled(prePct, BCBA_FORM), ts:Date.now()}],
           stats:bumpStat(p.stats,'pretestsCompleted')}))
       }}
       label="Pretest"/><OneLoveFooter/></div>
@@ -3507,7 +3598,11 @@ export default function App() {
       questions={dqs} answers={st.domainQuizAnswers} qIndex={st.domainQuizQIndex}
       onAnswer={(i,a)=>up({domainQuizAnswers:{...st.domainQuizAnswers,[i]:a}})}
       onNav={d=>up({domainQuizQIndex:Math.max(0,Math.min(dqs.length-1,st.domainQuizQIndex+d))})}
-      onSubmit={()=>setSt(p=>({...p, phase:'domain_quiz_results', weakSpots:updateWeakSpots(p.weakSpots, p.domainQuizQuestions, p.domainQuizAnswers)}))}
+      onSubmit={()=>{
+        const by = tallyByDomain(dqs, st.domainQuizAnswers, q=>q.domain_name, true)
+        track('quiz_completed', { quiz:'spot_check', domain: st.domainQuizDomain, pct: ovPct(by), byDomain: domPct(by), missedCount: missedIn(dqs, st.domainQuizAnswers) })
+        setSt(p=>({...p, phase:'domain_quiz_results', ...gradedPatch(p, p.domainQuizQuestions, p.domainQuizAnswers, 'quiz')}))
+      }}
       label="Spot-Check"/><OneLoveFooter/></div>
   }
 
@@ -3534,14 +3629,15 @@ export default function App() {
         const newAns = {...p.weakReviewAnswers, [p.weakReviewIdx]:choice}
         const ws = {...(p.weakSpots||{})}
         const id = weakSpotId(item.question)
+        let retired = p.missesRetired || 0
         if (isCorrect) {
           const newStreak = (ws[id]?.consecutiveCorrect || 0) + 1
-          if (newStreak >= 2) { delete ws[id] }
+          if (newStreak >= 2) { delete ws[id]; retired++ }
           else if (ws[id]) ws[id] = {...ws[id], consecutiveCorrect:newStreak, lastSeen:Date.now(), timesAttempted:(ws[id].timesAttempted||0)+1, timesCorrect:(ws[id].timesCorrect||0)+1}
         } else if (ws[id]) {
-          ws[id] = {...ws[id], consecutiveCorrect:0, lastSeen:Date.now(), timesAttempted:(ws[id].timesAttempted||0)+1}
+          ws[id] = {...ws[id], consecutiveCorrect:0, lastSeen:Date.now(), lastMissed:Date.now(), missCount:(ws[id].missCount||0)+1, timesAttempted:(ws[id].timesAttempted||0)+1}
         }
-        return {...p, weakReviewAnswers:newAns, weakSpots:ws}
+        return {...p, weakReviewAnswers:newAns, weakSpots:ws, missesRetired:retired}
       })
     }}
     onNext={()=>{
@@ -3627,7 +3723,9 @@ export default function App() {
       const practice = MODULES[st.activeModule].practice
       const nowAllAnswered = Object.keys(newAns).length === practice.length
       if (nowAllAnswered) {
-        setSt(p=>({...p, moduleAnswers:newAns, weakSpots:updateWeakSpots(p.weakSpots, practice, newAns)}))
+        const by = tallyByDomain(practice, newAns, q=>q.domain_name || st.activeModule, true)
+        track('quiz_completed', { quiz:'module', domain: st.activeModule, pct: ovPct(by), byDomain: domPct(by), missedCount: missedIn(practice, newAns) })
+        setSt(p=>({...p, moduleAnswers:newAns, ...gradedPatch(p, practice, newAns, 'quiz', st.activeModule)}))
       } else {
         up({moduleAnswers:newAns})
         // Auto-advance ONLY on correct answers (quick reinforcement, ~1.2s).
@@ -3668,8 +3766,10 @@ export default function App() {
       clearInterval(timerRef.current)
       const scores=calcScores(st.examQuestions,st.examAnswers)
       const examResult=scoreExam(st.examQuestions,st.examAnswers,BCBA_FORM)
+      track('exam_completed', { scaled: examResult.scaledScore, pass: examResult.passed, overallPct: examResult.percentCorrect, byDomain: domPct(scores) })
       setSt(p=>({...p, phase:'final_results', examScores:scores, examResult, timerActive:false,
-        weakSpots:updateWeakSpots(p.weakSpots, p.examQuestions, p.examAnswers),
+        ...gradedPatch(p, p.examQuestions, p.examAnswers, 'exam'),
+        attempts:[...(p.attempts||[]), {type:'exam', pct:examResult.percentCorrect, scaled:examResult.scaledScore, ts:Date.now()}],
         stats:bumpStat(p.stats,'examAttempts')}))
     }}/><OneLoveFooter/></div>
 
