@@ -23,30 +23,30 @@ export const MODULES = {
       {
         "stem": "A behavior analyst explains that all behavior is determined by environmental variables and genetic factors, with no room for free will. This statement best reflects which philosophical assumption of behavior analysis?",
         "options": [
-          "Determinism",
-          "Empiricism",
           "Parsimony",
+          "Empiricism",
+          "Determinism",
           "Pragmatism"
         ],
-        "correct": 0,
+        "correct": 2,
         "rationale": "Determinism is the philosophical assumption that all behavior is caused by environmental and genetic factors, with no room for free will. This assumption underlies the scientific approach to behavior analysis. Aligns with Task A-2."
       },
       {
         "stem": "Which of the following best describes the goal of \"prediction\" in behavior analysis?",
         "options": [
           "Identifying functional relationships between variables",
-          "Describing behavior in objective, measurable terms",
+          "Forecasting when and under what conditions behavior will occur",
           "Manipulating environmental variables to change behavior",
-          "Forecasting when and under what conditions behavior will occur"
+          "Describing behavior in objective, measurable terms"
         ],
-        "correct": 3,
+        "correct": 1,
         "rationale": "Prediction involves using knowledge of functional relationships to forecast when behavior will occur based on environmental conditions. Aligns with Task A-1."
       },
       {
         "stem": "A BCBA is working with a client who reports feeling anxious before social interactions. From a radical behaviorist perspective, the BCBA should:",
         "options": [
-          "Focus only on observable behaviors and ignore private events",
-          "Treat the anxiety as a mental construct requiring cognitive intervention",
+          "Focus only on observable behaviors and ignore private events as unmeasurable data",
+          "Treat the anxiety as a mental construct requiring cognitive intervention to change it",
           "Consider the anxiety as behavior subject to the same principles as public behavior",
           "Refer the client to a mental health professional for anxiety treatment"
         ],
@@ -57,22 +57,22 @@ export const MODULES = {
         "stem": "Which dimension of Applied Behavior Analysis ensures that interventions can be replicated by others?",
         "options": [
           "Applied",
-          "Behavioral",
           "Technological",
+          "Behavioral",
           "Conceptually systematic"
         ],
-        "correct": 2,
+        "correct": 1,
         "rationale": "The technological dimension requires that procedures be described clearly and completely enough that others can replicate them. Aligns with Task A-3."
       },
       {
         "stem": "A researcher demonstrates that a specific teaching procedure consistently produces learning across multiple students, settings, and behaviors. This best exemplifies which dimension of ABA?",
         "options": [
           "Effective",
-          "Generality",
+          "Applied",
           "Analytic",
-          "Applied"
+          "Generality"
         ],
-        "correct": 1,
+        "correct": 3,
         "rationale": "Generality refers to the extent to which behavior change occurs across different people, settings, behaviors, and time. Aligns with Task A-3."
       }
     ]
@@ -101,34 +101,34 @@ export const MODULES = {
       {
         "stem": "A child receives a sticker each time they complete a math worksheet. Over time, the child completes worksheets more frequently. The sticker is functioning as a:",
         "options": [
-          "Positive reinforcer",
+          "Motivating operation",
           "Discriminative stimulus",
           "Conditioned punisher",
-          "Motivating operation"
+          "Positive reinforcer"
         ],
-        "correct": 0,
+        "correct": 3,
         "rationale": "The sticker is presented following the behavior and increases the frequency of worksheet completion, making it a positive reinforcer. Aligns with Task B-3."
       },
       {
         "stem": "A student's disruptive behavior increases when the teacher is present but decreases when the teacher leaves the room. The teacher's presence is functioning as a:",
         "options": [
-          "Discriminative stimulus for disruption",
-          "Discriminative stimulus for appropriate behavior",
           "Conditioned reinforcer",
+          "Discriminative stimulus for appropriate behavior",
+          "Discriminative stimulus for disruption",
           "Punishing stimulus"
         ],
-        "correct": 0,
+        "correct": 2,
         "rationale": "The teacher's presence signals that disruptive behavior is more likely to be reinforced or less likely to be punished. Aligns with Task B-10."
       },
       {
         "stem": "A behavior analyst implements a DRO schedule where reinforcement is delivered every 5 minutes if no target behavior occurs. This is an example of:",
         "options": [
-          "Fixed-interval schedule",
-          "Variable-interval schedule",
+          "Differential reinforcement schedule",
+          "Variable-interval reinforcement schedule",
           "Fixed-time schedule",
-          "Differential reinforcement schedule"
+          "Fixed-interval reinforcement schedule"
         ],
-        "correct": 3,
+        "correct": 0,
         "rationale": "DRO (Differential Reinforcement of Other behavior) delivers reinforcement contingent on the absence of target behavior. Aligns with Task B-3."
       },
       {
@@ -145,12 +145,12 @@ export const MODULES = {
       {
         "stem": "A teacher uses a token economy where students earn points for completed assignments. The points can be exchanged for preferred activities. The points function as:",
         "options": [
-          "Conditioned reinforcers",
+          "Establishing operations",
           "Primary reinforcers",
           "Discriminative stimuli",
-          "Establishing operations"
+          "Conditioned reinforcers"
         ],
-        "correct": 0,
+        "correct": 3,
         "rationale": "Points acquire reinforcing properties through pairing with backup reinforcers (preferred activities). Aligns with Task B-4."
       }
     ]
@@ -179,12 +179,12 @@ export const MODULES = {
       {
         "stem": "A behavior analyst wants to measure how long a client engages in on-task behavior during a 30-minute work session. The most appropriate measurement procedure would be:",
         "options": [
-          "Duration recording",
+          "Interval recording",
           "Frequency recording",
           "Latency recording",
-          "Interval recording"
+          "Duration recording"
         ],
-        "correct": 0,
+        "correct": 3,
         "rationale": "Duration recording measures how long a behavior occurs, which is appropriate for measuring on-task behavior during a work session. Aligns with Task C-1."
       },
       {
@@ -201,34 +201,34 @@ export const MODULES = {
       {
         "stem": "Two observers independently collect data on a client's hand-raising behavior during a 20-minute session. Observer 1 records 15 instances, and Observer 2 records 12 instances. The interobserver agreement is:",
         "options": [
-          "80%",
-          "75%",
           "89%",
+          "75%",
+          "80%",
           "125%"
         ],
-        "correct": 0,
+        "correct": 2,
         "rationale": "Using the total count IOA method (smaller count divided by larger count times 100): (12 / 15) x 100 = 80%. This is the appropriate calculation when using frequency counts without interval-by-interval data. Aligns with Task C-8."
       },
       {
         "stem": "A behavior analyst uses partial interval recording to measure stereotypic behavior. This method is likely to:",
         "options": [
-          "Overestimate the true occurrence of behavior",
           "Underestimate the true occurrence of behavior",
+          "Overestimate the true occurrence of behavior",
           "Provide an exact measure of behavior occurrence",
           "Be unaffected by the length of intervals used"
         ],
-        "correct": 0,
+        "correct": 1,
         "rationale": "Partial interval recording scores an interval as occurring if the behavior happens at any point during the interval, leading to overestimation. Aligns with Task C-3."
       },
       {
         "stem": "A client's tantrum behavior shows a decreasing trend over the past week, with data points of 8, 6, 5, 3, and 2 occurrences per day. This pattern suggests:",
         "options": [
-          "The intervention is effective",
+          "More data collection is needed",
           "The behavior is increasing",
           "The data shows high variability",
-          "More data collection is needed"
+          "The intervention is effective"
         ],
-        "correct": 0,
+        "correct": 3,
         "rationale": "The consistent decreasing trend suggests the intervention is producing the desired behavior change. Aligns with Task C-3."
       }
     ]
@@ -257,20 +257,20 @@ export const MODULES = {
       {
         "stem": "A behavior analyst implements an intervention and observes behavior change, but cannot rule out the possibility that other factors caused the change. This represents a threat to:",
         "options": [
-          "External validity",
           "Internal validity",
+          "External validity",
           "Social validity",
           "Treatment integrity"
         ],
-        "correct": 1,
+        "correct": 0,
         "rationale": "Internal validity refers to the degree to which we can be confident that the intervention, rather than other factors, caused the observed change. Aligns with Task D-1."
       },
       {
         "stem": "A BCBA uses an ABAB design to evaluate an intervention. The primary advantage of this design is:",
         "options": [
-          "It requires fewer sessions than other designs",
+          "It requires far fewer sessions than most other designs",
           "It demonstrates experimental control through replication",
-          "It can be used with irreversible behaviors",
+          "It can be applied even to fully irreversible behaviors",
           "It eliminates the need for baseline data"
         ],
         "correct": 1,
@@ -290,23 +290,23 @@ export const MODULES = {
       {
         "stem": "A behavior analyst wants to compare the effectiveness of two different teaching procedures. The most appropriate single-subject design would be:",
         "options": [
-          "ABAB design",
-          "Multiple baseline design",
           "Alternating treatments design",
+          "Multiple baseline design",
+          "ABAB design",
           "Changing criterion design"
         ],
-        "correct": 2,
+        "correct": 0,
         "rationale": "An alternating treatments design allows for direct comparison of two or more interventions. Aligns with Task D-4."
       },
       {
         "stem": "A researcher observes that a client's behavior improves during the same week that a new medication is started. This represents which threat to internal validity?",
         "options": [
-          "History",
+          "Instrumentation",
           "Maturation",
           "Testing",
-          "Instrumentation"
+          "History"
         ],
-        "correct": 0,
+        "correct": 3,
         "rationale": "History refers to external events (like starting medication) that occur during the study and could affect the results. Aligns with Task D-1."
       }
     ]
@@ -335,12 +335,12 @@ export const MODULES = {
       {
         "stem": "A BCBA is asked to provide services outside their area of competence. According to the Ethics Code, the BCBA should:",
         "options": [
-          "Decline the case or obtain appropriate supervision/training",
           "Accept the case and learn the necessary skills while providing services",
+          "Decline the case or obtain appropriate supervision/training",
           "Refer the case to any available behavior analyst",
           "Provide services using general behavior analytic principles"
         ],
-        "correct": 0,
+        "correct": 1,
         "rationale": "The Ethics Code requires behavior analysts to work within their competence or obtain appropriate supervision/training. Aligns with Task E-2."
       },
       {
@@ -358,33 +358,33 @@ export const MODULES = {
         "stem": "A BCBA is providing supervision to a supervisee who consistently arrives late and unprepared for supervision meetings. The most appropriate initial response is to:",
         "options": [
           "Terminate the supervision relationship",
-          "Report the supervisee to the BACB",
           "Address the issues directly with the supervisee",
+          "Report the supervisee to the BACB",
           "Reduce the frequency of supervision meetings"
         ],
-        "correct": 2,
+        "correct": 1,
         "rationale": "Direct communication about performance issues is the appropriate first step in supervision. Aligns with Task E-4."
       },
       {
         "stem": "A client's parent asks a behavior analyst to share information about another client's treatment. The analyst should:",
         "options": [
-          "Decline to share any information about other clients",
           "Share general information without identifying details",
+          "Decline to share any information about other clients",
           "Share information only if both clients have similar diagnoses",
           "Obtain consent from the other client before sharing"
         ],
-        "correct": 0,
+        "correct": 1,
         "rationale": "Confidentiality requires that information about clients not be shared without appropriate consent. Aligns with Task E-5."
       },
       {
         "stem": "A BCBA is asked to provide a service that they believe is not in the client's best interest. The analyst should:",
         "options": [
-          "Provide the service as requested by the client",
-          "Refuse to provide the service without explanation",
           "Discuss alternative approaches with the client",
+          "Refuse to provide the service without explanation",
+          "Provide the service as requested by the client",
           "Refer the client to another provider immediately"
         ],
-        "correct": 2,
+        "correct": 0,
         "rationale": "When a requested service is not in the client's best interest, the analyst should discuss alternatives. Aligns with Task E-2."
       }
     ]
@@ -414,40 +414,40 @@ export const MODULES = {
         "stem": "A BCBA is conducting an initial consultation with parents of a 7-year-old child with autism who engages in frequent hand-flapping during transitions. The BCBA asks the parents structured questions about when the behaviors occur, what typically happens before and after, and how the family currently responds. This assessment method is best described as:",
         "options": [
           "A functional analysis using standard conditions",
-          "An indirect assessment method using interviews",
+          "A preference assessment to identify reinforcers",
           "A direct descriptive assessment with ABC recording",
-          "A preference assessment to identify reinforcers"
+          "An indirect assessment method using interviews"
         ],
-        "correct": 1,
+        "correct": 3,
         "rationale": "The BCBA is asking structured questions to gather information about behavior from informants rather than observing directly. Interviews are a foundational indirect assessment tool for generating initial hypotheses. Aligns with Task F-1."
       },
       {
         "stem": "During a functional behavior assessment, a BCBA administers a rating scale to teachers asking them to rate the frequency and intensity of a student's disruptive behavior across different classroom settings. The teachers report that disruptions are most severe during independent work time. This assessment approach is primarily useful for:",
         "options": [
-          "Establishing a functional relationship between variables",
+          "Gathering information about behavior without direct observation",
           "Conducting a controlled experimental analysis",
           "Identifying all possible reinforcers for the target behavior",
-          "Gathering information about behavior without direct observation"
+          "Establishing a functional relationship between variables"
         ],
-        "correct": 3,
+        "correct": 0,
         "rationale": "Rating scales completed by others provide informant-based data about behavior in naturalistic settings without requiring the BCBA to observe directly. While useful for initial screening, they have limitations in precision. Aligns with Task F-1."
       },
       {
         "stem": "A BCBA implements a standard functional analysis with a 6-year-old exhibiting aggressive behavior. Aggression is minimal during the Alone condition, increases significantly during the Attention condition, and remains low during Demand and Play conditions. Based on these results, the behavior is most likely maintained by:",
         "options": [
-          "Automatic reinforcement",
-          "Negative reinforcement through escape",
-          "Punishment contingencies",
-          "Positive reinforcement in the form of social attention"
+          "Automatic reinforcement produced by the behavior itself",
+          "Negative reinforcement through escape from task demands",
+          "Positive reinforcement in the form of social attention",
+          "Punishment contingencies"
         ],
-        "correct": 3,
+        "correct": 2,
         "rationale": "Elevated aggression only in the Attention condition, with low rates elsewhere, clearly indicates the behavior is maintained by contingent social attention (positive reinforcement). Aligns with Task F-3."
       },
       {
         "stem": "A teacher reports that a student \"sometimes\" engages in off-task behavior but cannot provide concrete data about frequency or specific contexts. The BCBA decides to collect baseline data using direct ABC recording in the classroom. This decision reflects the understanding that:",
         "options": [
-          "Interviews are more reliable than direct observation",
-          "Rating scales provide sufficient data for treatment planning",
+          "Interviews are inherently more reliable than direct observation of classroom behavior",
+          "Rating scales provide sufficient data for treatment planning without further observation",
           "Functional analysis is unnecessary when interview data is available",
           "Indirect assessment methods may not provide the precision needed for intervention planning"
         ],
@@ -457,12 +457,12 @@ export const MODULES = {
       {
         "stem": "A BCBA is assessing a client's preferences using a paired stimulus preference assessment, presenting two items at a time and recording which item the client selects. This method is most appropriate when:",
         "options": [
-          "The client has severe communication deficits and cannot verbally identify preferences",
-          "The BCBA needs to rank 20+ items quickly",
           "The client's preferences change frequently within a session",
-          "Establishing control over reinforcers is unnecessary"
+          "The BCBA needs to rank twenty or more items as quickly as possible in a single session",
+          "The client has severe communication deficits and cannot verbally identify preferences",
+          "Establishing control over reinforcers is unnecessary since preference alone ensures value"
         ],
-        "correct": 0,
+        "correct": 2,
         "rationale": "Paired stimulus assessments require only approach or selection behavior, making them ideal for clients who cannot verbally communicate preferences. Aligns with Task F-4."
       }
     ]
@@ -502,23 +502,23 @@ export const MODULES = {
       {
         "stem": "A behavior analyst is designing an intervention for a client whose aggressive behavior is maintained by escape from demands. The intervention should include:",
         "options": [
-          "Teaching an appropriate way to request breaks",
-          "Providing attention when aggression occurs",
           "Removing all demands from the environment",
+          "Providing attention when aggression occurs",
+          "Teaching an appropriate way to request breaks",
           "Using physical restraint when aggression occurs"
         ],
-        "correct": 0,
+        "correct": 2,
         "rationale": "For escape-maintained aggression, teaching a functional communication response is most appropriate. Aligns with Task G-14."
       },
       {
         "stem": "A client has difficulty with transitions between activities. An appropriate antecedent intervention would be:",
         "options": [
-          "Using a visual schedule to prepare for transitions",
           "Providing reinforcement after successful transitions",
+          "Using a visual schedule to prepare for transitions",
           "Implementing time-out for transition problems",
           "Removing preferred activities during transitions"
         ],
-        "correct": 0,
+        "correct": 1,
         "rationale": "Visual schedules are effective antecedent interventions for transition difficulties. Aligns with Task G-1."
       },
       {
@@ -526,21 +526,21 @@ export const MODULES = {
         "options": [
           "Always use the most intrusive prompt to ensure success",
           "Use a least-to-most prompting hierarchy",
-          "Use a most-to-least prompting hierarchy",
-          "Avoid prompts to promote independence"
+          "Avoid prompts to promote independence",
+          "Use a most-to-least prompting hierarchy"
         ],
-        "correct": 2,
+        "correct": 3,
         "rationale": "When a client has a history of problem behavior following errors, most-to-least (errorless learning) prompting is preferred because it minimizes errors by starting with the most intrusive prompt and systematically fading to less intrusive levels. This reduces frustration and problem behavior while building toward independence. Aligns with Task G-13."
       },
       {
         "stem": "A client engages in problem behavior when preferred items are not available. An appropriate intervention would be:",
         "options": [
-          "Teach the client to tolerate delays and denials",
           "Always provide preferred items to prevent problem behavior",
+          "Teach the client to tolerate delays and denials",
           "Remove all preferred items from the environment",
           "Use punishment when problem behavior occurs"
         ],
-        "correct": 0,
+        "correct": 1,
         "rationale": "Teaching tolerance for delays and denials addresses the root cause of the problem behavior. Aligns with Task G-14."
       }
     ]
@@ -569,41 +569,41 @@ export const MODULES = {
       {
         "stem": "A BCBA conducts a functional behavior assessment for an adolescent whose self-injurious behavior is maintained by escape from demands during math instruction. Three interventions are considered: (1) teaching functional communication with high-probability request sequences, (2) immediate physical restraint when SIB occurs, and (3) complete removal of math instruction. Which intervention selection principle BEST guides the BCBA to choose option 1?",
         "options": [
+          "Interventions must always include aversive consequences to suppress the behavior effectively",
           "The least restrictive, most effective intervention that addresses the maintaining condition",
-          "Interventions must always include aversive consequences",
-          "The intervention requiring the most intensive professional oversight",
+          "The intervention requiring the most intensive professional oversight and restrictive controls",
           "The intervention selected by the team without client input"
         ],
-        "correct": 0,
+        "correct": 1,
         "rationale": "The principle of least restrictiveness requires choosing interventions that are effective while minimizing restriction. Teaching FCT addresses the escape function without physical restraint or curriculum elimination. Aligns with Tasks H-1 and H-2."
       },
       {
         "stem": "A BCBA is designing a treatment plan for a 6-year-old whose parents strongly prefer naturalistic teaching at home over clinic-based discrete trial training. Assessment data support both approaches as equally effective for functional communication. The BCBA acknowledges the parents' preference aligns with their family values. This decision-making process reflects:",
         "options": [
-          "Dismissing family values when they conflict with research",
           "Incorporating client preferences and social validity into intervention selection",
+          "Dismissing family values when they conflict with research",
           "The BCBA's judgment should supersede caregiver input",
           "Only interventions with the highest fidelity requirements should be used"
         ],
-        "correct": 1,
+        "correct": 0,
         "rationale": "When evidence supports multiple approaches equally, incorporating family preferences and values demonstrates social validity in intervention selection, a core ethical requirement. Aligns with Tasks H-3 and H-4."
       },
       {
         "stem": "During an intervention planning meeting, a BCBA presents treatment options, reviews assessment data, discusses evidence bases, and explains potential risks and benefits. The parents ask questions and agree to proceed. This process exemplifies:",
         "options": [
-          "Obtaining informed consent for interventions",
-          "Implementing the intervention with the highest fidelity requirements",
           "Prioritizing the BCBA's recommendation regardless of input",
+          "Implementing the intervention with the highest fidelity requirements",
+          "Obtaining informed consent for interventions",
           "Ensuring minimal staff training requirements"
         ],
-        "correct": 0,
+        "correct": 2,
         "rationale": "Presenting options, explaining risks/benefits, allowing questions, and obtaining agreement constitute the informed consent process required by the Ethics Code before intervention implementation. Aligns with Task H-5."
       },
       {
         "stem": "A BCBA implements a token economy for on-task behavior. After 4 weeks, on-task behavior increased 30%, but staff deliver tokens at only 60% of planned opportunities. The BCBA's next action should be:",
         "options": [
-          "Terminate the token economy and select a different intervention",
-          "Increase the number of tokens to compensate for inconsistency",
+          "Terminate the token economy and select a different intervention since the current one is clearly not working",
+          "Increase the number of tokens to compensate for inconsistency and boost the overall reinforcement rate",
           "Accept the improvement as sufficient regardless of fidelity",
           "Collect and analyze treatment integrity data to identify whether poor fidelity is limiting effectiveness"
         ],
@@ -614,8 +614,8 @@ export const MODULES = {
         "stem": "An intervention teaching appropriate attention-seeking is effective in trained settings but shows no generalization to untrained hallway settings. Data-based review suggests the BCBA should:",
         "options": [
           "Eliminate the intervention as ineffective",
-          "Increase reinforcement magnitude across all settings",
-          "Conclude that peer-maintained behavior cannot be treated",
+          "Increase reinforcement magnitude across all settings so the behavior spreads to untrained areas",
+          "Conclude that peer-maintained behavior cannot be treated and discontinue services for this client",
           "Plan for generalization by training the intervention in target settings with additional staff"
         ],
         "correct": 3,
@@ -647,23 +647,23 @@ export const MODULES = {
       {
         "stem": "A BCBA supervisor is establishing supervision goals for a newly hired RBT whose technical skills are strong but who has limited English language proficiency. To ensure supervision is culturally responsive, the supervisor should:",
         "options": [
-          "Require all feedback in written English to maintain consistency",
           "Conduct an assessment of the supervisee's learning needs and adjust communication methods and examples accordingly",
+          "Require all feedback in written English to maintain consistency and hold every supervisee to one uniform standard",
           "Pair the supervisee with a bilingual RBT and reduce direct supervision hours",
-          "Focus exclusively on technical metrics and defer communication issues to HR"
+          "Focus exclusively on technical metrics and defer any language and communication concerns to the HR department"
         ],
-        "correct": 1,
+        "correct": 0,
         "rationale": "Culturally responsive supervision requires assessing individual needs and adapting methods - including communication style, pacing, and examples - to the supervisee's background. Aligns with Task I-4."
       },
       {
         "stem": "During supervision, a BCBA notices that an RBT's data collection accuracy has declined from 95% to 78% over the past month. The RBT reports feeling overwhelmed by caseload increases. Before implementing a corrective plan, the supervisor should:",
         "options": [
-          "Immediately recommend the RBT take a leave of absence",
-          "Document the decline and schedule mandatory retraining",
-          "Assign a performance improvement plan with a 30-day deadline",
-          "Conduct a functional assessment to identify whether the decline is due to skill deficits, motivational factors, or environmental barriers"
+          "Conduct a functional assessment to identify whether the decline is due to skill deficits, motivational factors, or environmental barriers",
+          "Document the decline and schedule mandatory retraining sessions on the assumption that the drop reflects a straightforward skill deficit",
+          "Assign a performance improvement plan with a 30-day deadline and treat continued errors as grounds for formal disciplinary action",
+          "Immediately recommend the RBT take a leave of absence"
         ],
-        "correct": 3,
+        "correct": 0,
         "rationale": "Before corrective action, the supervisor must identify controlling variables through functional assessment. The decline could stem from multiple sources requiring different interventions. Aligns with Task I-2."
       },
       {
@@ -681,9 +681,9 @@ export const MODULES = {
         "stem": "A BCBA supervisor discovers that a supervisee has been billing insurance for supervision hours that did not actually occur. The supervisor's immediate actions should include:",
         "options": [
           "Reporting the violation to the BACB, documenting findings, and establishing a corrective plan",
-          "Giving the supervisee 10 days to self-report before taking action",
+          "Giving the supervisee 10 days to self-report before taking any formal action against them",
           "Continuing standard supervision while monitoring for additional violations",
-          "Terminating the relationship immediately without documentation"
+          "Terminating the relationship immediately without documentation to limit further professional liability"
         ],
         "correct": 0,
         "rationale": "Insurance billing fraud is a serious ethical violation requiring immediate reporting, thorough documentation, and corrective action. Delaying or ignoring the violation risks further harm. Aligns with Task I-2."
@@ -691,12 +691,12 @@ export const MODULES = {
       {
         "stem": "A supervisor is evaluating their own effectiveness by examining supervisee competency gains, retention rates, ethical compliance, and client outcomes. This approach best represents:",
         "options": [
-          "Conducting quarterly self-reflection journaling",
-          "Asking supervisees to complete anonymous annual surveys",
           "Systematically collecting outcome data and using analysis to identify which supervision strategies produce improvement",
-          "Comparing methods informally with other BCBAs at conferences"
+          "Asking supervisees to complete anonymous annual surveys and using their satisfaction ratings as the primary quality measure",
+          "Conducting quarterly self-reflection journaling",
+          "Comparing methods informally with other BCBAs at conferences and adopting whichever practices seem most popular among peers"
         ],
-        "correct": 2,
+        "correct": 0,
         "rationale": "Empirically validated self-improvement requires systematic data collection on supervisee and client outcomes, analyzed to identify effective strategies. Informal or infrequent methods lack the rigor needed. Aligns with Task I-7."
       }
     ]
