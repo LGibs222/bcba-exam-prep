@@ -7,6 +7,7 @@ import { SAFMEDS_DECKS } from './data/safmedsDecks.js'
 import { TTSButton } from './TTS.jsx'
 import { QuickCheck, CategorizeGame, AnimatedVisual, MasteryMap } from './Engagement.jsx'
 import { track } from './tracking.js'
+import { TutorFab, TutorContext, AskTutorButton, useTutorQuestion } from './Tutor.jsx'
 import MyProgressScreen from './MyProgress.jsx'
 import { scoreExam, tallyByDomain, overallPctFromMap } from './scoring.js'
 import { pctToScaled, projectReadiness, recordDomainEvent, aggregateDomains, weakestDomains } from './analysis.js'
@@ -1731,6 +1732,7 @@ function QuestionScreen({questions,answers,qIndex,onAnswer,onNav,onSubmit,label,
   const selected = answers[qIndex]
   const total = questions.length
   const answered = Object.keys(answers).length
+  useTutorQuestion(q, showFeedback && selected !== undefined, selected, label)
   return (
     <div style={{maxWidth:700,margin:'0 auto',padding:'28px 20px',fontFamily:'system-ui'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
@@ -1921,6 +1923,9 @@ function MissedQuestionCard({q}) {
               <TTSButton token={`rat:review:${q.id||q.stem?.slice(0,30)}`} text={q.rationale} label="" size="xs"/>
             </div>
           )}
+          <div style={{marginTop:10}}>
+            <AskTutorButton question={q} userAnswer={q._userAns} source="missed_review"/>
+          </div>
         </div>
       )}
     </div>
@@ -2142,6 +2147,7 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
       <div style={{height:4,background:C.border,borderRadius:99,marginBottom:20,overflow:'hidden'}}>
         <div style={{width:`${((qIndex+1)/mod.practice.length)*100}%`,height:'100%',background:C.accent,borderRadius:99}}/>
       </div>
+      <TutorContext q={pq} answered={selected!==undefined} userAnswer={selected} source="module_quiz"/>
       <Card style={{marginBottom:16}}>
         <p style={{fontSize:16,lineHeight:1.65,color:C.text,margin:0,fontFamily:'Georgia,serif',fontWeight:500}}>{pq.stem}</p>
       </Card>
@@ -3022,6 +3028,7 @@ function WeakSpotReview({queue, idx, answers, onAnswer, onNext, onQuit, startCou
         <Pill text={q.domain_name} color={C.primary} bg={C.primaryLight}/>
         <span style={{fontSize:11,color:C.muted}}>Streak: {item.consecutiveCorrect||0}/2 to graduate · seen {item.timesAttempted||1}×</span>
       </div>
+      <TutorContext q={q} answered={showFeedback} userAnswer={userAns} source="weak_review"/>
       <Card style={{marginBottom:16}}>
         <p style={{fontSize:15,lineHeight:1.7,color:C.text,margin:0,fontFamily:'Georgia,serif',fontWeight:500}}>{q.stem}</p>
       </Card>
@@ -3515,6 +3522,7 @@ export default function App() {
   const nav = (
     <>
       <GlobalStyles/>
+      <TutorFab blocked={st.phase==='fullexam'}/>
       <NavBar st={st} onNav={handleNav}
         onReset={()=>up({confirmReset:true})}
         onConfirmReset={()=>{clearInterval(timerRef.current);clearPersisted();setFlagged(new Set());setSt({...INITIAL})}}

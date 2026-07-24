@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 
 /**
- * One Love TTS — calls the Cloudflare Worker proxy that fronts ElevenLabs.
- *
- * To wire up: paste your Cloudflare Worker URL into TTS_ENDPOINT below.
- * Until that's set, all 🔊 buttons render disabled with a tooltip explaining
- * setup is incomplete (no errors, no broken UI).
+ * One Love TTS — calls the authenticated Vercel tutor backend, which fronts
+ * ElevenLabs server-side (replaced the old unauthenticated Cloudflare Worker;
+ * the backend validates the access code and enforces the monthly budget).
  */
-const TTS_ENDPOINT = 'https://onelove-tts.lenwoodjr.workers.dev/'
+const TTS_ENDPOINT = 'https://onelove-tutor-backend.vercel.app/api/tts'
+const TTS_APP = 'BCBA'
 
 const isConfigured = () => !!TTS_ENDPOINT && !TTS_ENDPOINT.startsWith('PASTE_')
 
@@ -58,12 +57,16 @@ export async function playTTS(text, token) {
   try { audio.pause(); audio.currentTime = 0 } catch {}
   setCurrent(token, 'loading')
   try {
+    let code = '', name = ''
+    try { code = localStorage.getItem('ol-code') || ''; name = localStorage.getItem('ol-user') || '' } catch {}
     const res = await fetch(TTS_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text.slice(0, 1500) }),
+      body: JSON.stringify({ text: text.slice(0, 1500), app: TTS_APP, code, name }),
     })
     if (!res.ok) throw new Error(`tts_${res.status}`)
+    // Budget/auth refusals come back as JSON instead of audio.
+    if ((res.headers.get('content-type') || '').includes('application/json')) throw new Error('tts_denied')
     const blob = await res.blob()
     const url = URL.createObjectURL(blob)
     audio.src = url

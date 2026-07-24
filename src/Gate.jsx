@@ -108,7 +108,12 @@ export default function Gate({ children }) {
   function admit(displayName, code) {
     const nm = (displayName || name).trim()
     logLogin(nm, code)
-    try { localStorage.setItem('ol-user', nm) } catch {}
+    try {
+      localStorage.setItem('ol-user', nm)
+      // Kept for the tutor + read-aloud backends, which re-validate it
+      // server-side on every request (per-user quota + budget enforcement).
+      localStorage.setItem('ol-code', code || '')
+    } catch {}
     setAuthed(true)
   }
   async function onSubmit(e) {
