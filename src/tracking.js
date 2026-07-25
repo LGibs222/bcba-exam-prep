@@ -2,7 +2,7 @@
 // tracking backend (Google Apps Script web app; see cst-rebuild/tracking-backend.gs).
 // Fire-and-forget via sendBeacon; never blocks or breaks the UI; no-ops until
 // TRACK_ENDPOINT is set.
-const TRACK_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzPJa2EKhCGep6WRsbqWjq_eHBx-wQ58p92KkkiayzvHjFkCekaHRFlyk0FVvECd-ckjg/exec'
+const TRACK_ENDPOINT = 'https://script.google.com/macros/s/AKfycby5bv49s8z-oA525hit-LnvfgHDam4hUrSmsN79huqC-rnxMFJpB7QbI0isnjdjxQ/exec'
 const APP_ID = 'BCBA'
 
 // The name entered at the access gate — stored by Gate.jsx on sign-in.

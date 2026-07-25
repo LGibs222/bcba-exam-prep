@@ -27,7 +27,7 @@ import { useEffect, useRef, useState } from 'react'
 const ACCESS_SALT = 'onelove-bcba'
 const ACCESS_HASH = '808db059f54ff2c19407024f7029b20519afff487be32f5639f53f2b0ddd0648' // sha256("onelove-bcba:onelove2026")
 const APP_NAME = 'BCBA'
-const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzPJa2EKhCGep6WRsbqWjq_eHBx-wQ58p92KkkiayzvHjFkCekaHRFlyk0FVvECd-ckjg/exec'
+const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycby5bv49s8z-oA525hit-LnvfgHDam4hUrSmsN79huqC-rnxMFJpB7QbI0isnjdjxQ/exec'
 
 async function sha256Hex(s) {
   const bytes = new TextEncoder().encode(s)
