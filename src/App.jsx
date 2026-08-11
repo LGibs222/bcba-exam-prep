@@ -324,17 +324,37 @@ const BCBA_PILOT_QUESTIONS = 10  // unscored
 // so rawCut always maps to scaleCut (the equating step). See scoring.js.
 const BCBA_FORM = { rawCut: 133, scoredCount: 175, scaleMin: 0, scaleMax: 500, scaleCut: 400 } // 0.76 × 175
 
+// Target difficulty mix for scored mock items. Hard/moderate pools are still
+// growing batch by batch; where a domain can't meet a tier's quota the
+// shortfall cascades down (hard -> moderate -> easy), so the mix tightens
+// automatically as rewritten items ship without further code changes.
+const MOCK_DIFFICULTY_MIX = { hard: 0.30, moderate: 0.50 } // remainder easy
+
+function sampleDomainByDifficulty(dPool, n) {
+  const tier = d => [...dPool.filter(q => q.difficulty === d)].sort(()=>Math.random()-0.5)
+  const hard = tier('hard'), moderate = tier('moderate')
+  // Untagged items (defensive: shouldn't exist) count as easy.
+  const easy = [...dPool.filter(q => q.difficulty !== 'hard' && q.difficulty !== 'moderate')].sort(()=>Math.random()-0.5)
+  const nHard = Math.min(Math.round(n * MOCK_DIFFICULTY_MIX.hard), hard.length)
+  const nMod = Math.min(Math.round(n * MOCK_DIFFICULTY_MIX.moderate) + (Math.round(n * MOCK_DIFFICULTY_MIX.hard) - nHard), moderate.length)
+  const picked = [...hard.slice(0, nHard), ...moderate.slice(0, nMod)]
+  picked.push(...easy.slice(0, n - picked.length))
+  // If easy also runs dry, top up from whatever tiers have items left.
+  if (picked.length < n) picked.push(...[...moderate.slice(nMod), ...hard.slice(nHard)].slice(0, n - picked.length))
+  return picked
+}
+
 function sampleExamQuestions(pretestQs, count=BCBA_TOTAL_QUESTIONS) {
   const pretestStems = new Set(pretestQs.map(q=>q.stem.substring(0,60)))
   const pool = QUESTION_BANK.filter(q => !pretestStems.has(q.stem.substring(0,60)))
   const used = new Set()
   const sampled = []
-  // Sample by official scored proportions first
+  // Sample by official scored proportions first, stratified by difficulty
   Object.entries(BCBA_OFFICIAL_DOMAIN_COUNTS).forEach(([domain, n]) => {
     const dPool = pool.filter(q => q.domain_name === domain && !used.has(q))
-    const shuffled = [...dPool].sort(()=>Math.random()-0.5).slice(0, n)
-    shuffled.forEach(q => used.add(q))
-    sampled.push(...shuffled.map(q => ({...q, scored:true})))
+    const picked = sampleDomainByDifficulty(dPool, Math.min(n, dPool.length))
+    picked.forEach(q => used.add(q))
+    sampled.push(...picked.map(q => ({...q, scored:true})))
   })
   // Fill remaining slots (pilot questions) with random items from any domain
   const remaining = pool.filter(q => !used.has(q))
