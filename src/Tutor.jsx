@@ -121,8 +121,17 @@ export function AskTutorButton({ question, userAnswer, source, style = {} }) {
         color: T.accent, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
         whiteSpace: 'nowrap', ...style,
       }}>
-      🎙️ Ask Dr. Gibson
+      <MicGlyph size={13}/> Ask Dr. Gibson
     </button>
+  )
+}
+
+function MicGlyph({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"
+      strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: '-2px' }} aria-hidden="true">
+      <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm6-3a6 6 0 0 1-12 0M12 18v3"/>
+    </svg>
   )
 }
 
@@ -250,7 +259,7 @@ export function TutorFab({ blocked }) {
         fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
         boxShadow: '0 6px 24px rgba(0,0,0,0.25)',
       }}>
-      🎙️ Ask Dr. Gibson
+      <MicGlyph size={15}/> Ask Dr. Gibson
     </button>
   )
 

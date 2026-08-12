@@ -8,6 +8,7 @@ import { TTSButton } from './TTS.jsx'
 import { QuickCheck, CategorizeGame, AnimatedVisual, MasteryMap } from './Engagement.jsx'
 import { track } from './tracking.js'
 import { TutorFab, TutorContext, TutorStudyContext, AskTutorButton, useTutorQuestion } from './Tutor.jsx'
+import { Icon } from './icons.jsx'
 import MyProgressScreen from './MyProgress.jsx'
 import { scoreExam, tallyByDomain, overallPctFromMap } from './scoring.js'
 import { pctToScaled, projectReadiness, recordDomainEvent, aggregateDomains, weakestDomains } from './analysis.js'
@@ -268,10 +269,10 @@ const C = {
 // grounds principles, red flags the distinctions candidates confuse,
 // olive carries strategy.
 const CONCEPT_TYPES = [
-  { label:'Core Concept',       icon:'📖', color:'var(--gold)',        bg:'var(--gold-bg)',        border:'var(--accent-border)' },
-  { label:'Key Principles',     icon:'⚙️',  color:'var(--green-brand)', bg:'var(--green-brand-bg)', border:'var(--green-border)' },
-  { label:'Critical Distinction',icon:'⚠️', color:'var(--red-brand)',   bg:'var(--red-brand-bg)',   border:'var(--red-border)' },
-  { label:'Exam Strategy',      icon:'💡', color:'var(--olive)',       bg:'var(--olive-bg)',       border:'var(--border)' },
+  { label:'Core Concept',       icon:'book', color:'var(--gold)',        bg:'var(--gold-bg)',        border:'var(--accent-border)' },
+  { label:'Key Principles',     icon:'gear',  color:'var(--green-brand)', bg:'var(--green-brand-bg)', border:'var(--green-border)' },
+  { label:'Critical Distinction',icon:'alert', color:'var(--red-brand)',   bg:'var(--red-brand-bg)',   border:'var(--red-border)' },
+  { label:'Exam Strategy',      icon:'bulb', color:'var(--olive)',       bg:'var(--olive-bg)',       border:'var(--border)' },
 ]
 
 const DOMAINS = Object.keys(MODULES)
@@ -1245,14 +1246,14 @@ function ConceptVisual({type}) {
 
 // ── NAVBAR ───────────────────────────────────────────────
 const NAV = [
-  {id:'welcome',label:'Home',emoji:'🏠',always:true},
-  {id:'pretest',label:'Pretest',emoji:'📝',always:true},
-  {id:'pretest_results',label:'Results',emoji:'📊',needs:'pretestScores'},
-  {id:'modules',label:'Study',emoji:'📚',needs:'studyStarted'},
-  {id:'safmeds',label:'SAFMEDS',emoji:'🎴',always:true},
-  {id:'progress',label:'My Progress',emoji:'🧭',always:true},
-  {id:'exam_intro',label:'Exam',emoji:'🏁',needs:'examReady'},
-  {id:'final_results',label:'Report',emoji:'📈',needs:'examScores'},
+  {id:'welcome',label:'Home',icon:'home',always:true},
+  {id:'pretest',label:'Pretest',icon:'clipboard',always:true},
+  {id:'pretest_results',label:'Results',icon:'chart',needs:'pretestScores'},
+  {id:'modules',label:'Study',icon:'book',needs:'studyStarted'},
+  {id:'safmeds',label:'SAFMEDS',icon:'cards',always:true},
+  {id:'progress',label:'My Progress',icon:'compass',always:true},
+  {id:'exam_intro',label:'Exam',icon:'timer',needs:'examReady'},
+  {id:'final_results',label:'Report',icon:'doc',needs:'examScores'},
 ]
 
 // ── ONE LOVE BRAND MARK ──────────────────────────────────
@@ -1311,8 +1312,8 @@ function NavBar({st,onNav,onReset,onConfirmReset,onCancelReset,onToggleTheme}) {
                 style={{padding:'5px 10px',borderRadius:99,border:'none',whiteSpace:'nowrap',
                   background:isActive?'var(--gold)':'transparent',
                   color:isActive?'var(--gold-ink)':avail?C.text:C.gray,
-                  cursor:avail?'pointer':'default',fontSize:11,fontWeight:700,outline:'none',transition:'all .2s'}}>
-                {item.emoji} {item.label}
+                  cursor:avail?'pointer':'default',fontSize:11,fontWeight:700,outline:'none',transition:'all .2s',display:'inline-flex',alignItems:'center',gap:5}}>
+                <Icon name={item.icon} size={13}/>{item.label}
               </button>
             )
           })}
@@ -1321,7 +1322,7 @@ function NavBar({st,onNav,onReset,onConfirmReset,onCancelReset,onToggleTheme}) {
           {!st.confirmReset && (
             <button onClick={onToggleTheme} title={st.theme==='dark'?'Switch to light mode':'Switch to dark mode'}
               style={{padding:'4px 9px',borderRadius:99,border:`1px solid ${C.border}`,background:'transparent',color:C.text,cursor:'pointer',fontSize:13,fontWeight:700,whiteSpace:'nowrap',lineHeight:1}}>
-              {st.theme==='dark'?'☀️':'🌙'}
+              <Icon name={(st.theme==='dark')?'sun':'moon'} size={14}/>
             </button>
           )}
           {!st.confirmReset
@@ -1350,7 +1351,7 @@ function StatsCard({stats}) {
         <h3 style={{fontSize:11,fontWeight:700,color:C.muted,margin:0,textTransform:'uppercase',letterSpacing:'0.18em'}}>Your progress</h3>
         {showStreak && (
           <div style={{display:'flex',alignItems:'baseline',gap:8,padding:'6px 14px',borderRadius:99,background:'var(--accent-bg)',border:`1px solid ${C.accentBorder}`}}>
-            <span className="pulse-soft" style={{fontSize:18,lineHeight:1}}>🔥</span>
+            <span className="pulse-soft" style={{lineHeight:1}}><Icon name="flame" size={17}/></span>
             <span style={{fontSize:18,fontWeight:800,color:C.accent,letterSpacing:'-0.02em'}}>{streak}</span>
             <span style={{fontSize:11,fontWeight:600,color:C.accent,textTransform:'uppercase',letterSpacing:'0.08em'}}>day streak</span>
           </div>
@@ -1558,28 +1559,28 @@ function ModeCardGrid({st, stats, onStart, onNav}) {
   const examTaken = !!st.examScores
   const modes = [
     {
-      cls: 'pretest', icon: '📝', name: 'Pretest', meta: '30 questions, 9 domains',
+      cls: 'pretest', icon: 'clipboard', name: 'Pretest', meta: '30 questions, 9 domains',
       desc: pretestDone ? 'Diagnostic complete. Review your weak domains.' : 'Diagnostic snapshot of your weak domains. Take it once before studying.',
       cta: pretestDone ? 'Review results' : 'Begin pretest',
       status: pretestDone ? { label: 'Done', cls: 'done' } : { label: 'Start here', cls: 'now' },
       onClick: () => pretestDone ? onNav?.('pretest_results') : onStart?.(),
     },
     {
-      cls: 'modules', icon: '📚', name: 'Modules', meta: `9 domains, 5-Q quizzes`,
+      cls: 'modules', icon: 'book', name: 'Modules', meta: `9 domains, 5-Q quizzes`,
       desc: `Concept content + key-term flip cards. ${modulesPassed} of ${DOMAINS.length} passed.`,
       cta: modulesPassed > 0 ? 'Continue studying' : 'Open modules',
       status: passedAll ? { label: 'Done', cls: 'done' } : (pretestDone || st.skippedPretest) ? { label: 'Now', cls: 'now' } : { label: 'After pretest', cls: 'locked' },
       onClick: () => onNav?.('modules'),
     },
     {
-      cls: 'mock', icon: '🏁', name: 'Mock Exam', meta: '185 Q, 4 hours, 175 scored',
+      cls: 'mock', icon: 'timer', name: 'Mock Exam', meta: '185 Q, 4 hours, 175 scored',
       desc: 'Full 185-question simulation with 10 hidden field-test items. Pass all modules first.',
       cta: examTaken ? 'View results' : passedAll ? 'Begin mock' : 'Unlocks soon',
       status: examTaken ? { label: 'Done', cls: 'done' } : passedAll ? { label: 'Ready', cls: 'now' } : { label: 'Locked', cls: 'locked' },
       onClick: () => examTaken ? onNav?.('final_results') : passedAll ? onNav?.('exam_intro') : null,
     },
     {
-      cls: 'safmeds', icon: '🎴', name: 'SAFMEDS', meta: '280 terms, 4 levels',
+      cls: 'safmeds', icon: 'cards', name: 'SAFMEDS', meta: '280 terms, 4 levels',
       desc: 'Gamified fluency drill. Beat your per-minute rate. Earn tokens.',
       cta: 'Start drill',
       status: { label: 'Anytime', cls: '' },
@@ -1593,7 +1594,7 @@ function ModeCardGrid({st, stats, onStart, onNav}) {
           role="button" tabIndex={0} aria-label={`${m.name}: ${m.cta}`}
           onKeyDown={e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); m.onClick?.() } }}>
           <span className={`mode-status ${m.status.cls}`}>{m.status.label}</span>
-          <div className="mode-icon">{m.icon}</div>
+          <div className="mode-icon"><Icon name={m.icon} size={22}/></div>
           <div className="mode-name">{m.name}</div>
           <div className="mode-meta">{m.meta}</div>
           <div className="mode-desc">{m.desc}</div>
@@ -1658,7 +1659,7 @@ function Welcome({st,onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpot
 
         {/* TODAY'S FOCUS */}
         <div className="fade-up fade-up-2 focus-card" onClick={()=>focusGo(focus.go)} style={{marginBottom:18}}>
-          <div className="focus-icon">{'✨'}</div>
+          <div className="focus-icon"><Icon name="target" size={22}/></div>
           <div className="focus-text">
             <div className="focus-eyebrow">Today's focus</div>
             <div className="focus-title">{focus.title}</div>
@@ -1677,11 +1678,11 @@ function Welcome({st,onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpot
             alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:18,flexShrink:0,boxShadow:'0 3px 12px rgba(166,69,88,0.35)'}}>DG</div>
           <div style={{flex:1,minWidth:220}}>
             <div style={{fontSize:11,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--berry)',fontWeight:800,marginBottom:3}}>
-              🎙️ Built-in voice tutor
+              Built-in voice tutor
             </div>
             <div style={{fontWeight:800,fontSize:'1.02rem',color:C.text,marginBottom:3}}>Ask Dr. Gibson — anywhere you get stuck</div>
             <div style={{fontSize:'0.86rem',color:C.muted,lineHeight:1.55}}>
-              Tap <b style={{color:C.text}}>🎙️ Ask Dr. Gibson</b> on any practice question <b style={{color:C.text}}>or study concept</b> and
+              Tap <b style={{color:C.text}}>Ask Dr. Gibson</b> on any practice question <b style={{color:C.text}}>or study concept</b> and
               talk it through — he answers out loud in his own voice. Hints before you answer, full walk-throughs after,
               straight teaching while you study.
             </div>
@@ -1712,7 +1713,7 @@ function Welcome({st,onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpot
             </div>
             {streak > 0 && (
               <div className="ach-streak">
-                <span className="pulse-soft">{'🔥'}</span>
+                <span className="pulse-soft"><Icon name="flame" size={17}/></span>
                 <span className="num">{streak}</span>
                 <span className="lbl">DAY STREAK</span>
               </div>
@@ -1746,7 +1747,7 @@ function Welcome({st,onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpot
         {/* WEAK SPOTS */}
         {weakSpotsCount > 0 && (
           <div className="fade-up fade-up-5 weak-card" style={{marginBottom:18}}>
-            <div className="weak-icon">{'🔍'}</div>
+            <div className="weak-icon"><Icon name="search" size={20}/></div>
             <div style={{flex:1,minWidth:200,fontSize:'0.92rem'}}>
               <b style={{color:'var(--coral)'}}>{weakSpotsCount} weak spot{weakSpotsCount===1?'':'s'} in your review queue.</b>
               <div style={{color:C.muted,fontSize:'0.84rem'}}>Items you missed before. Get them right twice in a row to clear them.</div>
@@ -1902,7 +1903,7 @@ function PretestResults({scores,weakDomains,onStudy,onSkip}) {
           return (
             <div key={d} style={{marginBottom:12,padding:'10px 14px',borderRadius:10,background:weak?C.redBg:'transparent',border:`1px solid ${weak?C.redBorder:C.border}`}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
-                <span style={{fontSize:13,fontWeight:600,color:C.text}}>{MODULES[d]?.icon} {d}</span>
+                <span style={{fontSize:13,fontWeight:600,color:C.text}}>{d}</span>
                 {weak&&<Pill text="Needs Review" color={C.red} bg={C.redBg}/>}
               </div>
               <ProgressBar value={p} label={`${s.correct}/${s.total} correct`} color={weak?C.red:C.green}/>
@@ -1912,7 +1913,7 @@ function PretestResults({scores,weakDomains,onStudy,onSkip}) {
       </Card>
       {weakDomains.length>0&&(
         <div style={{background:C.accentBg,border:`1px solid ${C.accentBorder}`,borderRadius:14,padding:20,marginBottom:20}}>
-          <p style={{fontSize:14,color:C.accent,fontWeight:700,margin:'0 0 8px'}}>📚 {weakDomains.length} domain{weakDomains.length>1?'s':''} require module completion before the full exam</p>
+          <p style={{fontSize:14,color:C.accent,fontWeight:700,margin:'0 0 8px'}}>{weakDomains.length} domain{weakDomains.length>1?'s':''} require module completion before the full exam</p>
           {weakDomains.map(d=><div key={d} style={{fontSize:13,color:C.text,padding:'2px 0'}}>→ {d}</div>)}
         </div>
       )}
@@ -1948,7 +1949,7 @@ function ModuleHub({weakDomains,moduleStatuses,onSelect,onExam,onSpotCheck}) {
           <Card key={d} style={{marginBottom:12}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12,gap:8,flexWrap:'wrap'}}>
               <div style={{display:'flex',alignItems:'center',gap:12,flex:1,minWidth:0}}>
-                <div style={{fontSize:28,flexShrink:0}}>{MODULES[d]?.icon}</div>
+                <div style={{width:36,height:36,borderRadius:9,background:'var(--gold-bg)',color:'var(--gold)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:15,flexShrink:0}}>{d[0]}</div>
                 <div style={{minWidth:0}}>
                   <div style={{fontSize:15,fontWeight:700,color:C.primary}}>{d}</div>
                   <div style={{fontSize:12,color:C.muted}}>{MODULES[d]?.concepts?.length||0} concepts · 5-Q checkpoint</div>
@@ -1959,11 +1960,11 @@ function ModuleHub({weakDomains,moduleStatuses,onSelect,onExam,onSpotCheck}) {
             <div style={{display:'flex',gap:8}}>
               <button onClick={()=>onSelect(d)}
                 style={{flex:1,padding:'10px 14px',borderRadius:10,border:`1.5px solid ${C.primary}`,background:status==='passed'?C.white:C.primary,color:status==='passed'?C.primary:'var(--bg-base)',cursor:'pointer',fontSize:13,fontWeight:700}}>
-                {status==='passed'?'📖 Review':'Study →'}
+                {status==='passed'?'Review':'Study →'}
               </button>
               <button onClick={()=>onSpotCheck(d)}
                 style={{flex:1,padding:'10px 14px',borderRadius:10,border:'none',background:C.accent,color:'var(--gold-ink)',cursor:'pointer',fontSize:13,fontWeight:700}}>
-                🎯 Spot-Check 20Q
+                Spot-Check 20Q
               </button>
             </div>
           </Card>
@@ -2052,7 +2053,7 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
 
         {/* Module header */}
         <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:18}}>
-          <span style={{fontSize:30}}>{mod.icon}</span>
+          <span style={{width:40,height:40,borderRadius:10,background:'var(--gold-bg)',color:'var(--gold)',display:'inline-flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:17,flexShrink:0}}>{domain[0]}</span>
           <h2 style={{fontSize:20,fontWeight:700,color:C.primary,margin:0,fontFamily:'Georgia,serif'}}>{domain}</h2>
         </div>
 
@@ -2089,7 +2090,7 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
           {/* Type header */}
           <div style={{background:ctype.bg,padding:'11px 20px',borderBottom:`1px solid ${ctype.border}`,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
             <div style={{display:'flex',alignItems:'center',gap:8}}>
-              <span style={{fontSize:16}}>{ctype.icon}</span>
+              <span style={{display:'inline-flex',color:ctype.color}}><Icon name={ctype.icon} size={15}/></span>
               <span style={{fontSize:11,fontWeight:800,color:ctype.color,textTransform:'uppercase',letterSpacing:'0.08em'}}>{ctype.label}</span>
             </div>
             <Pill text={domain.split(' ')[0]} color={C.primary} bg={C.primaryLight}/>
@@ -2208,7 +2209,7 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
         {!passed && missed.length > 0 && (
           <>
             <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:10,display:'flex',alignItems:'center',gap:6}}>
-              <span>🔍</span> Review your {missed.length} missed question{missed.length>1?'s':''} before retrying
+              <span><Icon name="search" size={14}/></span> Review your {missed.length} missed question{missed.length>1?'s':''} before retrying
             </div>
             {missed.map(mq => <MissedQuestionCard key={mq._i} q={mq}/>)}
           </>
@@ -2219,7 +2220,7 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
             <button onClick={()=>onFinish('passed')} style={{padding:'14px 32px',background:C.green,color:'#fff',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer'}}>✓ Complete Module</button>
           ) : (
             <>
-              <button onClick={onReviewConcepts} style={{padding:'13px 22px',background:C.white,color:C.primary,border:`2px solid ${C.primary}`,borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer'}}>📖 Re-read Concepts</button>
+              <button onClick={onReviewConcepts} style={{padding:'13px 22px',background:C.white,color:C.primary,border:`2px solid ${C.primary}`,borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer'}}>Re-read Concepts</button>
               <button onClick={()=>onAnswer('reset')} style={{padding:'13px 26px',background:C.primary,color:'var(--bg-base)',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer'}}>↻ Retry Quiz</button>
               <button onClick={()=>onFinish('failed')} style={{padding:'13px 18px',background:'transparent',color:C.muted,border:'none',cursor:'pointer',fontSize:13,fontWeight:600}}>Back to Modules</button>
             </>
@@ -2443,7 +2444,7 @@ function SafmedsCard({safmeds, onOpen}) {
   return (
     <div style={{marginBottom:20,background:'linear-gradient(135deg, #ede9fe 0%, #c4b5fd 100%)',border:'1px solid #a78bfa',borderRadius:14,padding:'16px 18px',display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap'}}>
       <div>
-        <h3 style={{fontSize:14,fontWeight:800,color:'var(--berry)',margin:'0 0 4px',textTransform:'uppercase',letterSpacing:'0.06em'}}>🎴 SAFMEDS Fluency Drill</h3>
+        <h3 style={{fontSize:14,fontWeight:800,color:'var(--berry)',margin:'0 0 4px',textTransform:'uppercase',letterSpacing:'0.06em'}}>SAFMEDS Fluency Drill</h3>
         <p style={{fontSize:13,color:'var(--berry)',margin:0,opacity:0.85}}>
           🪙 <strong>{tokens}</strong> tokens · Best (Beginner 60s): <strong>{bestBeginner}</strong>
         </p>
@@ -2472,7 +2473,7 @@ function SafmedsProgress({safmeds, onBack}) {
   const allOptions = [
     { id: 'mega-or-all', label: '◆ All sessions (every deck)', group: 'Combined' },
     { id: 'mega', label: '🧠 Mega Deck only', group: 'Combined' },
-    { id: 'all', label: '🎯 All Terms only', group: 'Combined' },
+    { id: 'all', label: 'All Terms only', group: 'Combined' },
     ...baseLevelOptions,
     ...domainOptions,
   ]
@@ -2553,7 +2554,7 @@ function SafmedsProgress({safmeds, onBack}) {
   return (
     <div style={{maxWidth:920,margin:'0 auto',padding:'24px 20px',fontFamily:'system-ui'}}>
       <button onClick={onBack} style={{background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:14,marginBottom:14,padding:0}}>← Back to SAFMEDS</button>
-      <h2 style={{fontSize:22,fontWeight:700,color:'var(--berry)',margin:'0 0 6px',fontFamily:'Georgia,serif'}}>📈 SAFMEDS Progress</h2>
+      <h2 style={{fontSize:22,fontWeight:700,color:'var(--berry)',margin:'0 0 6px',fontFamily:'Georgia,serif'}}>SAFMEDS Progress</h2>
       <p style={{fontSize:14,color:C.muted,margin:'0 0 18px'}}>Frequency correct over time, by deck, with 7-day rolling average.</p>
 
       {/* Filters */}
@@ -2847,7 +2848,7 @@ function SafmedsHub({safmeds, onStart, onBack, onProgress}) {
   return (
     <div style={{maxWidth:760,margin:'0 auto',padding:'24px 20px',fontFamily:'system-ui'}}>
       <button onClick={onBack} style={{background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:14,marginBottom:14,padding:0}}>← Back</button>
-      <h2 style={{fontSize:22,fontWeight:700,color:'var(--berry)',margin:'0 0 6px',fontFamily:'Georgia,serif'}}>🎴 SAFMEDS Fluency Drill</h2>
+      <h2 style={{fontSize:22,fontWeight:700,color:'var(--berry)',margin:'0 0 6px',fontFamily:'Georgia,serif'}}>SAFMEDS Fluency Drill</h2>
       <p style={{fontSize:14,color:C.muted,margin:'0 0 18px'}}>Say All Fast Minute Each Day Shuffled · See definition → recall term → self-grade</p>
 
       {/* Token + level summary */}
@@ -2922,7 +2923,7 @@ function SafmedsHub({safmeds, onStart, onBack, onProgress}) {
         <button onClick={()=>startDeck('all')}
           style={{textAlign:'left',padding:'14px 16px',borderRadius:12,border:`2px solid ${C.accent}`,background:C.accentBg,cursor:'pointer',fontFamily:'inherit'}}>
           <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
-            <span style={{fontSize:18}}>🎯</span>
+            <span style={{display:"inline-flex"}}><Icon name="target" size={17}/></span>
             <span style={{fontSize:14,fontWeight:800,color:C.accent}}>All Terms</span>
           </div>
           <div style={{fontSize:11,color:C.accent,opacity:0.8}}>{getSafmedsCards('all').length} cards · every level mixed</div>
@@ -2933,7 +2934,7 @@ function SafmedsHub({safmeds, onStart, onBack, onProgress}) {
       {(safmeds?.history?.length || 0) > 0 && (
         <button onClick={onProgress}
           style={{width:'100%',padding:'12px 16px',borderRadius:10,border:'1px solid var(--berry)',background:C.white,color:'var(--berry)',cursor:'pointer',fontSize:13,fontWeight:700,fontFamily:'inherit',marginBottom:24,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-          📈 View Progress Chart →
+          View Progress Chart →
         </button>
       )}
 
@@ -3074,7 +3075,7 @@ function SafmedsResults({results, safmeds, onAgain, onPickAnother, onDone}) {
 
       <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
         <button onClick={onAgain} style={{padding:'12px 22px',background:'var(--berry)',color:'#fff',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>↻ Run It Back</button>
-        <button onClick={onPickAnother} style={{padding:'12px 22px',background:C.white,color:'var(--berry)',border:'2px solid var(--berry)',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>📚 Pick Different Deck</button>
+        <button onClick={onPickAnother} style={{padding:'12px 22px',background:C.white,color:'var(--berry)',border:'2px solid var(--berry)',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>Pick Different Deck</button>
         <button onClick={onDone} style={{padding:'12px 18px',background:'transparent',color:C.muted,border:'none',cursor:'pointer',fontSize:13,fontWeight:600}}>← Home</button>
       </div>
     </div>
@@ -3087,7 +3088,7 @@ function WeakSpotsCard({count, onReview}) {
   return (
     <div style={{marginBottom:20,background:'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',border:`1px solid ${C.redBorder}`,borderRadius:14,padding:'16px 18px',display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap'}}>
       <div>
-        <h3 style={{fontSize:14,fontWeight:800,color:C.red,margin:'0 0 4px',textTransform:'uppercase',letterSpacing:'0.06em'}}>🎯 Weak Spots</h3>
+        <h3 style={{fontSize:14,fontWeight:800,color:C.red,margin:'0 0 4px',textTransform:'uppercase',letterSpacing:'0.06em'}}>Weak Spots</h3>
         <p style={{fontSize:13,color:C.red,margin:0,opacity:0.85}}>You have <strong>{count}</strong> question{count===1?'':'s'} to review</p>
       </div>
       <button onClick={onReview} style={{padding:'10px 18px',background:C.red,color:'#fff',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>
@@ -3109,7 +3110,7 @@ function WeakSpotReview({queue, idx, answers, onAnswer, onNext, onQuit, startCou
     <div style={{maxWidth:680,margin:'0 auto',padding:'24px 20px',fontFamily:'system-ui'}}>
       <button onClick={onQuit} style={{background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:14,marginBottom:14,padding:0}}>← Save & Exit</button>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14,flexWrap:'wrap',gap:8}}>
-        <h2 style={{fontSize:20,fontWeight:700,color:C.red,margin:0,fontFamily:'Georgia,serif'}}>🎯 Weak Spots Review</h2>
+        <h2 style={{fontSize:20,fontWeight:700,color:C.red,margin:0,fontFamily:'Georgia,serif'}}>Weak Spots Review</h2>
         <span style={{fontSize:12,color:C.muted}}>Question {idx+1} of {queue.length} · started with {startCount}</span>
       </div>
       <div style={{height:4,background:C.border,borderRadius:99,marginBottom:18,overflow:'hidden'}}>
@@ -3173,7 +3174,7 @@ function WeakSpotSummary({queue, answers, startCount, onContinue, onDone, remain
   const graduatedCount = queue.filter((item,i) => answers[i] === item.question.correct && (item.consecutiveCorrect||0) + 1 >= 2).length
   return (
     <div style={{maxWidth:560,margin:'0 auto',padding:'48px 20px',textAlign:'center',fontFamily:'system-ui'}}>
-      <div style={{fontSize:48,marginBottom:8}}>🎯</div>
+      <div style={{marginBottom:8,color:"var(--gold)"}}><Icon name="target" size={44}/></div>
       <h2 style={{fontSize:22,fontWeight:700,color:C.primary,fontFamily:'Georgia,serif',margin:'0 0 6px'}}>Review Complete</h2>
       <p style={{fontSize:14,color:C.muted,margin:'0 0 24px'}}>You worked through {queue.length} weak-spot question{queue.length===1?'':'s'}</p>
 
@@ -3216,7 +3217,7 @@ function DomainQuizResults({domain, questions, answers, onReview, onTryAnother, 
   const passed = percent >= 80
   return (
     <div style={{maxWidth:580,margin:'0 auto',padding:'40px 20px',textAlign:'center',fontFamily:'system-ui'}}>
-      <div style={{fontSize:48,marginBottom:8}}>{MODULES[domain]?.icon}</div>
+      <div style={{width:56,height:56,margin:'0 auto 10px',borderRadius:14,background:'var(--gold-bg)',color:'var(--gold)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:24}}>{domain[0]}</div>
       <h2 style={{fontSize:22,fontWeight:700,color:C.primary,fontFamily:'Georgia,serif',margin:'0 0 6px'}}>Spot-Check Complete</h2>
       <p style={{fontSize:14,color:C.muted,margin:'0 0 22px'}}>{domain}</p>
       <div style={{padding:'24px 20px',borderRadius:14,background:passed?C.greenBg:C.redBg,border:`1px solid ${passed?C.greenBorder:C.redBorder}`,marginBottom:24}}>
@@ -3285,7 +3286,7 @@ function ExamReview({questions, answers, onBack}) {
         <select value={domainFilter} onChange={e=>setDomainFilter(e.target.value)}
           style={{padding:'7px 12px',borderRadius:8,border:`1px solid ${C.border}`,fontSize:13,background:C.white,color:C.text,fontFamily:'inherit',width:'100%',maxWidth:360}}>
           <option value="">All domains</option>
-          {allDomains.map(d=><option key={d} value={d}>{MODULES[d]?.icon||''} {d}</option>)}
+          {allDomains.map(d=><option key={d} value={d}>{d}</option>)}
         </select>
       </div>
 
@@ -3422,7 +3423,7 @@ function FinalResults({examScores,examResult,examQuestions,examAnswers,pretestSc
           const p=pct(s.correct,s.total)
           return (
             <div key={d} style={{marginBottom:12}}>
-              <ProgressBar value={p} label={`${MODULES[d]?.icon||''} ${d} (${s.correct}/${s.total})`} color={p>=70?C.green:C.red}/>
+              <ProgressBar value={p} label={`${d} (${s.correct}/${s.total})`} color={p>=70?C.green:C.red}/>
             </div>
           )
         })}
@@ -3439,7 +3440,7 @@ function FinalResults({examScores,examResult,examQuestions,examAnswers,pretestSc
             const diff=examP-preP
             return (
               <div key={d} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 0',borderBottom:`1px solid ${C.accentBorder}`}}>
-                <span style={{fontSize:13,color:C.text}}>{MODULES[d]?.icon} {d}</span>
+                <span style={{fontSize:13,color:C.text}}>{d}</span>
                 <span style={{fontSize:13,fontWeight:700,color:diff>0?C.green:diff<0?C.red:C.muted}}>
                   {preP}% → {examP}% ({diff>0?'+':''}{diff}%)
                 </span>
