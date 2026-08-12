@@ -444,8 +444,8 @@ const Card = ({children,style={},className=''}) => (
     ...style
   }}>{children}</div>
 )
-const Pill = ({text,color,bg}) => (
-  <span style={{fontSize:11,fontWeight:700,color,background:bg,padding:'2px 10px',borderRadius:99,textTransform:'uppercase',letterSpacing:'0.06em'}}>{text}</span>
+const Pill = ({text,color,bg,style={}}) => (
+  <span style={{fontSize:11,fontWeight:700,color,background:bg,padding:'2px 10px',borderRadius:99,textTransform:'uppercase',letterSpacing:'0.06em',...style}}>{text}</span>
 )
 const ProgressBar = ({value,color=C.primary,label}) => (
   <div style={{marginBottom:4}}>
@@ -1826,14 +1826,15 @@ function QuestionScreen({questions,answers,qIndex,onAnswer,onNav,onSubmit,label,
   return (
     <div style={{maxWidth:700,margin:'0 auto',padding:'28px 20px',fontFamily:'system-ui'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-        <div>
-          <Pill text={q.domain_name} color={C.primary} bg={C.primaryLight}/>
-          {q.task&&<span style={{marginLeft:8,fontSize:11,color:C.muted}}>{q.task}</span>}
+        <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+          <Pill text={q.domain_name} color={C.muted} bg={'transparent'} style={{border:`1px solid ${C.border}`}}/>
+          {q.task&&<span style={{fontSize:11,color:C.muted}}>{q.task}</span>}
+          {q.difficulty==='hard'&&<Pill text="Exam-Level" color={'var(--gold)'} bg={'transparent'} style={{border:'1px solid var(--gold)'}}/>}
         </div>
-        <span style={{fontSize:13,color:C.muted}}>Q {qIndex+1} / {total}</span>
+        <span style={{fontSize:13,color:C.muted,fontVariantNumeric:'tabular-nums'}}>Q {qIndex+1} / {total}</span>
       </div>
-      <div style={{height:4,background:C.border,borderRadius:99,marginBottom:24,overflow:'hidden'}}>
-        <div style={{width:`${((qIndex+1)/total)*100}%`,height:'100%',background:C.primary,borderRadius:99,transition:'width 0.3s'}}/>
+      <div style={{height:3,background:C.border,borderRadius:99,marginBottom:24,overflow:'hidden'}}>
+        <div style={{width:`${((qIndex+1)/total)*100}%`,height:'100%',background:'var(--gold)',borderRadius:99,transition:'width 0.3s'}}/>
       </div>
       <Card style={{marginBottom:18}}>
         <p style={{fontSize:16,lineHeight:1.65,color:C.text,margin:0,fontFamily:'Georgia,serif',fontWeight:500}}>{q.stem}</p>
@@ -1861,9 +1862,12 @@ function QuestionScreen({questions,answers,qIndex,onAnswer,onNav,onSubmit,label,
         })}
       </div>
       {showFeedback&&selected!==undefined&&(
-        <Card style={{background:C.grayLight,marginBottom:16}}>
+        <Card style={{background:C.grayLight,marginBottom:16,borderLeft:'3px solid var(--gold)'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10}}>
-            <p style={{fontSize:13,color:C.text,margin:0,lineHeight:1.6,flex:1}}><strong>Explanation:</strong> {q.rationale}</p>
+            <div style={{flex:1}}>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',textTransform:'uppercase',color:'var(--gold)',marginBottom:6}}>Why</div>
+              <p style={{fontSize:13,color:C.text,margin:0,lineHeight:1.65}}>{q.rationale}</p>
+            </div>
             <TTSButton token={`rat:pretest:${qIndex}`} text={q.rationale} label="" size="xs"/>
           </div>
         </Card>
@@ -2008,8 +2012,8 @@ function MissedQuestionCard({q}) {
             <strong>✓ Correct:</strong> {['A','B','C','D'][q.correct]}. {q.options[q.correct]}
           </div>
           {q.rationale && (
-            <div style={{padding:'10px 12px',background:C.grayLight,borderRadius:8,fontSize:12.5,color:C.text,lineHeight:1.65,display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10}}>
-              <span style={{flex:1}}><strong style={{color:C.primary}}>📘 Why:</strong> {q.rationale}</span>
+            <div style={{padding:'10px 12px',background:C.grayLight,borderRadius:8,borderLeft:'3px solid var(--gold)',fontSize:12.5,color:C.text,lineHeight:1.65,display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10}}>
+              <span style={{flex:1}}><strong style={{color:'var(--gold)',textTransform:'uppercase',letterSpacing:'0.14em',fontSize:10.5}}>Why</strong><br/>{q.rationale}</span>
               <TTSButton token={`rat:review:${q.id||q.stem?.slice(0,30)}`} text={q.rationale} label="" size="xs"/>
             </div>
           )}
@@ -2265,9 +2269,12 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
       </div>
       {selected!==undefined&&(
         <>
-          <Card style={{background:C.grayLight,marginBottom:14}}>
+          <Card style={{background:C.grayLight,marginBottom:14,borderLeft:'3px solid var(--gold)'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10}}>
-              <p style={{fontSize:13,color:C.text,margin:0,lineHeight:1.6,flex:1}}><strong>Explanation:</strong> {pq.rationale}</p>
+              <div style={{flex:1}}>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',textTransform:'uppercase',color:'var(--gold)',marginBottom:6}}>Why</div>
+                <p style={{fontSize:13,color:C.text,margin:0,lineHeight:1.65}}>{pq.rationale}</p>
+              </div>
               <TTSButton token={`rat:mod:${qIndex}`} text={pq.rationale} label="" size="xs"/>
             </div>
           </Card>
@@ -2867,8 +2874,8 @@ function SafmedsHub({safmeds, onStart, onBack, onProgress}) {
         <div style={{display:'flex',gap:6,marginBottom:10,flexWrap:'wrap'}}>
           {['timed','practice'].map(m=>(
             <button key={m} onClick={()=>setMode(m)}
-              style={{padding:'7px 14px',borderRadius:99,border:`1.5px solid ${mode===m?'var(--berry)':C.border}`,background:mode===m?'var(--berry)':C.white,color:mode===m?C.white:'var(--berry)',cursor:'pointer',fontSize:12,fontWeight:700,fontFamily:'inherit'}}>
-              {m==='timed'?'⏱ Timed Sprint':'🐢 Untimed Practice'}
+              style={{padding:'7px 14px',borderRadius:99,border:`1.5px solid ${mode===m?'var(--berry)':C.border}`,background:mode===m?'var(--berry)':C.white,color:mode===m?'#fff':'var(--berry)',cursor:'pointer',fontSize:12,fontWeight:700,fontFamily:'inherit'}}>
+              {m==='timed'?'Timed Sprint':'Untimed Practice'}
             </button>
           ))}
         </div>
