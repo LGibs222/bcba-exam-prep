@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from 'react'
  *
  * Wiring:
  *   - Question screens call useTutorQuestion(question, answered, userAnswer, source)
+ *   - Study/module content screens render <TutorStudyContext study={{domain_name,title,body,example}}/>
  *   - Review cards render <AskTutorButton question={q} userAnswer={i}/>
  *   - App root mounts <TutorFab blocked={phase === 'fullexam'}/> once.
  */
@@ -46,6 +47,20 @@ export function useTutorQuestion(q, answered, userAnswer, source) {
 /** Render-anywhere variant of useTutorQuestion — safe inside conditional JSX. */
 export function TutorContext({ q, answered, userAnswer, source }) {
   useTutorQuestion(q, answered, userAnswer, source)
+  return null
+}
+
+/** Register the study concept currently on screen — module content pages. */
+export function TutorStudyContext({ study, source }) {
+  useEffect(() => {
+    if (!study || !study.title || !study.body) return
+    store = { ...store, ctx: { study: {
+      domain_name: study.domain_name || '', title: study.title,
+      body: study.body, example: study.example || '',
+    }, source: source || 'study' } }
+    emit()
+    return () => { store = { ...store, ctx: null }; emit() }
+  }, [study && study.title, study && study.domain_name])
   return null
 }
 
@@ -126,8 +141,8 @@ export function TutorFab({ blocked }) {
   const stemRef = useRef('')
   const scrollRef = useRef(null)
 
-  // new question on screen → fresh conversation
-  const stem = ctx?.question?.stem || ''
+  // new question/concept on screen → fresh conversation
+  const stem = ctx?.question?.stem || ctx?.study?.title || ''
   useEffect(() => {
     if (stem && stem !== stemRef.current) {
       stemRef.current = stem
@@ -156,7 +171,9 @@ export function TutorFab({ blocked }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           app: APP_ID, name, code,
-          question: ctx.question, answered: ctx.answered, userAnswer: ctx.userAnswer,
+          ...(ctx.study
+            ? { study: ctx.study }
+            : { question: ctx.question, answered: ctx.answered, userAnswer: ctx.userAnswer }),
           history, text: text || undefined, audio: audio || undefined,
           voiceReply: !muted,
         }),
@@ -225,7 +242,7 @@ export function TutorFab({ blocked }) {
   }
 
   const fab = (
-    <button type="button" onClick={() => setOpen(true)} aria-label="Ask Dr. Gibson about this question"
+    <button type="button" onClick={() => setOpen(true)} aria-label={ctx.study ? 'Ask Dr. Gibson about this concept' : 'Ask Dr. Gibson about this question'}
       style={{
         position: 'fixed', right: 16, bottom: 16, zIndex: 9000,
         display: 'flex', alignItems: 'center', gap: 8, padding: '12px 18px',
@@ -239,7 +256,9 @@ export function TutorFab({ blocked }) {
 
   if (!open) return fab
 
-  const suggestion = ctx.answered ? 'Why is my answer wrong?' : 'Can you give me a hint?'
+  const suggestion = ctx.study
+    ? 'Can you give me an example of this?'
+    : ctx.answered ? 'Why is my answer wrong?' : 'Can you give me a hint?'
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9100, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.35)' }}
       onClick={e => { if (e.target === e.currentTarget) setOpen(false) }}>
@@ -254,7 +273,7 @@ export function TutorFab({ blocked }) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 800, fontSize: 14.5 }}>Dr. Gibson</div>
             <div style={{ fontSize: 11, color: T.muted }}>
-              {ctx.answered ? 'Reviewing this question with you' : 'Coaching — no spoilers before you answer'}
+              {ctx.study ? 'Talking through this concept with you' : ctx.answered ? 'Reviewing this question with you' : 'Coaching — no spoilers before you answer'}
               {remaining !== null ? ` · ${remaining} left today` : ''}
             </div>
           </div>
@@ -271,8 +290,10 @@ export function TutorFab({ blocked }) {
         <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10, minHeight: 140 }}>
           {messages.length === 0 && (
             <div style={{ fontSize: 13, color: T.muted, lineHeight: 1.6 }}>
-              Ask me anything about this question — tap the mic and talk, or type below.{' '}
-              {ctx.answered ? 'You’ve answered, so I can walk through the whole item with you.' : 'You haven’t answered yet, so I’ll coach without giving it away.'}
+              {ctx.study
+                ? <>Ask me anything about <b>{ctx.study.title}</b> — tap the mic and talk, or type below. Nothing to spoil here, so I’ll teach it straight.</>
+                : <>Ask me anything about this question — tap the mic and talk, or type below.{' '}
+                  {ctx.answered ? 'You’ve answered, so I can walk through the whole item with you.' : 'You haven’t answered yet, so I’ll coach without giving it away.'}</>}
               <div style={{ marginTop: 10 }}>
                 <button type="button" onClick={() => send({ text: suggestion })} disabled={busy}
                   style={{ padding: '7px 12px', borderRadius: 99, border: `1px solid ${T.border}`, background: T.soft, color: T.ink, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>

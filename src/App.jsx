@@ -7,7 +7,7 @@ import { SAFMEDS_DECKS } from './data/safmedsDecks.js'
 import { TTSButton } from './TTS.jsx'
 import { QuickCheck, CategorizeGame, AnimatedVisual, MasteryMap } from './Engagement.jsx'
 import { track } from './tracking.js'
-import { TutorFab, TutorContext, AskTutorButton, useTutorQuestion } from './Tutor.jsx'
+import { TutorFab, TutorContext, TutorStudyContext, AskTutorButton, useTutorQuestion } from './Tutor.jsx'
 import MyProgressScreen from './MyProgress.jsx'
 import { scoreExam, tallyByDomain, overallPctFromMap } from './scoring.js'
 import { pctToScaled, projectReadiness, recordDomainEvent, aggregateDomains, weakestDomains } from './analysis.js'
@@ -1619,6 +1619,24 @@ function Welcome({st,onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpot
           </button>
         </div>
 
+        {/* ASK DR. GIBSON — voice tutor callout */}
+        <div className="fade-up fade-up-2" style={{marginBottom:18,display:'flex',alignItems:'center',gap:16,padding:'18px 22px',
+          borderRadius:16,background:'var(--berry-bg)',border:'1px solid rgba(166,69,88,0.25)',flexWrap:'wrap'}}>
+          <div style={{width:48,height:48,borderRadius:'50%',background:'var(--berry)',color:'#fff',display:'flex',
+            alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:18,flexShrink:0,boxShadow:'0 3px 12px rgba(166,69,88,0.35)'}}>DG</div>
+          <div style={{flex:1,minWidth:220}}>
+            <div style={{fontSize:11,letterSpacing:'0.14em',textTransform:'uppercase',color:'var(--berry)',fontWeight:800,marginBottom:3}}>
+              🎙️ Built-in voice tutor
+            </div>
+            <div style={{fontWeight:800,fontSize:'1.02rem',color:C.text,marginBottom:3}}>Ask Dr. Gibson — anywhere you get stuck</div>
+            <div style={{fontSize:'0.86rem',color:C.muted,lineHeight:1.55}}>
+              Tap <b style={{color:C.text}}>🎙️ Ask Dr. Gibson</b> on any practice question <b style={{color:C.text}}>or study concept</b> and
+              talk it through — he answers out loud in his own voice. Hints before you answer, full walk-throughs after,
+              straight teaching while you study.
+            </div>
+          </div>
+        </div>
+
         {/* ACHIEVEMENTS + STREAK */}
         {(earnedCount > 0 || streak > 0) && (
           <div className="fade-up fade-up-3 ach-card" style={{marginBottom:18}}>
@@ -1977,6 +1995,8 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
 
     return (
       <div style={{maxWidth:680,margin:'0 auto',padding:'24px 20px',fontFamily:'system-ui'}}>
+        <TutorStudyContext source="module_content"
+          study={{domain_name:domain, title:concept.title, body:concept.body, example:concept.example}}/>
         <button onClick={onBack} style={{background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:14,marginBottom:14,padding:0}}>← Back to modules</button>
 
         {/* Module header */}
