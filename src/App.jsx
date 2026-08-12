@@ -248,28 +248,30 @@ function gradedPatch(p, questions, answers, src, fallbackDomain) {
   }
 }
 
-// Color palette — surface/text/border colors come from CSS vars so they
-// switch between light and dark themes via [data-theme="dark"] on <html>.
-// Brand colors (primary, accent) stay literal for consistent identity.
-// Sunrise palette: deep brown-black ink as primary, dusty rose as accent,
-// terracotta + sand + wine as additional warm colors. CSS-var refs stay
-// so the dark-mode overrides in GlobalStyles continue to apply.
+// Color palette — every value routes through CSS vars so both themes switch
+// via [data-theme="dark"] on <html>. Blue Hour brand system: gold is the
+// single accent; green/red are semantic (passed / needs work); the legacy
+// keys (peach/coral/berry/sage) alias into the brand family during the
+// screen-by-screen migration.
 const C = {
-  primary:'#1f160d', primaryLight:'var(--primary-light)', primaryMid:'#564434',
-  accent:'#a64558', accentBg:'var(--accent-bg)', accentBorder:'var(--accent-border)',
+  primary:'var(--text)', primaryLight:'var(--primary-light)', primaryMid:'var(--muted)',
+  accent:'var(--gold)', accentBg:'var(--accent-bg)', accentBorder:'var(--accent-border)',
   green:'var(--green)', greenBg:'var(--green-bg)', greenBorder:'var(--green-border)',
   red:'var(--red)', redBg:'var(--red-bg)', redBorder:'var(--red-border)',
   gray:'var(--gray)', grayLight:'var(--surface-alt)', border:'var(--border)',
   text:'var(--text)', muted:'var(--muted)', white:'var(--surface)',
-  // Sunrise-specific accents
-  peach:'#b96a3d', coral:'#a64558', gold:'#b18432', berry:'#6f3047', sage:'#5a7a52',
+  // Brand accents (legacy names kept, values remapped)
+  peach:'var(--olive)', coral:'var(--red-brand)', gold:'var(--gold)', berry:'var(--green-deep)', sage:'var(--green-brand)',
 }
 
+// Concept card types — brand family, theme-aware. Gold teaches, green
+// grounds principles, red flags the distinctions candidates confuse,
+// olive carries strategy.
 const CONCEPT_TYPES = [
-  { label:'Core Concept',       icon:'📖', color:'#1a3a5c', bg:'#e8f0fb', border:'#93c5fd' },
-  { label:'Key Principles',     icon:'⚙️',  color:'#166534', bg:'#f0fdf4', border:'#86efac' },
-  { label:'Critical Distinction',icon:'⚠️', color:'#92400e', bg:'#fffbeb', border:'#fcd34d' },
-  { label:'Exam Strategy',      icon:'💡', color:'#5b21b6', bg:'#f5f3ff', border:'#c4b5fd' },
+  { label:'Core Concept',       icon:'📖', color:'var(--gold)',        bg:'var(--gold-bg)',        border:'var(--accent-border)' },
+  { label:'Key Principles',     icon:'⚙️',  color:'var(--green-brand)', bg:'var(--green-brand-bg)', border:'var(--green-border)' },
+  { label:'Critical Distinction',icon:'⚠️', color:'var(--red-brand)',   bg:'var(--red-brand-bg)',   border:'var(--red-border)' },
+  { label:'Exam Strategy',      icon:'💡', color:'var(--olive)',       bg:'var(--olive-bg)',       border:'var(--border)' },
 ]
 
 const DOMAINS = Object.keys(MODULES)
@@ -386,7 +388,7 @@ const INITIAL = {
   // SAFMEDS transient session
   sfxDeckId:null, sfxMode:'timed', sfxTimer:60, sfxCards:[], sfxCardIdx:0, sfxRevealed:false, sfxCorrect:0, sfxMissed:0, sfxRemaining:60, sfxResults:null,
   // theme: 'light' | 'dark'
-  theme: 'light',
+  theme: null, // null = follow the device setting; set by the toggle
   confirmReset:false, timerSeconds:14400, timerActive:false,
   stats: {daysStudied:[], todayDate:'', todayMinutes:0, totalMinutes:0, modulesPassed:0, pretestsCompleted:0, examAttempts:0},
 }
@@ -459,97 +461,133 @@ const ProgressBar = ({value,color=C.primary,label}) => (
 // ── GLOBAL STYLES (theme variables + keyframes) ──────────────────────────────
 const GlobalStyles = () => (
   <style>{`
-    /* "Sunrise" theme — warm ivory base, terracotta + dusty rose +
-       warm sand + deep wine, sage for success. Boutique-magazine warmth. */
+    /* "Blue Hour" theme — OneLove brand system (locked 2026-08-12).
+       Black is the ground, gold is the single accent, green and red carry
+       meaning only (passed / needs work). Day = cream under a golden dawn;
+       Night = warm black deepening into forest green. Legacy var names
+       (peach/coral/berry/sage) are kept as aliases into the brand family so
+       existing components keep working during the screen-by-screen migration. */
     :root {
-      --bg-base: #faf6ef;
-      --paper-2: #f3ece0;
+      /* Day */
+      --bg-base: #f5f1e4;
+      --paper-2: #ece6d3;
 
-      /* Sunrise palette anchors */
-      --peach:     #b96a3d;
-      --peach-2:   #d18555;
-      --peach-bg:  #f4e2d2;
-      --coral:     #a64558;
-      --coral-bg:  #f3dde2;
-      --gold:      #b18432;
-      --gold-bg:   #f3e8c8;
-      --berry:     #6f3047;
-      --berry-bg:  #ecd9df;
-      --sage:      #5a7a52;
-      --sage-bg:   #e2eadb;
+      /* Brand anchors */
+      --gold:      #a87f10;
+      --gold-2:    #c49a2a;
+      --gold-bg:   #f0e5c2;
+      --gold-ink:  #fff8e8;
+      --green-brand: #2e7d46;
+      --green-deep:  #1f5c33;
+      --green-brand-bg: #ddeade;
+      --red-brand:  #b03a26;
+      --red-brand-bg: #f2ddd6;
+      --olive:     #7d774a;
+      --olive-bg:  #e9e6d0;
+
+      /* Atmosphere (hero skies + ridgelines) */
+      --sky0: #dfe4d2; --sky1: #f5efdc; --sky2: #f2ddb0;
+      --ridge-1: #b8c4a8; --ridge-2: #9aab8c;
+      --glow: rgba(168, 127, 16, 0.28);
+      --star: transparent;
+
+      /* Legacy aliases → brand family */
+      --peach:     var(--olive);
+      --peach-2:   #918a58;
+      --peach-bg:  var(--olive-bg);
+      --coral:     var(--red-brand);
+      --coral-bg:  var(--red-brand-bg);
+      --berry:     var(--green-deep);
+      --berry-bg:  var(--green-brand-bg);
+      --sage:      var(--green-brand);
+      --sage-bg:   var(--green-brand-bg);
 
       /* Aliases consumed by C palette + components */
       --bg: var(--bg-base);
-      --surface: rgba(255, 255, 255, 0.78);
-      --surface-solid: #ffffff;
-      --surface-alt: rgba(255, 255, 255, 0.55);
-      --text: #1f160d;
-      --muted: #564434;
-      --border: #e6dcc9;
-      --gray: #8a7864;
+      --surface: rgba(253, 251, 242, 0.82);
+      --surface-solid: #fdfbf2;
+      --surface-alt: rgba(253, 251, 242, 0.55);
+      --text: #171408;
+      --muted: #5c5340;
+      --border: rgba(23, 20, 8, 0.15);
+      --gray: #7c7358;
 
-      --primary-light: var(--peach-bg);
-      --accent-bg: var(--coral-bg);
-      --accent-border: rgba(166, 69, 88, 0.45);
-      --green: var(--sage);
-      --green-bg: var(--sage-bg);
-      --green-border: rgba(90, 122, 82, 0.45);
-      --red: var(--coral);
-      --red-bg: var(--coral-bg);
-      --red-border: rgba(166, 69, 88, 0.45);
-      --shadow: 0 4px 24px rgba(31, 22, 13, 0.08);
+      --primary-light: var(--gold-bg);
+      --accent-bg: var(--gold-bg);
+      --accent-border: rgba(168, 127, 16, 0.45);
+      --green: var(--green-brand);
+      --green-bg: var(--green-brand-bg);
+      --green-border: rgba(46, 125, 70, 0.45);
+      --red: var(--red-brand);
+      --red-bg: var(--red-brand-bg);
+      --red-border: rgba(176, 58, 38, 0.45);
+      --shadow: 0 4px 24px rgba(23, 20, 8, 0.08);
     }
     :root[data-theme="dark"] {
-      /* Warm "twilight" Sunrise variant — deep wine-brown with cream text */
-      --bg-base: #1a120c;
-      --paper-2: rgba(255, 246, 232, 0.06);
-      --peach:     #d18555;
-      --peach-2:   #e2a071;
-      --peach-bg:  rgba(209, 133, 85, 0.14);
-      --coral:     #d27086;
-      --coral-bg:  rgba(210, 112, 134, 0.14);
-      --gold:      #d8a754;
-      --gold-bg:   rgba(216, 167, 84, 0.14);
-      --berry:     #b07088;
-      --berry-bg:  rgba(176, 112, 136, 0.14);
-      --sage:      #a8c8a0;
-      --sage-bg:   rgba(168, 200, 160, 0.14);
+      /* Night */
+      --bg-base: #121108;
+      --paper-2: rgba(240, 234, 216, 0.06);
+
+      --gold:      #e0a92e;
+      --gold-2:    #c9962a;
+      --gold-bg:   rgba(224, 169, 46, 0.14);
+      --gold-ink:  #241a04;
+      --green-brand: #67a878;
+      --green-deep:  #4f8f63;
+      --green-brand-bg: rgba(103, 168, 120, 0.14);
+      --red-brand:  #d05a40;
+      --red-brand-bg: rgba(208, 90, 64, 0.14);
+      --olive:     #b0ab7a;
+      --olive-bg:  rgba(176, 171, 122, 0.14);
+
+      --sky0: #0b0a06; --sky1: #101b10; --sky2: #1e3a24;
+      --ridge-1: #16281a; --ridge-2: #0b130d;
+      --glow: rgba(224, 169, 46, 0.3);
+      --star: rgba(240, 234, 216, 0.65);
+
+      --peach:     var(--olive);
+      --peach-2:   #c4bf94;
+      --peach-bg:  var(--olive-bg);
+      --coral:     var(--red-brand);
+      --coral-bg:  var(--red-brand-bg);
+      --berry:     var(--green-deep);
+      --berry-bg:  var(--green-brand-bg);
+      --sage:      var(--green-brand);
+      --sage-bg:   var(--green-brand-bg);
 
       --bg: var(--bg-base);
-      --surface: rgba(255, 246, 232, 0.06);
-      --surface-solid: #2a1c14;
-      --surface-alt: rgba(255, 246, 232, 0.04);
-      --text: #f3ece0;
-      --muted: #c9b89a;
-      --border: rgba(255, 246, 232, 0.1);
-      --gray: #c9b89a;
+      --surface: rgba(240, 234, 216, 0.05);
+      --surface-solid: #1b1a10;
+      --surface-alt: rgba(240, 234, 216, 0.04);
+      --text: #f0ead8;
+      --muted: #97927b;
+      --border: rgba(240, 234, 216, 0.12);
+      --gray: #97927b;
 
-      --primary-light: var(--peach-bg);
-      --accent-bg: var(--coral-bg);
-      --accent-border: rgba(210, 112, 134, 0.4);
-      --green: var(--sage);
-      --green-bg: var(--sage-bg);
-      --green-border: rgba(168, 200, 160, 0.4);
-      --red: var(--coral);
-      --red-bg: var(--coral-bg);
-      --red-border: rgba(210, 112, 134, 0.4);
+      --primary-light: var(--gold-bg);
+      --accent-bg: var(--gold-bg);
+      --accent-border: rgba(224, 169, 46, 0.4);
+      --green: var(--green-brand);
+      --green-bg: var(--green-brand-bg);
+      --green-border: rgba(103, 168, 120, 0.4);
+      --red: var(--red-brand);
+      --red-bg: var(--red-brand-bg);
+      --red-border: rgba(208, 90, 64, 0.4);
       --shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
     }
 
     html, body {
       background:
-        radial-gradient(ellipse 80% 50% at 50% 0%,    rgba(177,132,50,0.14), transparent 70%),
-        radial-gradient(ellipse 60% 50% at 100% 30%,  rgba(185,106,61,0.14), transparent 70%),
-        radial-gradient(ellipse 60% 50% at 0% 100%,   rgba(166,69,88,0.10),  transparent 70%),
+        radial-gradient(ellipse 80% 45% at 50% 0%,   rgba(168,127,16,0.10), transparent 70%),
+        radial-gradient(ellipse 60% 50% at 0% 100%,  rgba(46,125,70,0.07),  transparent 70%),
         var(--bg-base);
       background-attachment: fixed;
       color: var(--text);
     }
     :root[data-theme="dark"] html, :root[data-theme="dark"] body {
       background:
-        radial-gradient(ellipse 80% 50% at 50% 0%,    rgba(216,167,84,0.10), transparent 70%),
-        radial-gradient(ellipse 60% 50% at 100% 30%,  rgba(209,133,85,0.10), transparent 70%),
-        radial-gradient(ellipse 60% 50% at 0% 100%,   rgba(210,112,134,0.08), transparent 70%),
+        radial-gradient(ellipse 80% 45% at 50% 0%,   rgba(16,27,16,0.9), transparent 75%),
+        radial-gradient(ellipse 50% 40% at 85% 100%, rgba(224,169,46,0.07), transparent 70%),
         var(--bg-base);
     }
     body {
@@ -611,7 +649,7 @@ const GlobalStyles = () => (
     /* Greeting subtle shimmer on the accent word */
     @keyframes shimmer { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
     .greeting-accent {
-      background: linear-gradient(90deg, var(--peach) 0%, var(--coral) 50%, var(--berry) 100%);
+      background: linear-gradient(90deg, var(--gold-2) 0%, var(--gold) 55%, var(--green-brand) 130%);
       background-size: 200% 100%;
       -webkit-background-clip: text;
       background-clip: text;
@@ -648,7 +686,7 @@ const GlobalStyles = () => (
     .hero-orb .orb-num {
       font-size: clamp(2.4rem, 6vw, 3.5rem); font-weight: 800;
       letter-spacing: -0.04em; line-height: 1;
-      background: linear-gradient(135deg, var(--peach), var(--coral));
+      background: linear-gradient(135deg, var(--gold-2), var(--gold));
       -webkit-background-clip: text; background-clip: text; color: transparent;
     }
     .hero-orb .orb-lbl {
@@ -718,10 +756,10 @@ const GlobalStyles = () => (
     .ach-icons .badge:first-child { margin-left: 0; }
     .ach-streak {
       display: flex; align-items: center; gap: 8px;
-      background: var(--coral-bg);
-      border: 1px solid var(--coral);
+      background: var(--gold-bg);
+      border: 1px solid var(--gold);
       padding: 7px 14px; border-radius: 99px;
-      color: var(--coral);
+      color: var(--gold);
       font-weight: 700;
     }
     .ach-streak .num { font-size: 1.1rem; letter-spacing: -0.02em; }
@@ -841,7 +879,7 @@ const GlobalStyles = () => (
     .week-totals .num {
       font-size: 2.1rem; font-weight: 800;
       letter-spacing: -0.025em; line-height: 1;
-      background: linear-gradient(135deg, var(--peach), var(--coral));
+      background: linear-gradient(135deg, var(--gold-2), var(--gold));
       -webkit-background-clip: text; background-clip: text; color: transparent;
     }
     .week-totals .lbl {
@@ -1210,8 +1248,9 @@ const NAV = [
 
 // ── ONE LOVE BRAND MARK ──────────────────────────────────
 function OneLoveLogo({ height = 26, dark = true }) {
-  const inkColor = dark ? '#fbf7ea' : '#161210'
-  const heartColor = dark ? '#c4493a' : '#a8302a'
+  // Token-based so the wordmark is legible on any themed surface.
+  const inkColor = 'var(--text)'
+  const heartColor = 'var(--red-brand)'
   return (
     <svg height={height} viewBox="0 0 380 80" xmlns="http://www.w3.org/2000/svg" aria-label="One Love" style={{ display: 'block' }}>
       <text x="170" y="60" textAnchor="end" fontFamily="Fraunces, Georgia, serif" fontWeight="900" fontSize="54" letterSpacing="-1.2" fill={inkColor}>One</text>
@@ -1249,9 +1288,9 @@ function NavBar({st,onNav,onReset,onConfirmReset,onCancelReset,onToggleTheme}) {
   const studyStarted = st.pretestScores || st.skippedPretest
   const examReady = studyStarted && (st.weakDomains.length===0 || st.weakDomains.every(d=>st.moduleStatuses[d]==='passed'))
   return (
-    <div style={{background:C.primary,position:'sticky',top:0,zIndex:200,boxShadow:'0 2px 12px rgba(31,41,52,0.18)'}}>
-      <div style={{maxWidth:760,margin:'0 auto',padding:'10px 14px 8px',borderBottom:'1px solid rgba(251,247,234,0.10)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-        <OneLoveLogo height={26} dark={true}/>
+    <div style={{background:'var(--surface-solid)',position:'sticky',top:0,zIndex:200,borderBottom:`1px solid ${C.border}`,boxShadow:'var(--shadow)'}}>
+      <div style={{maxWidth:760,margin:'0 auto',padding:'10px 14px 8px',borderBottom:`1px solid ${C.border}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <OneLoveLogo height={26} dark={st.theme==='dark'}/>
       </div>
       <div style={{maxWidth:760,margin:'0 auto',padding:'0 12px',display:'flex',alignItems:'center',justifyContent:'space-between',height:50}}>
         <div style={{display:'flex',gap:2,overflowX:'auto',scrollbarWidth:'none'}}>
@@ -1261,8 +1300,8 @@ function NavBar({st,onNav,onReset,onConfirmReset,onCancelReset,onToggleTheme}) {
             return (
               <button key={item.id} onClick={()=>avail&&onNav(item.id)} disabled={!avail}
                 style={{padding:'5px 10px',borderRadius:99,border:'none',whiteSpace:'nowrap',
-                  background:isActive?'#fff':'transparent',
-                  color:isActive?C.primary:avail?'#ece6dc':'rgba(236,230,220,0.35)',
+                  background:isActive?'var(--gold)':'transparent',
+                  color:isActive?'var(--gold-ink)':avail?C.text:C.gray,
                   cursor:avail?'pointer':'default',fontSize:11,fontWeight:700,outline:'none',transition:'all .2s'}}>
                 {item.emoji} {item.label}
               </button>
@@ -1272,16 +1311,16 @@ function NavBar({st,onNav,onReset,onConfirmReset,onCancelReset,onToggleTheme}) {
         <div style={{flexShrink:0,marginLeft:8,display:'flex',gap:6,alignItems:'center'}}>
           {!st.confirmReset && (
             <button onClick={onToggleTheme} title={st.theme==='dark'?'Switch to light mode':'Switch to dark mode'}
-              style={{padding:'4px 9px',borderRadius:99,border:'1px solid rgba(255,255,255,0.18)',background:'transparent',color:'#ece6dc',cursor:'pointer',fontSize:13,fontWeight:700,whiteSpace:'nowrap',lineHeight:1}}>
+              style={{padding:'4px 9px',borderRadius:99,border:`1px solid ${C.border}`,background:'transparent',color:C.text,cursor:'pointer',fontSize:13,fontWeight:700,whiteSpace:'nowrap',lineHeight:1}}>
               {st.theme==='dark'?'☀️':'🌙'}
             </button>
           )}
           {!st.confirmReset
-            ?<button onClick={onReset} style={{padding:'4px 10px',borderRadius:99,border:'1px solid rgba(255,255,255,0.18)',background:'transparent',color:'#e8a597',cursor:'pointer',fontSize:11,fontWeight:700,whiteSpace:'nowrap'}}>Reset</button>
+            ?<button onClick={onReset} style={{padding:'4px 10px',borderRadius:99,border:`1px solid ${C.border}`,background:'transparent',color:C.red,cursor:'pointer',fontSize:11,fontWeight:700,whiteSpace:'nowrap'}}>Reset</button>
             :<div style={{display:'flex',gap:4,alignItems:'center'}}>
-               <span style={{fontSize:10,color:'#e8a597',whiteSpace:'nowrap'}}>Start over?</span>
-               <button onClick={onConfirmReset} style={{padding:'3px 8px',borderRadius:99,border:'none',background:'#c47a6a',color:'#fff',cursor:'pointer',fontSize:10,fontWeight:700}}>Yes</button>
-               <button onClick={onCancelReset} style={{padding:'3px 8px',borderRadius:99,border:'1px solid rgba(255,255,255,0.18)',background:'transparent',color:'rgba(236,230,220,0.7)',cursor:'pointer',fontSize:10,fontWeight:700}}>No</button>
+               <span style={{fontSize:10,color:C.red,whiteSpace:'nowrap'}}>Start over?</span>
+               <button onClick={onConfirmReset} style={{padding:'3px 8px',borderRadius:99,border:'none',background:C.red,color:'#fff',cursor:'pointer',fontSize:10,fontWeight:700}}>Yes</button>
+               <button onClick={onCancelReset} style={{padding:'3px 8px',borderRadius:99,border:`1px solid ${C.border}`,background:'transparent',color:C.muted,cursor:'pointer',fontSize:10,fontWeight:700}}>No</button>
              </div>}
         </div>
       </div>
@@ -1614,7 +1653,7 @@ function Welcome({st,onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpot
             <div className="focus-desc">{focus.desc}</div>
           </div>
           <button className="btn-cta" onClick={(e)=>{e.stopPropagation(); focusGo(focus.go)}}
-            style={{padding:'12px 22px',background:C.primary,color:'#fff',border:'none',borderRadius:99,fontSize:14,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:8}}>
+            style={{padding:'12px 22px',background:C.primary,color:'var(--bg-base)',border:'none',borderRadius:99,fontSize:14,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:8}}>
             {focus.cta} <span className="cta-arrow">{'→'}</span>
           </button>
         </div>
@@ -1740,7 +1779,7 @@ function Welcome({st,onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpot
         {!st.pretestScores && !st.skippedPretest && (
           <div className="fade-up fade-up-7" style={{marginTop:36}}>
             <button onClick={onStart} className="btn-cta"
-              style={{width:'100%',padding:'16px',background:C.primary,color:'#fff',border:'none',borderRadius:14,fontSize:16,fontWeight:700,cursor:'pointer',letterSpacing:'0.02em',boxShadow:'0 4px 20px rgba(31,22,13,0.15)',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:10}}>
+              style={{width:'100%',padding:'16px',background:C.primary,color:'var(--bg-base)',border:'none',borderRadius:14,fontSize:16,fontWeight:700,cursor:'pointer',letterSpacing:'0.02em',boxShadow:'0 4px 20px rgba(31,22,13,0.15)',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:10}}>
               Begin Diagnostic Pretest <span className="cta-arrow">{'→'}</span>
             </button>
             <button onClick={onSkipPretest} className="btn-cta"
@@ -1821,7 +1860,7 @@ function QuestionScreen({questions,answers,qIndex,onAnswer,onNav,onSubmit,label,
           style={{padding:'10px 20px',borderRadius:10,border:`1px solid ${C.border}`,background:C.white,color:qIndex===0?C.muted:C.primary,cursor:qIndex===0?'default':'pointer',fontSize:14,fontWeight:600}}>← Back</button>
         <span style={{fontSize:13,color:C.muted}}>{answered}/{total} answered</span>
         {qIndex<total-1
-          ?<button onClick={()=>onNav(1)} style={{padding:'10px 20px',borderRadius:10,border:'none',background:C.primary,color:C.white,cursor:'pointer',fontSize:14,fontWeight:600}}>Next →</button>
+          ?<button onClick={()=>onNav(1)} style={{padding:'10px 20px',borderRadius:10,border:'none',background:C.primary,color:'var(--bg-base)',cursor:'pointer',fontSize:14,fontWeight:600}}>Next →</button>
           :<button onClick={onSubmit} disabled={answered<total}
               style={{padding:'10px 20px',borderRadius:10,border:'none',background:answered<total?C.muted:C.accent,color:C.white,cursor:answered<total?'default':'pointer',fontSize:14,fontWeight:600}}>
               {answered<total?`${total-answered} left`:`Submit ${label} ✓`}
@@ -1867,7 +1906,7 @@ function PretestResults({scores,weakDomains,onStudy,onSkip}) {
       )}
       <div style={{display:'flex',gap:12}}>
         {weakDomains.length>0&&(
-          <button onClick={onStudy} style={{flex:1,padding:'15px',background:C.primary,color:C.white,border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
+          <button onClick={onStudy} style={{flex:1,padding:'15px',background:C.primary,color:'var(--bg-base)',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
             Start Study Plan ({weakDomains.length} modules) →
           </button>
         )}
@@ -1911,7 +1950,7 @@ function ModuleHub({weakDomains,moduleStatuses,onSelect,onExam,onSpotCheck}) {
                 {status==='passed'?'📖 Review':'Study →'}
               </button>
               <button onClick={()=>onSpotCheck(d)}
-                style={{flex:1,padding:'10px 14px',borderRadius:10,border:'none',background:C.accent,color:C.white,cursor:'pointer',fontSize:13,fontWeight:700}}>
+                style={{flex:1,padding:'10px 14px',borderRadius:10,border:'none',background:C.accent,color:'var(--gold-ink)',cursor:'pointer',fontSize:13,fontWeight:700}}>
                 🎯 Spot-Check 20Q
               </button>
             </div>
@@ -2123,11 +2162,11 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
           </button>
           {isLast
             ? <button onClick={onStartQuiz}
-                style={{padding:'11px 28px',borderRadius:10,border:'none',background:C.accent,color:C.white,cursor:'pointer',fontSize:14,fontWeight:700}}>
+                style={{padding:'11px 28px',borderRadius:10,border:'none',background:C.accent,color:'var(--gold-ink)',cursor:'pointer',fontSize:14,fontWeight:700}}>
                 Take Quiz →
               </button>
             : <button onClick={()=>nav(1)}
-                style={{padding:'11px 22px',borderRadius:10,border:'none',background:C.primary,color:C.white,cursor:'pointer',fontSize:14,fontWeight:600}}>
+                style={{padding:'11px 22px',borderRadius:10,border:'none',background:C.primary,color:'var(--bg-base)',cursor:'pointer',fontSize:14,fontWeight:600}}>
                 Next Concept →
               </button>
           }
@@ -2169,7 +2208,7 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
           ) : (
             <>
               <button onClick={onReviewConcepts} style={{padding:'13px 22px',background:C.white,color:C.primary,border:`2px solid ${C.primary}`,borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer'}}>📖 Re-read Concepts</button>
-              <button onClick={()=>onAnswer('reset')} style={{padding:'13px 26px',background:C.primary,color:C.white,border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer'}}>↻ Retry Quiz</button>
+              <button onClick={()=>onAnswer('reset')} style={{padding:'13px 26px',background:C.primary,color:'var(--bg-base)',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer'}}>↻ Retry Quiz</button>
               <button onClick={()=>onFinish('failed')} style={{padding:'13px 18px',background:'transparent',color:C.muted,border:'none',cursor:'pointer',fontSize:13,fontWeight:600}}>Back to Modules</button>
             </>
           )}
@@ -2220,7 +2259,7 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
             </div>
           </Card>
           {qIndex<mod.practice.length-1&&(
-            <button onClick={()=>onAnswer('next')} style={{width:'100%',padding:'13px',background:C.primary,color:C.white,border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer'}}>Next Question →</button>
+            <button onClick={()=>onAnswer('next')} style={{width:'100%',padding:'13px',background:C.primary,color:'var(--bg-base)',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer'}}>Next Question →</button>
           )}
         </>
       )}
@@ -2247,7 +2286,7 @@ function ExamIntro({onStart}) {
           </Card>
         ))}
       </div>
-      <button onClick={onStart} style={{padding:'15px 40px',background:C.primary,color:C.white,border:'none',borderRadius:12,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
+      <button onClick={onStart} style={{padding:'15px 40px',background:C.primary,color:'var(--bg-base)',border:'none',borderRadius:12,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
         Begin Full Exam →
       </button>
     </div>
@@ -2312,7 +2351,7 @@ function ExamScreen({questions,answers,qIndex,timerSeconds,onAnswer,onNav,onSubm
         <button onClick={()=>setShowMap(!showMap)}
           style={{padding:'8px 14px',borderRadius:10,border:`1px solid ${C.border}`,background:C.white,color:C.primary,cursor:'pointer',fontSize:13,fontWeight:600}}>📋 Navigator</button>
         {qIndex<total-1
-          ?<button onClick={()=>onNav(1)} style={{padding:'10px 20px',borderRadius:10,border:'none',background:C.primary,color:C.white,cursor:'pointer',fontSize:14,fontWeight:600}}>Next →</button>
+          ?<button onClick={()=>onNav(1)} style={{padding:'10px 20px',borderRadius:10,border:'none',background:C.primary,color:'var(--bg-base)',cursor:'pointer',fontSize:14,fontWeight:600}}>Next →</button>
           :<button onClick={onSubmit} disabled={answered<total}
               style={{padding:'10px 20px',borderRadius:10,border:'none',background:answered<total?C.muted:C.accent,color:C.white,cursor:answered<total?'default':'pointer',fontSize:14,fontWeight:600}}>
               {answered<total?`${total-answered} left`:'Submit Exam ✓'}
@@ -3108,7 +3147,7 @@ function WeakSpotReview({queue, idx, answers, onAnswer, onNext, onQuit, startCou
             <p style={{fontSize:13.5,color:C.text,margin:0,lineHeight:1.7}}>{q.rationale}</p>
           </Card>
           <button onClick={onNext}
-            style={{width:'100%',padding:'13px',background:C.primary,color:C.white,border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>
+            style={{width:'100%',padding:'13px',background:C.primary,color:'var(--bg-base)',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>
             {idx < queue.length - 1 ? 'Next Question →' : 'See Summary →'}
           </button>
         </>
@@ -3176,7 +3215,7 @@ function DomainQuizResults({domain, questions, answers, onReview, onTryAnother, 
         </p>
       </div>
       <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
-        <button onClick={onReview} style={{padding:'12px 20px',background:C.primary,color:C.white,border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>📖 Review Questions</button>
+        <button onClick={onReview} style={{padding:'12px 20px',background:C.primary,color:'var(--bg-base)',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>📖 Review Questions</button>
         <button onClick={onTryAnother} style={{padding:'12px 20px',background:C.white,color:C.accent,border:`2px solid ${C.accent}`,borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>↻ New 20 Questions</button>
         <button onClick={onBack} style={{padding:'12px 18px',background:'transparent',color:C.muted,border:'none',cursor:'pointer',fontSize:13,fontWeight:600}}>← Back to Study Plan</button>
       </div>
@@ -3398,7 +3437,7 @@ function FinalResults({examScores,examResult,examQuestions,examAnswers,pretestSc
         </Card>
       )}
       <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-        <button onClick={onReview} style={{flex:'2 1 220px',padding:'14px',background:C.accent,color:C.white,border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
+        <button onClick={onReview} style={{flex:'2 1 220px',padding:'14px',background:C.accent,color:'var(--gold-ink)',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
           📖 Review All Questions →
         </button>
         <button onClick={onReset} style={{flex:'1 1 140px',padding:'14px',background:C.white,color:C.primary,border:`2px solid ${C.primary}`,borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
@@ -3512,9 +3551,12 @@ export default function App() {
     savePersisted({ st, flagged: [...flagged] })
   }, [st, flagged])
 
-  // Reflect theme on <html> so CSS vars switch
+  // Reflect theme on <html> so CSS vars switch. With no saved choice the app
+  // follows the device setting (Night on dark-mode phones — most of our
+  // students study in the evening).
   useEffect(() => {
-    document.documentElement.dataset.theme = st.theme || 'light'
+    const system = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light'
+    document.documentElement.dataset.theme = st.theme || system
   }, [st.theme])
 
   // Daily activity tracking + session heartbeat (counts 1 min per visible-tab minute)
@@ -3567,7 +3609,10 @@ export default function App() {
         onReset={()=>up({confirmReset:true})}
         onConfirmReset={()=>{clearInterval(timerRef.current);clearPersisted();setFlagged(new Set());setSt({...INITIAL})}}
         onCancelReset={()=>up({confirmReset:false})}
-        onToggleTheme={()=>up({theme: st.theme==='dark'?'light':'dark'})}/>
+        onToggleTheme={()=>{
+          const effective = st.theme || (window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light')
+          up({theme: effective==='dark'?'light':'dark'})
+        }}/>
     </>
   )
 
@@ -3577,7 +3622,7 @@ export default function App() {
     const a=ovPct(st.pretestScores), b=ovPct(st.examScores), hist=(st.safmeds&&st.safmeds.history)||[]
     const heatRows=aggregateDomains(st.domainEvents, DOMAINS)
     const projection=projectReadiness(st.attempts, BCBA_FORM)
-    return <div>{nav}<MyProgressScreen name={(()=>{try{return localStorage.getItem('ol-user')||''}catch{return ''}})()} accent="#a64558" theme={st.theme} overall={b!=null?b:a} pre={a} post={b} growth={(a!=null&&b!=null)?b-a:null} domains={dsc} modulesPassed={Object.values(st.moduleStatuses||{}).filter(x=>x==='passed').length} modulesTotal={DOMAINS.length} safmeds={{tokens:(st.safmeds&&st.safmeds.totalTokens)||0, sessions:hist.length, bestRate:hist.reduce((m,h)=>Math.max(m,h.rate||0),0)}} examTaken={!!st.examScores} onHome={()=>up({phase:'welcome'})}
+    return <div>{nav}<MyProgressScreen name={(()=>{try{return localStorage.getItem('ol-user')||''}catch{return ''}})()} accent="var(--gold)" theme={st.theme} overall={b!=null?b:a} pre={a} post={b} growth={(a!=null&&b!=null)?b-a:null} domains={dsc} modulesPassed={Object.values(st.moduleStatuses||{}).filter(x=>x==='passed').length} modulesTotal={DOMAINS.length} safmeds={{tokens:(st.safmeds&&st.safmeds.totalTokens)||0, sessions:hist.length, bestRate:hist.reduce((m,h)=>Math.max(m,h.rate||0),0)}} examTaken={!!st.examScores} onHome={()=>up({phase:'welcome'})}
       projection={projection} scaleMax={500}
       heatDomains={heatRows} weakest={weakestDomains(heatRows,3)}
       missBank={{active:Object.keys(st.weakSpots||{}).length, retired:st.missesRetired||0}}

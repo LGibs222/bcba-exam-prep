@@ -17,11 +17,11 @@ import { useEffect, useRef, useState } from 'react'
  */
 const TUTOR_ENDPOINT = 'https://onelove-tutor-backend.vercel.app/api/tutor'
 const APP_ID = 'BCBA'
-// Theme — OneLove cream (matches the BCBA app's warm sunrise palette).
+// Theme — Blue Hour tokens (follows the app's day/night switch via CSS vars).
 const T = {
-  accent: '#a64558', ink: '#1f160d', surface: '#fffdf6',
-  soft: '#f6efe0', border: 'rgba(22,18,16,0.15)', muted: '#7a6b58',
-  bubbleUser: '#1f160d', bubbleUserText: '#faf6ec',
+  accent: 'var(--gold, #a87f10)', ink: 'var(--text, #171408)', surface: 'var(--surface-solid, #fdfbf2)',
+  soft: 'var(--surface-alt, #ece6d3)', border: 'var(--border, rgba(23,20,8,0.15))', muted: 'var(--muted, #5c5340)',
+  bubbleUser: 'var(--text, #171408)', bubbleUserText: 'var(--bg, #f5f1e4)',
 }
 
 // ── module-level store (same pattern as TTS.jsx) ─────────────────────

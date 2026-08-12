@@ -9,7 +9,7 @@ const band = (p) => p == null ? 'na' : p >= 70 ? 'good' : p >= 50 ? 'mid' : 'low
 const heatBand = (p) => p == null ? 'na' : p >= 80 ? 'good' : p >= 60 ? 'mid' : 'low'
 
 export default function MyProgressScreen({
-  name = '', accent = '#a64558', theme = 'light',
+  name = '', accent = 'var(--gold)', theme = 'light',
   overall = null, pre = null, post = null, growth = null,
   domains = [], modulesPassed = 0, modulesTotal = 0,
   safmeds = { tokens: 0, sessions: 0, bestRate: 0 },
