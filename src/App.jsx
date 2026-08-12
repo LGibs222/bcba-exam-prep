@@ -1862,7 +1862,7 @@ function QuestionScreen({questions,answers,qIndex,onAnswer,onNav,onSubmit,label,
         {qIndex<total-1
           ?<button onClick={()=>onNav(1)} style={{padding:'10px 20px',borderRadius:10,border:'none',background:C.primary,color:'var(--bg-base)',cursor:'pointer',fontSize:14,fontWeight:600}}>Next →</button>
           :<button onClick={onSubmit} disabled={answered<total}
-              style={{padding:'10px 20px',borderRadius:10,border:'none',background:answered<total?C.muted:C.accent,color:C.white,cursor:answered<total?'default':'pointer',fontSize:14,fontWeight:600}}>
+              style={{padding:'10px 20px',borderRadius:10,border:'none',background:answered<total?C.muted:C.accent,color:answered<total?'#fff':'var(--gold-ink)',cursor:answered<total?'default':'pointer',fontSize:14,fontWeight:600}}>
               {answered<total?`${total-answered} left`:`Submit ${label} ✓`}
             </button>}
       </div>
@@ -1910,7 +1910,7 @@ function PretestResults({scores,weakDomains,onStudy,onSkip}) {
             Start Study Plan ({weakDomains.length} modules) →
           </button>
         )}
-        <button onClick={onSkip} style={{flex:weakDomains.length>0?0:1,padding:'15px 24px',background:weakDomains.length>0?C.white:C.primary,color:weakDomains.length>0?C.primary:C.white,border:`2px solid ${C.primary}`,borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
+        <button onClick={onSkip} style={{flex:weakDomains.length>0?0:1,padding:'15px 24px',background:weakDomains.length>0?C.white:C.primary,color:weakDomains.length>0?C.primary:'var(--bg-base)',border:`2px solid ${C.primary}`,borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
           {weakDomains.length===0?'Proceed to Full Exam →':'Skip to Exam'}
         </button>
       </div>
@@ -1946,7 +1946,7 @@ function ModuleHub({weakDomains,moduleStatuses,onSelect,onExam,onSpotCheck}) {
             </div>
             <div style={{display:'flex',gap:8}}>
               <button onClick={()=>onSelect(d)}
-                style={{flex:1,padding:'10px 14px',borderRadius:10,border:`1.5px solid ${C.primary}`,background:status==='passed'?C.white:C.primary,color:status==='passed'?C.primary:C.white,cursor:'pointer',fontSize:13,fontWeight:700}}>
+                style={{flex:1,padding:'10px 14px',borderRadius:10,border:`1.5px solid ${C.primary}`,background:status==='passed'?C.white:C.primary,color:status==='passed'?C.primary:'var(--bg-base)',cursor:'pointer',fontSize:13,fontWeight:700}}>
                 {status==='passed'?'📖 Review':'Study →'}
               </button>
               <button onClick={()=>onSpotCheck(d)}
@@ -1960,7 +1960,7 @@ function ModuleHub({weakDomains,moduleStatuses,onSelect,onExam,onSpotCheck}) {
       <div style={{marginTop:24,textAlign:'center'}}>
         <p style={{fontSize:13,color:C.muted,marginBottom:12}}>{passedCount}/{weakDomains.length} modules passed</p>
         <button onClick={onExam} disabled={!allPassed}
-          style={{padding:'14px 32px',background:allPassed?C.primary:C.muted,color:C.white,border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:allPassed?'pointer':'default',fontFamily:'Georgia,serif'}}>
+          style={{padding:'14px 32px',background:allPassed?C.primary:C.muted,color:allPassed?'var(--bg-base)':'#fff',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:allPassed?'pointer':'default',fontFamily:'Georgia,serif'}}>
           {allPassed?'Begin Full Exam →':'Complete all modules to unlock exam'}
         </button>
       </div>
@@ -2054,7 +2054,7 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
           ))}
           <span style={{fontSize:12,color:C.muted,marginLeft:6,flex:1}}>{conceptIdx+1} / {mod.concepts.length}</span>
           <button onClick={()=>setShowMap(s=>!s)}
-            style={{padding:'5px 11px',borderRadius:99,border:`1px solid ${C.border}`,background:showMap?ctype.color:C.white,color:showMap?C.white:ctype.color,cursor:'pointer',fontSize:11,fontWeight:700,fontFamily:'inherit'}}>
+            style={{padding:'5px 11px',borderRadius:99,border:`1px solid ${C.border}`,background:showMap?ctype.color:C.white,color:showMap?'#fff':ctype.color,cursor:'pointer',fontSize:11,fontWeight:700,fontFamily:'inherit'}}>
             🗺️ Map
           </button>
         </div>
@@ -2204,7 +2204,7 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
 
         <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap',marginTop:24}}>
           {passed ? (
-            <button onClick={()=>onFinish('passed')} style={{padding:'14px 32px',background:C.green,color:C.white,border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer'}}>✓ Complete Module</button>
+            <button onClick={()=>onFinish('passed')} style={{padding:'14px 32px',background:C.green,color:'#fff',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer'}}>✓ Complete Module</button>
           ) : (
             <>
               <button onClick={onReviewConcepts} style={{padding:'13px 22px',background:C.white,color:C.primary,border:`2px solid ${C.primary}`,borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer'}}>📖 Re-read Concepts</button>
@@ -2353,7 +2353,7 @@ function ExamScreen({questions,answers,qIndex,timerSeconds,onAnswer,onNav,onSubm
         {qIndex<total-1
           ?<button onClick={()=>onNav(1)} style={{padding:'10px 20px',borderRadius:10,border:'none',background:C.primary,color:'var(--bg-base)',cursor:'pointer',fontSize:14,fontWeight:600}}>Next →</button>
           :<button onClick={onSubmit} disabled={answered<total}
-              style={{padding:'10px 20px',borderRadius:10,border:'none',background:answered<total?C.muted:C.accent,color:C.white,cursor:answered<total?'default':'pointer',fontSize:14,fontWeight:600}}>
+              style={{padding:'10px 20px',borderRadius:10,border:'none',background:answered<total?C.muted:C.accent,color:answered<total?'#fff':'var(--gold-ink)',cursor:answered<total?'default':'pointer',fontSize:14,fontWeight:600}}>
               {answered<total?`${total-answered} left`:'Submit Exam ✓'}
             </button>}
       </div>
@@ -2431,12 +2431,12 @@ function SafmedsCard({safmeds, onOpen}) {
   return (
     <div style={{marginBottom:20,background:'linear-gradient(135deg, #ede9fe 0%, #c4b5fd 100%)',border:'1px solid #a78bfa',borderRadius:14,padding:'16px 18px',display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap'}}>
       <div>
-        <h3 style={{fontSize:14,fontWeight:800,color:'#5b21b6',margin:'0 0 4px',textTransform:'uppercase',letterSpacing:'0.06em'}}>🎴 SAFMEDS Fluency Drill</h3>
-        <p style={{fontSize:13,color:'#5b21b6',margin:0,opacity:0.85}}>
+        <h3 style={{fontSize:14,fontWeight:800,color:'var(--berry)',margin:'0 0 4px',textTransform:'uppercase',letterSpacing:'0.06em'}}>🎴 SAFMEDS Fluency Drill</h3>
+        <p style={{fontSize:13,color:'var(--berry)',margin:0,opacity:0.85}}>
           🪙 <strong>{tokens}</strong> tokens · Best (Beginner 60s): <strong>{bestBeginner}</strong>
         </p>
       </div>
-      <button onClick={onOpen} style={{padding:'10px 18px',background:'#5b21b6',color:C.white,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>
+      <button onClick={onOpen} style={{padding:'10px 18px',background:'var(--berry)',color:'#fff',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>
         Drill →
       </button>
     </div>
@@ -2533,15 +2533,15 @@ function SafmedsProgress({safmeds, onBack}) {
   const xFor = i => withRoll.length <= 1 ? padL + innerW / 2 : padL + (i / (withRoll.length - 1)) * innerW
   const yFor = v => padT + (1 - (v / yMax)) * innerH
 
-  const lineColor = '#5b21b6'
+  const lineColor = 'var(--berry)'
   const rollColor = '#a16207'
-  const dotColor = '#5b21b6'
+  const dotColor = 'var(--berry)'
   const fmtDate = s => { const [y, m, d] = (s || '').split('-'); return `${m}/${d}` }
 
   return (
     <div style={{maxWidth:920,margin:'0 auto',padding:'24px 20px',fontFamily:'system-ui'}}>
       <button onClick={onBack} style={{background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:14,marginBottom:14,padding:0}}>← Back to SAFMEDS</button>
-      <h2 style={{fontSize:22,fontWeight:700,color:'#5b21b6',margin:'0 0 6px',fontFamily:'Georgia,serif'}}>📈 SAFMEDS Progress</h2>
+      <h2 style={{fontSize:22,fontWeight:700,color:'var(--berry)',margin:'0 0 6px',fontFamily:'Georgia,serif'}}>📈 SAFMEDS Progress</h2>
       <p style={{fontSize:14,color:C.muted,margin:'0 0 18px'}}>Frequency correct over time, by deck, with 7-day rolling average.</p>
 
       {/* Filters */}
@@ -2562,7 +2562,7 @@ function SafmedsProgress({safmeds, onBack}) {
           <div style={{display:'flex',gap:6}}>
             {[{id:'linear',label:'Linear'},{id:'scc',label:'Standard Celeration'}].map(c=>(
               <button key={c.id} onClick={()=>setChartType(c.id)}
-                style={{padding:'7px 12px',borderRadius:8,border:`1.5px solid ${chartType===c.id?'#5b21b6':C.border}`,background:chartType===c.id?'#5b21b6':C.white,color:chartType===c.id?C.white:'#5b21b6',cursor:'pointer',fontSize:12,fontWeight:700,fontFamily:'inherit'}}>
+                style={{padding:'7px 12px',borderRadius:8,border:`1.5px solid ${chartType===c.id?'var(--berry)':C.border}`,background:chartType===c.id?'var(--berry)':C.white,color:chartType===c.id?'#fff':'var(--berry)',cursor:'pointer',fontSize:12,fontWeight:700,fontFamily:'inherit'}}>
                 {c.label}
               </button>
             ))}
@@ -2574,7 +2574,7 @@ function SafmedsProgress({safmeds, onBack}) {
             <div style={{display:'flex',gap:6}}>
               {[{id:'correct',label:'Correct (count)'},{id:'rate',label:'Correct/min'}].map(m=>(
                 <button key={m.id} onClick={()=>setMetric(m.id)}
-                  style={{padding:'7px 12px',borderRadius:8,border:`1.5px solid ${metric===m.id?'#5b21b6':C.border}`,background:metric===m.id?'#5b21b6':C.white,color:metric===m.id?C.white:'#5b21b6',cursor:'pointer',fontSize:12,fontWeight:700,fontFamily:'inherit'}}>
+                  style={{padding:'7px 12px',borderRadius:8,border:`1.5px solid ${metric===m.id?'var(--berry)':C.border}`,background:metric===m.id?'var(--berry)':C.white,color:metric===m.id?'#fff':'var(--berry)',cursor:'pointer',fontSize:12,fontWeight:700,fontFamily:'inherit'}}>
                   {m.label}
                 </button>
               ))}
@@ -2835,14 +2835,14 @@ function SafmedsHub({safmeds, onStart, onBack, onProgress}) {
   return (
     <div style={{maxWidth:760,margin:'0 auto',padding:'24px 20px',fontFamily:'system-ui'}}>
       <button onClick={onBack} style={{background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:14,marginBottom:14,padding:0}}>← Back</button>
-      <h2 style={{fontSize:22,fontWeight:700,color:'#5b21b6',margin:'0 0 6px',fontFamily:'Georgia,serif'}}>🎴 SAFMEDS Fluency Drill</h2>
+      <h2 style={{fontSize:22,fontWeight:700,color:'var(--berry)',margin:'0 0 6px',fontFamily:'Georgia,serif'}}>🎴 SAFMEDS Fluency Drill</h2>
       <p style={{fontSize:14,color:C.muted,margin:'0 0 18px'}}>Say All Fast Minute Each Day Shuffled · See definition → recall term → self-grade</p>
 
       {/* Token + level summary */}
       <div style={{background:'linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%)',border:'1px solid #c4b5fd',borderRadius:14,padding:'14px 18px',marginBottom:20,display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap'}}>
         <div>
-          <div style={{fontSize:11,fontWeight:800,color:'#5b21b6',textTransform:'uppercase',letterSpacing:'0.06em'}}>Token Balance</div>
-          <div style={{fontSize:24,fontWeight:900,color:'#5b21b6'}}>🪙 {tokens}</div>
+          <div style={{fontSize:11,fontWeight:800,color:'var(--berry)',textTransform:'uppercase',letterSpacing:'0.06em'}}>Token Balance</div>
+          <div style={{fontSize:24,fontWeight:900,color:'var(--berry)'}}>🪙 {tokens}</div>
         </div>
         <div style={{flex:1,minWidth:200}}>
           <SelfGraph history={safmeds?.history}/>
@@ -2854,7 +2854,7 @@ function SafmedsHub({safmeds, onStart, onBack, onProgress}) {
         <div style={{display:'flex',gap:6,marginBottom:10,flexWrap:'wrap'}}>
           {['timed','practice'].map(m=>(
             <button key={m} onClick={()=>setMode(m)}
-              style={{padding:'7px 14px',borderRadius:99,border:`1.5px solid ${mode===m?'#5b21b6':C.border}`,background:mode===m?'#5b21b6':C.white,color:mode===m?C.white:'#5b21b6',cursor:'pointer',fontSize:12,fontWeight:700,fontFamily:'inherit'}}>
+              style={{padding:'7px 14px',borderRadius:99,border:`1.5px solid ${mode===m?'var(--berry)':C.border}`,background:mode===m?'var(--berry)':C.white,color:mode===m?C.white:'var(--berry)',cursor:'pointer',fontSize:12,fontWeight:700,fontFamily:'inherit'}}>
               {m==='timed'?'⏱ Timed Sprint':'🐢 Untimed Practice'}
             </button>
           ))}
@@ -2864,7 +2864,7 @@ function SafmedsHub({safmeds, onStart, onBack, onProgress}) {
             <span style={{fontSize:12,color:C.muted,marginRight:4}}>Timer:</span>
             {SAFMEDS_TIMERS.map(t=>(
               <button key={t} onClick={()=>setTimer(t)}
-                style={{padding:'5px 12px',borderRadius:8,border:`1px solid ${timer===t?'#5b21b6':C.border}`,background:timer===t?'#ede9fe':C.white,color:timer===t?'#5b21b6':C.text,cursor:'pointer',fontSize:12,fontWeight:600,fontFamily:'inherit'}}>
+                style={{padding:'5px 12px',borderRadius:8,border:`1px solid ${timer===t?'var(--berry)':C.border}`,background:timer===t?'#ede9fe':C.white,color:timer===t?'var(--berry)':C.text,cursor:'pointer',fontSize:12,fontWeight:600,fontFamily:'inherit'}}>
                 {t}s
               </button>
             ))}
@@ -2900,12 +2900,12 @@ function SafmedsHub({safmeds, onStart, onBack, onProgress}) {
       <h3 style={{fontSize:13,fontWeight:800,color:C.muted,textTransform:'uppercase',letterSpacing:'0.07em',margin:'0 0 10px'}}>Mega Deck</h3>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:24}}>
         <button onClick={()=>startDeck('mega')}
-          style={{textAlign:'left',padding:'14px 16px',borderRadius:12,border:`2px solid #5b21b6`,background:'linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%)',cursor:'pointer',fontFamily:'inherit'}}>
+          style={{textAlign:'left',padding:'14px 16px',borderRadius:12,border:'2px solid var(--berry)',background:'var(--berry-bg)',cursor:'pointer',fontFamily:'inherit'}}>
           <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
             <span style={{fontSize:18}}>🧠</span>
-            <span style={{fontSize:14,fontWeight:800,color:'#5b21b6'}}>Mega Deck</span>
+            <span style={{fontSize:14,fontWeight:800,color:'var(--berry)'}}>Mega Deck</span>
           </div>
-          <div style={{fontSize:11,color:'#5b21b6',opacity:0.8}}>{getSafmedsCards('mega').length} cards · everything mixed (levels + domains)</div>
+          <div style={{fontSize:11,color:'var(--berry)',opacity:0.8}}>{getSafmedsCards('mega').length} cards · everything mixed (levels + domains)</div>
         </button>
         <button onClick={()=>startDeck('all')}
           style={{textAlign:'left',padding:'14px 16px',borderRadius:12,border:`2px solid ${C.accent}`,background:C.accentBg,cursor:'pointer',fontFamily:'inherit'}}>
@@ -2920,7 +2920,7 @@ function SafmedsHub({safmeds, onStart, onBack, onProgress}) {
       {/* View progress button */}
       {(safmeds?.history?.length || 0) > 0 && (
         <button onClick={onProgress}
-          style={{width:'100%',padding:'12px 16px',borderRadius:10,border:`1px solid #5b21b6`,background:C.white,color:'#5b21b6',cursor:'pointer',fontSize:13,fontWeight:700,fontFamily:'inherit',marginBottom:24,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+          style={{width:'100%',padding:'12px 16px',borderRadius:10,border:'1px solid var(--berry)',background:C.white,color:'var(--berry)',cursor:'pointer',fontSize:13,fontWeight:700,fontFamily:'inherit',marginBottom:24,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
           📈 View Progress Chart →
         </button>
       )}
@@ -2950,31 +2950,31 @@ function SafmedsSession({deckId, mode, timer, cards, cardIdx, revealed, correct,
   if (!card) return <div style={{padding:40,textAlign:'center'}}>No cards available.</div>
 
   const isTimed = mode === 'timed'
-  const timerColor = remaining <= 10 ? C.red : remaining <= 30 ? C.accent : '#5b21b6'
+  const timerColor = remaining <= 10 ? C.red : remaining <= 30 ? C.accent : 'var(--berry)'
   const total = correct + missed
   const rate = isTimed && (timer - remaining) > 0 ? safmedsRate(correct, timer - remaining) : 0
 
   return (
     <div style={{maxWidth:680,margin:'0 auto',padding:'20px',fontFamily:'system-ui'}}>
       {/* Header bar */}
-      <div style={{background:'#5b21b6',borderRadius:12,padding:'10px 16px',marginBottom:16,display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:8,color:C.white}}>
+      <div style={{background:'var(--berry)',borderRadius:12,padding:'10px 16px',marginBottom:16,display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:8,color:'#fff'}}>
         <div>
           <div style={{fontSize:11,opacity:0.8,textTransform:'uppercase',letterSpacing:'0.07em'}}>SAFMEDS · {mode}</div>
           <div style={{fontSize:13,fontWeight:700}}>✓ {correct}  ·  ✗ {missed}{rate>0 && ` · ${rate}/min`}</div>
         </div>
         {isTimed ? (
-          <div style={{fontSize:24,fontWeight:900,color:timerColor==='#5b21b6'?C.white:timerColor,fontVariantNumeric:'tabular-nums'}}>
+          <div style={{fontSize:24,fontWeight:900,color:timerColor==='var(--berry)'?'#fff':timerColor,fontVariantNumeric:'tabular-nums'}}>
             {Math.floor(remaining/60)}:{String(remaining%60).padStart(2,'0')}
           </div>
         ) : (
           <div style={{fontSize:13,opacity:0.85}}>Card {total+1}</div>
         )}
-        <button onClick={onQuit} style={{background:'rgba(255,255,255,0.18)',border:'none',color:C.white,padding:'6px 12px',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>End</button>
+        <button onClick={onQuit} style={{background:'rgba(255,255,255,0.18)',border:'none',color:'#fff',padding:'6px 12px',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>End</button>
       </div>
 
       {/* Card */}
       <div style={{minHeight:280,background:C.white,border:`2px solid ${revealed?C.greenBorder:'#a78bfa'}`,borderRadius:18,padding:'30px 26px',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',marginBottom:10,boxShadow:'0 6px 24px rgba(91,33,182,0.12)'}}>
-        <div style={{fontSize:11,fontWeight:800,color:revealed?C.green:'#5b21b6',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:14}}>
+        <div style={{fontSize:11,fontWeight:800,color:revealed?C.green:'var(--berry)',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:14}}>
           {revealed?'✓ Term':'Definition'}
         </div>
         {!revealed ? (
@@ -2999,7 +2999,7 @@ function SafmedsSession({deckId, mode, timer, cards, cardIdx, revealed, correct,
 
       {/* Action buttons */}
       {!revealed ? (
-        <button onClick={onReveal} style={{width:'100%',padding:'16px',background:'#5b21b6',color:C.white,border:'none',borderRadius:12,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+        <button onClick={onReveal} style={{width:'100%',padding:'16px',background:'var(--berry)',color:'#fff',border:'none',borderRadius:12,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
           Reveal Term →
         </button>
       ) : (
@@ -3025,7 +3025,7 @@ function SafmedsResults({results, safmeds, onAgain, onPickAnother, onDone}) {
   return (
     <div style={{maxWidth:580,margin:'0 auto',padding:'40px 20px',textAlign:'center',fontFamily:'system-ui'}}>
       <div style={{fontSize:48,marginBottom:8}}>{isPB ? '🏆' : '🎴'}</div>
-      <h2 style={{fontSize:22,fontWeight:700,color:'#5b21b6',fontFamily:'Georgia,serif',margin:'0 0 4px'}}>
+      <h2 style={{fontSize:22,fontWeight:700,color:'var(--berry)',fontFamily:'Georgia,serif',margin:'0 0 4px'}}>
         {isPB ? 'New Personal Best!' : 'Session Complete'}
       </h2>
       <p style={{fontSize:13,color:C.muted,margin:'0 0 22px'}}>{deckLabel} · {mode === 'timed' ? `${timer}s sprint` : 'practice'}</p>
@@ -3048,8 +3048,8 @@ function SafmedsResults({results, safmeds, onAgain, onPickAnother, onDone}) {
           <div style={{fontSize:11,color:C.red,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em'}}>Missed</div>
         </div>
         <div style={{padding:'14px 8px',borderRadius:12,background:'#ede9fe',border:'1px solid #a78bfa'}}>
-          <div style={{fontSize:24,fontWeight:900,color:'#5b21b6'}}>{mode==='timed'?`${rate}`:correct+missed}</div>
-          <div style={{fontSize:11,color:'#5b21b6',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em'}}>{mode==='timed'?'Per Minute':'Total'}</div>
+          <div style={{fontSize:24,fontWeight:900,color:'var(--berry)'}}>{mode==='timed'?`${rate}`:correct+missed}</div>
+          <div style={{fontSize:11,color:'var(--berry)',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em'}}>{mode==='timed'?'Per Minute':'Total'}</div>
         </div>
       </div>
 
@@ -3061,8 +3061,8 @@ function SafmedsResults({results, safmeds, onAgain, onPickAnother, onDone}) {
       </div>
 
       <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
-        <button onClick={onAgain} style={{padding:'12px 22px',background:'#5b21b6',color:C.white,border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>↻ Run It Back</button>
-        <button onClick={onPickAnother} style={{padding:'12px 22px',background:C.white,color:'#5b21b6',border:'2px solid #5b21b6',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>📚 Pick Different Deck</button>
+        <button onClick={onAgain} style={{padding:'12px 22px',background:'var(--berry)',color:'#fff',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>↻ Run It Back</button>
+        <button onClick={onPickAnother} style={{padding:'12px 22px',background:C.white,color:'var(--berry)',border:'2px solid var(--berry)',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>📚 Pick Different Deck</button>
         <button onClick={onDone} style={{padding:'12px 18px',background:'transparent',color:C.muted,border:'none',cursor:'pointer',fontSize:13,fontWeight:600}}>← Home</button>
       </div>
     </div>
@@ -3078,7 +3078,7 @@ function WeakSpotsCard({count, onReview}) {
         <h3 style={{fontSize:14,fontWeight:800,color:C.red,margin:'0 0 4px',textTransform:'uppercase',letterSpacing:'0.06em'}}>🎯 Weak Spots</h3>
         <p style={{fontSize:13,color:C.red,margin:0,opacity:0.85}}>You have <strong>{count}</strong> question{count===1?'':'s'} to review</p>
       </div>
-      <button onClick={onReview} style={{padding:'10px 18px',background:C.red,color:C.white,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>
+      <button onClick={onReview} style={{padding:'10px 18px',background:C.red,color:'#fff',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>
         Review →
       </button>
     </div>
@@ -3183,7 +3183,7 @@ function WeakSpotSummary({queue, answers, startCount, onContinue, onDone, remain
       <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
         {remaining > 0 && (
           <button onClick={onContinue}
-            style={{padding:'13px 24px',background:C.red,color:C.white,border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>
+            style={{padding:'13px 24px',background:C.red,color:'#fff',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>
             Keep Reviewing ({remaining}) →
           </button>
         )}
@@ -3250,7 +3250,7 @@ function ExamReview({questions, answers, onBack}) {
   const filterPill = (val, label, count, color) => (
     <button onClick={()=>setFilter(val)}
       style={{padding:'6px 12px',borderRadius:99,border:`1.5px solid ${filter===val?color:C.border}`,
-        background:filter===val?color:C.white,color:filter===val?C.white:color,
+        background:filter===val?color:C.white,color:filter===val?'#fff':color,
         cursor:'pointer',fontSize:12,fontWeight:700,whiteSpace:'nowrap'}}>
       {label} ({count})
     </button>
@@ -3339,7 +3339,7 @@ function ExamReview({questions, answers, onBack}) {
             <button onClick={()=>setShowNav(v=>!v)}
               style={{padding:'8px 12px',borderRadius:10,border:`1px solid ${C.border}`,background:C.white,color:C.primary,cursor:'pointer',fontSize:12,fontWeight:600}}>📋 Navigator</button>
             <button onClick={()=>setIdx(i=>Math.min(filtered.length-1,i+1))} disabled={idx===filtered.length-1}
-              style={{padding:'10px 18px',borderRadius:10,border:'none',background:idx===filtered.length-1?C.muted:C.primary,color:C.white,cursor:idx===filtered.length-1?'default':'pointer',fontSize:13,fontWeight:600}}>Next →</button>
+              style={{padding:'10px 18px',borderRadius:10,border:'none',background:idx===filtered.length-1?C.muted:C.primary,color:idx===filtered.length-1?'#fff':'var(--bg-base)',cursor:idx===filtered.length-1?'default':'pointer',fontSize:13,fontWeight:600}}>Next →</button>
           </div>
 
           {showNav && (
@@ -3622,7 +3622,7 @@ export default function App() {
     const a=ovPct(st.pretestScores), b=ovPct(st.examScores), hist=(st.safmeds&&st.safmeds.history)||[]
     const heatRows=aggregateDomains(st.domainEvents, DOMAINS)
     const projection=projectReadiness(st.attempts, BCBA_FORM)
-    return <div>{nav}<MyProgressScreen name={(()=>{try{return localStorage.getItem('ol-user')||''}catch{return ''}})()} accent="var(--gold)" theme={st.theme} overall={b!=null?b:a} pre={a} post={b} growth={(a!=null&&b!=null)?b-a:null} domains={dsc} modulesPassed={Object.values(st.moduleStatuses||{}).filter(x=>x==='passed').length} modulesTotal={DOMAINS.length} safmeds={{tokens:(st.safmeds&&st.safmeds.totalTokens)||0, sessions:hist.length, bestRate:hist.reduce((m,h)=>Math.max(m,h.rate||0),0)}} examTaken={!!st.examScores} onHome={()=>up({phase:'welcome'})}
+    return <div>{nav}<MyProgressScreen name={(()=>{try{return localStorage.getItem('ol-user')||''}catch{return ''}})()} accent="var(--gold)" theme={st.theme || (window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light')} overall={b!=null?b:a} pre={a} post={b} growth={(a!=null&&b!=null)?b-a:null} domains={dsc} modulesPassed={Object.values(st.moduleStatuses||{}).filter(x=>x==='passed').length} modulesTotal={DOMAINS.length} safmeds={{tokens:(st.safmeds&&st.safmeds.totalTokens)||0, sessions:hist.length, bestRate:hist.reduce((m,h)=>Math.max(m,h.rate||0),0)}} examTaken={!!st.examScores} onHome={()=>up({phase:'welcome'})}
       projection={projection} scaleMax={500}
       heatDomains={heatRows} weakest={weakestDomains(heatRows,3)}
       missBank={{active:Object.keys(st.weakSpots||{}).length, retired:st.missesRetired||0}}
