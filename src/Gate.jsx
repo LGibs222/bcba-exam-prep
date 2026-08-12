@@ -83,14 +83,39 @@ async function validateCode(code) {
   return jsonp(url)
 }
 
+// The gate renders BEFORE the app (and its GlobalStyles) mounts, so it
+// carries its own copy of the Blue Hour tokens it uses. index.html sets
+// data-theme pre-paint, so the gate loads in the right mode.
+function GateStyles() {
+  return (
+    <style>{`
+      :root {
+        --bg-base: #f5f1e4; --sky0: #dfe4d2; --surface-solid: #fdfbf2;
+        --text: #171408; --muted: #5c5340; --border: rgba(23,20,8,0.15);
+        --gray: #7c7358; --gold: #a87f10; --gold-ink: #fff8e8;
+        --red: #b03a26; --red-brand: #b03a26;
+        --shadow: 0 4px 24px rgba(23,20,8,0.08);
+      }
+      :root[data-theme="dark"] {
+        --bg-base: #121108; --sky0: #0b0a06; --surface-solid: #1b1a10;
+        --text: #f0ead8; --muted: #97927b; --border: rgba(240,234,216,0.12);
+        --gray: #97927b; --gold: #e0a92e; --gold-ink: #241a04;
+        --red: #d05a40; --red-brand: #d05a40;
+        --shadow: 0 4px 24px rgba(0,0,0,0.5);
+      }
+      body { margin: 0; background: var(--bg-base); }
+    `}</style>
+  )
+}
+
 function OneLoveGateLogo() {
   return (
     <svg height={40} viewBox="0 0 380 80" xmlns="http://www.w3.org/2000/svg" aria-label="One Love" style={{ display: 'block' }}>
-      <text x="170" y="60" textAnchor="end" fontFamily="Fraunces, Georgia, serif" fontWeight="900" fontSize="54" letterSpacing="-1.2" fill="#161210">One</text>
+      <text x="170" y="60" textAnchor="end" fontFamily="Fraunces, Georgia, serif" fontWeight="900" fontSize="54" letterSpacing="-1.2" fill="var(--text)">One</text>
       <g transform="translate(190, 35)">
-        <path d="M 10 4 C 10 -2, 4 -6, 0 -2 C -4 -6, -10 -2, -10 4 C -10 11, 0 17, 0 17 C 0 17, 10 11, 10 4 Z" fill="#a8302a"/>
+        <path d="M 10 4 C 10 -2, 4 -6, 0 -2 C -4 -6, -10 -2, -10 4 C -10 11, 0 17, 0 17 C 0 17, 10 11, 10 4 Z" fill="var(--red-brand)"/>
       </g>
-      <text x="208" y="60" fontFamily="Fraunces, Georgia, serif" fontWeight="900" fontStyle="italic" fontSize="54" letterSpacing="-1.2" fill="#161210">Love</text>
+      <text x="208" y="60" fontFamily="Fraunces, Georgia, serif" fontWeight="900" fontStyle="italic" fontSize="54" letterSpacing="-1.2" fill="var(--text)">Love</text>
     </svg>
   )
 }
@@ -140,34 +165,35 @@ export default function Gate({ children }) {
 
   if (authed) return children
 
-  const fieldLabel = { display: 'block', fontSize: 11, fontWeight: 700, color: '#161210', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }
+  const fieldLabel = { display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }
   const fieldInput = (errored) => ({
     width: '100%', padding: '12px 14px', fontSize: 15,
-    border: `1.5px solid ${errored ? '#a8302a' : 'rgba(22,18,16,0.18)'}`,
-    borderRadius: 10, background: '#fffdf6', color: '#161210',
+    border: `1.5px solid ${errored ? 'var(--red)' : 'var(--border)'}`,
+    borderRadius: 10, background: 'var(--surface-solid)', color: 'var(--text)',
     fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
   })
 
   return (
     <div style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '24px', background: 'linear-gradient(180deg, #faf6ec 0%, #f1e8d4 100%)',
+      padding: '24px', background: 'linear-gradient(180deg, var(--sky0) 0%, var(--bg-base) 100%)',
       fontFamily: 'Inter, system-ui, sans-serif',
     }}>
+      <GateStyles/>
       <div style={{
-        width: '100%', maxWidth: 440, background: '#fffdf6', border: '1px solid rgba(22,18,16,0.08)',
-        borderRadius: 18, padding: '36px 32px 28px', boxShadow: '0 12px 40px rgba(22,18,16,0.10)',
+        width: '100%', maxWidth: 440, background: 'var(--surface-solid)', border: '1px solid var(--border)',
+        borderRadius: 18, padding: '36px 32px 28px', boxShadow: 'var(--shadow)',
       }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
           <OneLoveGateLogo/>
         </div>
-        <div style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: '#7a6b58', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 22 }}>
+        <div style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 22 }}>
           Licensed Behavior Analysts PLLC
         </div>
-        <h1 style={{ fontFamily: 'Fraunces, Georgia, serif', fontWeight: 700, fontSize: 22, color: '#161210', margin: '0 0 6px', textAlign: 'center' }}>
+        <h1 style={{ fontFamily: 'Fraunces, Georgia, serif', fontWeight: 700, fontSize: 22, color: 'var(--text)', margin: '0 0 6px', textAlign: 'center' }}>
           BCBA Exam Prep
         </h1>
-        <p style={{ fontSize: 13.5, color: '#5a4f44', margin: '0 0 22px', textAlign: 'center', lineHeight: 1.5 }}>
+        <p style={{ fontSize: 13.5, color: 'var(--muted)', margin: '0 0 22px', textAlign: 'center', lineHeight: 1.5 }}>
           Sign in to continue.
         </p>
         <form onSubmit={onSubmit}>
@@ -184,11 +210,12 @@ export default function Gate({ children }) {
             value={pw} onChange={e => setPw(e.target.value)} disabled={busy}
             style={fieldInput(!!error)}
           />
-          {error && <div style={{ marginTop: 8, fontSize: 12.5, color: '#a8302a' }}>{error}</div>}
+          {error && <div style={{ marginTop: 8, fontSize: 12.5, color: 'var(--red)' }}>{error}</div>}
           <button type="submit" disabled={busy || !pw || !name.trim()}
             style={{
               width: '100%', marginTop: 16, padding: '13px', borderRadius: 10, border: 'none',
-              background: (busy || !pw || !name.trim()) ? 'rgba(22,18,16,0.4)' : '#161210', color: '#faf6ec',
+              background: (busy || !pw || !name.trim()) ? 'var(--gray)' : 'var(--gold)',
+              color: (busy || !pw || !name.trim()) ? '#fff' : 'var(--gold-ink)',
               fontSize: 14.5, fontWeight: 700, letterSpacing: '0.02em',
               cursor: (busy || !pw || !name.trim()) ? 'default' : 'pointer',
               fontFamily: 'inherit',
@@ -197,11 +224,11 @@ export default function Gate({ children }) {
           </button>
         </form>
         <a href="https://lgibs222.github.io/onelove-exam-prep/#request" target="_blank" rel="noopener"
-          style={{ display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 16, padding: '12px', borderRadius: 10, border: '1.5px solid rgba(22,18,16,0.25)', background: 'transparent', color: '#161210', fontSize: 13.5, fontWeight: 700, textAlign: 'center', textDecoration: 'none' }}>
+          style={{ display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 16, padding: '12px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', fontSize: 13.5, fontWeight: 700, textAlign: 'center', textDecoration: 'none' }}>
           Don’t have a code? Request access →
         </a>
-        <p style={{ fontSize: 11, color: '#7a6b58', margin: '12px 0 0', textAlign: 'center', lineHeight: 1.5 }}>
-          Or email <a href="mailto:lenwoodjr@gmail.com" style={{ color: '#161210', fontWeight: 600 }}>lenwoodjr@gmail.com</a>
+        <p style={{ fontSize: 11, color: 'var(--muted)', margin: '12px 0 0', textAlign: 'center', lineHeight: 1.5 }}>
+          Or email <a href="mailto:lenwoodjr@gmail.com" style={{ color: 'var(--text)', fontWeight: 600 }}>lenwoodjr@gmail.com</a>
         </p>
       </div>
     </div>

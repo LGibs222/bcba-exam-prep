@@ -7,6 +7,15 @@
     <meta name="description" content="BCBA 6th Edition TCO exam prep: diagnostic pretest, targeted training modules, full 185-question mock exam, SAFMEDS fluency drill." />
     <meta name="theme-color" content="#f5f1e4" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#121108" media="(prefers-color-scheme: dark)" />
+    <script>
+      // Set the theme before first paint so the access gate and app load in
+      // the right mode with no flash: saved choice wins, else device setting.
+      try {
+        var _s = JSON.parse(localStorage.getItem('bcba-exam-prep-v1') || '{}')
+        var _t = (_s.st && _s.st.theme) || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        document.documentElement.dataset.theme = _t
+      } catch (e) {}
+    </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

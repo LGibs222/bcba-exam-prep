@@ -617,20 +617,29 @@ const GlobalStyles = () => (
     @keyframes softPulse { 0%,100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(212,165,116,0)); } 50% { transform: scale(1.08); filter: drop-shadow(0 0 8px rgba(212,165,116,.55)); } }
     .pulse-soft { display:inline-block; animation: softPulse 2.4s ease-in-out infinite; }
 
-    @keyframes orbDrift { 0%,100% { transform: translate(0,0); } 50% { transform: translate(8px,-12px); } }
-    .welcome-orb {
-      position: absolute; border-radius: 50%; filter: blur(60px);
-      pointer-events: none; z-index: 0;
-      animation: orbDrift 14s ease-in-out infinite;
-    }
-    .welcome-orb-1 { top: -80px; right: -60px; width: 280px; height: 280px;
-      background: radial-gradient(circle, rgba(185,106,61,.18) 0%, transparent 70%); }
-    .welcome-orb-2 { top: 40%; left: -100px; width: 320px; height: 320px;
-      background: radial-gradient(circle, rgba(177,132,50,.16) 0%, transparent 70%);
-      animation-delay: -4s; animation-duration: 18s; }
-    .welcome-orb-3 { bottom: -60px; right: 10%; width: 220px; height: 220px;
-      background: radial-gradient(circle, rgba(166,69,88,.14) 0%, transparent 70%);
-      animation-delay: -8s; animation-duration: 16s; }
+    /* ── Blue Hour atmosphere (welcome hero) ─────────────────────
+       Dusk sky fading into the page ground, two ridgelines, a warm
+       lamplight glow, stars at night only (--star is transparent by
+       day). All values come from the sky/ridge/glow/star tokens. */
+    .atmo { position: absolute; top: 0; left: 0; right: 0; height: 520px; z-index: 0; pointer-events: none;
+      background: linear-gradient(180deg, var(--sky0) 0%, var(--sky1) 46%, var(--sky2) 78%, transparent 100%); }
+    .atmo-stars { position: absolute; inset: 0 0 30% 0;
+      background-image:
+        radial-gradient(1px 1px at 12% 18%, var(--star), transparent),
+        radial-gradient(1px 1px at 34% 9%, var(--star), transparent),
+        radial-gradient(1.5px 1.5px at 58% 14%, var(--star), transparent),
+        radial-gradient(1px 1px at 79% 7%, var(--star), transparent),
+        radial-gradient(1px 1px at 90% 22%, var(--star), transparent),
+        radial-gradient(1px 1px at 68% 28%, var(--star), transparent),
+        radial-gradient(1px 1px at 22% 32%, var(--star), transparent); }
+    .atmo-glow { position: absolute; right: -60px; top: 150px; width: 480px; height: 300px;
+      background: radial-gradient(closest-side, var(--glow), transparent 72%); }
+    .atmo-ridge1 { position: absolute; left: 0; right: 0; top: 320px; height: 130px; background: var(--ridge-1); opacity: 0.5;
+      clip-path: polygon(0 100%, 0 62%, 12% 38%, 22% 58%, 34% 22%, 46% 55%, 58% 30%, 70% 62%, 82% 40%, 92% 66%, 100% 52%, 100% 100%);
+      -webkit-mask-image: linear-gradient(180deg, black 55%, transparent 100%); mask-image: linear-gradient(180deg, black 55%, transparent 100%); }
+    .atmo-ridge2 { position: absolute; left: 0; right: 0; top: 372px; height: 88px; background: var(--ridge-2); opacity: 0.55;
+      clip-path: polygon(0 100%, 0 55%, 15% 75%, 28% 45%, 41% 78%, 55% 50%, 68% 80%, 81% 55%, 100% 74%, 100% 100%);
+      -webkit-mask-image: linear-gradient(180deg, black 45%, transparent 100%); mask-image: linear-gradient(180deg, black 45%, transparent 100%); }
 
     /* Hover lift for interactive cards / domain tiles */
     .lift { transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s, border-color .25s; }
@@ -1613,10 +1622,13 @@ function Welcome({st,onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpot
 
   return (
     <div style={{position:'relative',overflow:'hidden'}}>
-      {/* Decorative atmospheric orbs */}
-      <div className="welcome-orb welcome-orb-1"/>
-      <div className="welcome-orb welcome-orb-2"/>
-      <div className="welcome-orb welcome-orb-3"/>
+      {/* Blue Hour atmosphere — dusk sky, stars (night only), ridgelines, lamplight glow */}
+      <div className="atmo" aria-hidden="true">
+        <div className="atmo-stars"/>
+        <div className="atmo-glow"/>
+        <div className="atmo-ridge1"/>
+        <div className="atmo-ridge2"/>
+      </div>
 
       <div style={{maxWidth:1080,margin:'0 auto',padding:'40px 24px 56px',position:'relative',zIndex:1}}>
 
