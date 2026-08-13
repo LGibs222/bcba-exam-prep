@@ -1987,12 +1987,66 @@ function ModuleHub({weakDomains,moduleStatuses,onSelect,onExam,onSpotCheck}) {
 
 // ── LEARNING MODULE ──────────────────────────────────────
 // ── MISSED QUESTION CARD (quiz remediation) ─────────────
+// ── MODULE FEEDBACK ──────────────────────────────────────
+// Rating + comment on the module-complete screen. Rides the existing
+// tracking pipeline (track → Apps Script → Sheets) as event 'module_feedback';
+// one submission per module per device (localStorage guard).
+function ModuleFeedbackCard({domain, passed}) {
+  const fbKey = `ol-fb:BCBA:${domain}`
+  const [sent,setSent] = useState(() => { try { return !!localStorage.getItem(fbKey) } catch { return false } })
+  const [rating,setRating] = useState(0)
+  const [hover,setHover] = useState(0)
+  const [comment,setComment] = useState('')
+  if (sent) return (
+    <Card style={{marginTop:22,textAlign:'center',padding:'14px 18px'}}>
+      <span style={{fontSize:13,color:C.green,fontWeight:700}}>✓ Feedback received — thanks for helping improve this module.</span>
+    </Card>
+  )
+  const submit = () => {
+    if (!rating) return
+    track('module_feedback', { domain, rating, comment: comment.trim().slice(0,600), passed: !!passed })
+    try { localStorage.setItem(fbKey, String(rating)) } catch {}
+    setSent(true)
+  }
+  const active = hover || rating
+  return (
+    <Card style={{marginTop:22,padding:'18px 20px'}}>
+      <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',textTransform:'uppercase',color:'var(--gold)',marginBottom:6}}>Quick feedback</div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:14,flexWrap:'wrap'}}>
+        <div style={{fontSize:14,fontWeight:600,color:C.text}}>How was this module?</div>
+        <div style={{display:'flex',gap:4}} onMouseLeave={()=>setHover(0)}>
+          {[1,2,3,4,5].map(n=>(
+            <button key={n} onClick={()=>setRating(n)} onMouseEnter={()=>setHover(n)}
+              aria-label={`${n} star${n>1?'s':''}`}
+              style={{background:'none',border:'none',padding:2,cursor:'pointer',color:n<=active?'var(--gold)':C.border,transition:'color .12s'}}>
+              <Icon name="star" size={22} stroke={n<=active?2.1:1.7}/>
+            </button>
+          ))}
+        </div>
+      </div>
+      {rating>0 && (
+        <>
+          <textarea value={comment} onChange={e=>setComment(e.target.value)} rows={2} maxLength={600}
+            placeholder="Anything confusing, missing, or great? (optional)"
+            style={{width:'100%',marginTop:12,padding:'10px 12px',borderRadius:10,border:`1px solid ${C.border}`,background:'var(--surface-alt)',color:C.text,fontSize:13,fontFamily:'inherit',resize:'vertical',boxSizing:'border-box'}}/>
+          <div style={{display:'flex',justifyContent:'flex-end',marginTop:10}}>
+            <button onClick={submit}
+              style={{padding:'9px 22px',borderRadius:10,border:'none',background:C.accent,color:'var(--gold-ink)',fontSize:13,fontWeight:700,cursor:'pointer'}}>
+              Send Feedback
+            </button>
+          </div>
+        </>
+      )}
+    </Card>
+  )
+}
+
 function MissedQuestionCard({q}) {
   const [expanded,setExpanded] = useState(true)
   return (
-    <div style={{border:`1px solid ${C.redBorder}`,borderRadius:10,marginBottom:10,overflow:'hidden',background:C.white}}>
+    <div style={{border:`1px solid ${C.redBorder}`,borderRadius:10,marginBottom:10,overflow:'hidden',background:'var(--surface-solid)'}}>
       <button onClick={()=>setExpanded(e=>!e)}
-        style={{width:'100%',padding:'10px 14px',background:expanded?C.redBg:C.white,
+        style={{width:'100%',padding:'10px 14px',background:expanded?C.redBg:'var(--surface-solid)',
           border:'none',textAlign:'left',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontFamily:'inherit'}}>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <span style={{fontSize:13,fontWeight:800,color:C.red}}>✗</span>
@@ -2001,7 +2055,7 @@ function MissedQuestionCard({q}) {
         <span style={{fontSize:14,color:C.muted,fontWeight:700}}>{expanded?'−':'+'}</span>
       </button>
       {expanded && (
-        <div style={{padding:'14px 16px 16px',borderTop:`1px solid ${C.redBorder}`,background:'#fefcfc'}}>
+        <div style={{padding:'14px 16px 16px',borderTop:`1px solid ${C.redBorder}`,background:'var(--surface-solid)'}}>
           <p style={{fontSize:13.5,color:C.text,margin:'0 0 12px',lineHeight:1.65,fontFamily:'Georgia,serif',fontWeight:500}}>{q.stem}</p>
           {q._userAns !== undefined && q._userAns !== q.correct && (
             <div style={{fontSize:12.5,padding:'9px 11px',borderRadius:8,background:C.redBg,color:C.red,border:`1px solid ${C.redBorder}`,marginBottom:6,lineHeight:1.5}}>
@@ -2232,6 +2286,7 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
             </>
           )}
         </div>
+        <ModuleFeedbackCard domain={domain} passed={passed}/>
       </div>
     )
   }
