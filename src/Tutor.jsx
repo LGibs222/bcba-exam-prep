@@ -126,6 +126,16 @@ export function AskTutorButton({ question, userAnswer, source, style = {} }) {
   )
 }
 
+function SpeakerGlyph({ size = 15, muted = false }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"
+      strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: '-2px' }} aria-hidden="true">
+      <path d="M11 5 6 9H3v6h3l5 4z"/>
+      {muted ? <path d="M16 9l5 6m0-6-5 6"/> : <path d="M15.5 9a4.2 4.2 0 0 1 0 6M18.2 7a7.4 7.4 0 0 1 0 10"/>}
+    </svg>
+  )
+}
+
 function MicGlyph({ size = 14 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"
@@ -172,7 +182,7 @@ export function TutorFab({ blocked }) {
     const { name, code } = getIdentity()
     setBusy(true); setNotice('')
     if (text) setMessages(m => [...m, { role: 'user', content: text }])
-    else setMessages(m => [...m, { role: 'user', content: '🎤 …', pendingVoice: true }])
+    else setMessages(m => [...m, { role: 'user', content: 'Voice message…', pendingVoice: true }])
     try {
       const history = messages.filter(m => !m.pendingVoice).map(m => ({ role: m.role, content: m.content }))
       const r = await fetch(TUTOR_ENDPOINT, {
@@ -278,7 +288,7 @@ export function TutorFab({ blocked }) {
       }}>
         {/* header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px 10px', borderBottom: `1px solid ${T.border}` }}>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: T.accent, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 15, flexShrink: 0 }}>DG</div>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: T.accent, color: 'var(--gold-ink, #fff8e8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 15, flexShrink: 0 }}>DG</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 800, fontSize: 14.5 }}>Dr. Gibson</div>
             <div style={{ fontSize: 11, color: T.muted }}>
@@ -288,8 +298,8 @@ export function TutorFab({ blocked }) {
           </div>
           <button type="button" onClick={() => { const m = !muted; setMuted(m); setMutedLS(m); if (m) stopReply() }}
             title={muted ? 'Voice replies off' : 'Voice replies on'}
-            style={{ border: `1px solid ${T.border}`, background: 'transparent', borderRadius: 99, padding: '6px 10px', cursor: 'pointer', fontSize: 14 }}>
-            {muted ? '🔇' : '🔊'}
+            style={{ border: `1px solid ${T.border}`, background: 'transparent', borderRadius: 99, padding: '6px 10px', cursor: 'pointer', color: muted ? T.muted : T.ink, display: 'inline-flex', alignItems: 'center' }}>
+            <SpeakerGlyph muted={muted}/>
           </button>
           <button type="button" onClick={() => setOpen(false)} aria-label="Close"
             style={{ border: 'none', background: 'transparent', fontSize: 20, cursor: 'pointer', color: T.muted, padding: 4 }}>✕</button>
@@ -321,7 +331,7 @@ export function TutorFab({ blocked }) {
             }}>{m.content}</div>
           ))}
           {busy && <div style={{ alignSelf: 'flex-start', color: T.muted, fontSize: 13 }}>Dr. Gibson is thinking…</div>}
-          {notice && <div style={{ alignSelf: 'stretch', background: '#fdf1e3', border: '1px solid #eacB9a', color: '#7a4a12', borderRadius: 10, padding: '9px 12px', fontSize: 12.5, lineHeight: 1.5 }}>{notice}</div>}
+          {notice && <div style={{ alignSelf: 'stretch', background: 'var(--gold-bg, #fdf1e3)', border: '1px solid var(--accent-border, #eacb9a)', color: 'var(--gold, #7a4a12)', borderRadius: 10, padding: '9px 12px', fontSize: 12.5, lineHeight: 1.5 }}>{notice}</div>}
         </div>
 
         {/* input row */}
@@ -332,14 +342,14 @@ export function TutorFab({ blocked }) {
             aria-label={recording ? 'Stop recording and send' : 'Ask by voice'}
             style={{
               width: 46, height: 46, borderRadius: '50%', border: 'none', flexShrink: 0,
-              background: recording ? '#c0392b' : T.accent, color: '#fff', fontSize: 19, cursor: busy ? 'default' : 'pointer',
+              background: recording ? 'var(--red, #c0392b)' : T.accent, color: recording ? '#fff' : 'var(--gold-ink, #fff8e8)', fontSize: 19, cursor: busy ? 'default' : 'pointer',
               animation: recording ? 'olTutorPulse 1.2s infinite' : 'none',
             }}>
-            {recording ? '■' : '🎤'}
+            {recording ? '■' : <MicGlyph size={19}/>}
           </button>
           <input value={input} onChange={e => setInput(e.target.value)} disabled={busy || recording}
             placeholder={recording ? 'Listening… tap ■ to send' : 'Or type your question…'}
-            style={{ flex: 1, padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${T.border}`, background: '#fff', color: T.ink, fontSize: 14, outline: 'none', fontFamily: 'inherit' }} />
+            style={{ flex: 1, padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${T.border}`, background: T.surface, color: T.ink, fontSize: 14, outline: 'none', fontFamily: 'inherit' }} />
           <button type="submit" disabled={busy || recording || !input.trim()}
             style={{ padding: '11px 16px', borderRadius: 12, border: 'none', background: (busy || !input.trim()) ? T.border : T.ink, color: '#fff', fontWeight: 700, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit' }}>
             Send

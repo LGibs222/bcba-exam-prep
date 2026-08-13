@@ -89,17 +89,17 @@ function computeAchievements(stats, safmeds, moduleStatuses, examScores) {
   const totalMinutes = stats?.totalMinutes || 0
 
   const all = [
-    { id:'first_step',   label:'First Step',     icon:'🌱', earned: days >= 1,             description:'Studied for the first time' },
-    { id:'streak_3',     label:'On a Roll',      icon:'🔥', earned: streak >= 3,           description:'3-day study streak' },
-    { id:'streak_7',     label:'Week Strong',    icon:'⭐', earned: streak >= 7,           description:'7-day study streak' },
-    { id:'streak_14',    label:'Two Weeks',      icon:'💎', earned: streak >= 14,          description:'14-day study streak' },
-    { id:'first_module', label:'Module Master',  icon:'📚', earned: modulesPassed >= 1,    description:'Passed your first module quiz' },
-    { id:'half_modules', label:'Halfway',        icon:'🌗', earned: modulesPassed >= 5,    description:'Passed 5 module quizzes' },
-    { id:'all_modules',  label:'All Domains',    icon:'🎯', earned: modulesPassed >= 9,    description:'Passed every domain quiz' },
-    { id:'first_exam',   label:'Test-Ready',     icon:'🏁', earned: examAttempts >= 1,     description:'Took your first mock exam' },
-    { id:'fluency_50',   label:'Fluency',        icon:'🎴', earned: safmedsTokens >= 50,   description:'Earned 50 SAFMEDS tokens' },
-    { id:'time_60',      label:'Hour One',       icon:'⏱',  earned: totalMinutes >= 60,    description:'Studied for 60 minutes total' },
-    { id:'time_300',     label:'Five Hours',     icon:'🕐', earned: totalMinutes >= 300,   description:'Studied for 5 hours total' },
+    { id:'first_step',   label:'First Step',     icon:'sprout',  earned: days >= 1,             description:'Studied for the first time' },
+    { id:'streak_3',     label:'On a Roll',      icon:'flame',   earned: streak >= 3,           description:'3-day study streak' },
+    { id:'streak_7',     label:'Week Strong',    icon:'star',    earned: streak >= 7,           description:'7-day study streak' },
+    { id:'streak_14',    label:'Two Weeks',      icon:'gem',     earned: streak >= 14,          description:'14-day study streak' },
+    { id:'first_module', label:'Module Master',  icon:'book',    earned: modulesPassed >= 1,    description:'Passed your first module quiz' },
+    { id:'half_modules', label:'Halfway',        icon:'compass', earned: modulesPassed >= 5,    description:'Passed 5 module quizzes' },
+    { id:'all_modules',  label:'All Domains',    icon:'target',  earned: modulesPassed >= 9,    description:'Passed every domain quiz' },
+    { id:'first_exam',   label:'Test-Ready',     icon:'flag',    earned: examAttempts >= 1,     description:'Took your first mock exam' },
+    { id:'fluency_50',   label:'Fluency',        icon:'cards',   earned: safmedsTokens >= 50,   description:'Earned 50 SAFMEDS tokens' },
+    { id:'time_60',      label:'Hour One',       icon:'timer',   earned: totalMinutes >= 60,    description:'Studied for 60 minutes total' },
+    { id:'time_300',     label:'Five Hours',     icon:'clock',   earned: totalMinutes >= 300,   description:'Studied for 5 hours total' },
   ]
   return all
 }
@@ -123,10 +123,10 @@ function suggestNextFocus(st) {
 
 // ── SAFMEDS (Say All Fast Minute Each Day Shuffled) ────────
 const SAFMEDS_LEVELS = [
-  { id:'beginner',     label:'Beginner',     icon:'🌱', unlock:0,   color:'#16a34a' },
-  { id:'intermediate', label:'Intermediate', icon:'⭐', unlock:50,  color:'#2563eb' },
-  { id:'advanced',     label:'Advanced',     icon:'🔥', unlock:200, color:'#dc2626' },
-  { id:'master',       label:'Master',       icon:'🏆', unlock:500, color:'#7c3aed' },
+  { id:'beginner',     label:'Beginner',     icon:'sprout', unlock:0,   color:'var(--green)' },
+  { id:'intermediate', label:'Intermediate', icon:'star',   unlock:50,  color:'var(--gold)' },
+  { id:'advanced',     label:'Advanced',     icon:'flame',  unlock:200, color:'var(--red)' },
+  { id:'master',       label:'Master',       icon:'trophy', unlock:500, color:'var(--berry)' },
 ]
 const SAFMEDS_TIMERS = [30, 60, 90, 120]
 
@@ -1111,8 +1111,8 @@ function FAChart() {
     <svg viewBox={`0 0 ${W} ${H+50}`} style={{width:'100%',maxWidth:280,display:'block',margin:'0 auto'}}>
       <text x={W/2} y={13} textAnchor="middle" fontSize={10} fontWeight="700" fill="#64748b">FA Pattern — Automatic Reinforcement</text>
       <line x1={pL-2} y1={18} x2={pL-2} y2={H+18} stroke="#e2e8f0" strokeWidth={1}/>
-      <text x={pL-4} y={22} textAnchor="end" fontSize={8} fill="#94a3b8">High</text>
-      <text x={pL-4} y={H+18} textAnchor="end" fontSize={8} fill="#94a3b8">Low</text>
+      <text x={pL-4} y={22} textAnchor="end" fontSize={8} fill="var(--muted)">High</text>
+      <text x={pL-4} y={H+18} textAnchor="end" fontSize={8} fill="var(--muted)">Low</text>
       {bars.map((b,i)=>{const x=pL+(bW+gap)*i,bh=(b.v/10)*H;return(
         <g key={i}><rect x={x} y={H-bh+18} width={bW} height={bh} fill={b.c} rx={4} opacity={.9}/>
           <text x={x+bW/2} y={H+32} textAnchor="middle" fontSize={9} fill="#64748b">{b.l}</text></g>
@@ -1140,7 +1140,7 @@ function ScheduleChart() {
           <text x={pL+bW+6} y={y+rH/2+4} fontSize={8} fill="#64748b">{r.note}</text>
         </g>
       )})}
-      <text x={pL} y={rows.length*rH+38} fontSize={8} fill="#94a3b8">← Response Rate Comparison →</text>
+      <text x={pL} y={rows.length*rH+38} fontSize={8} fill="var(--muted)">← Response Rate Comparison →</text>
     </svg>
   )
 }
@@ -1154,12 +1154,12 @@ function ABABGraph() {
     <svg viewBox={`0 0 ${W} ${H+pB}`} style={{width:'100%',maxWidth:290,display:'block',margin:'0 auto'}}>
       <text x={W/2} y={13} textAnchor="middle" fontSize={10} fontWeight="700" fill="#64748b">ABAB Reversal Design</text>
       <line x1={pL-2} y1={16} x2={pL-2} y2={H+16} stroke="#e2e8f0" strokeWidth={1}/>
-      {[1,2,3].map(i=><line key={i} x1={phX[i]} y1={16} x2={phX[i]} y2={H+16} stroke="#cbd5e1" strokeDasharray="4,3" strokeWidth={1.5}/>)}
+      {[1,2,3].map(i=><line key={i} x1={phX[i]} y1={16} x2={phX[i]} y2={H+16} stroke="var(--border)" strokeDasharray="4,3" strokeWidth={1.5}/>)}
       {segs.map((s,si)=><text key={si} x={(phX[si]+(phX[si+1]||W-6))/2} y={H+28} textAnchor="middle" fontSize={9} fontWeight="700" fill={s.c}>{s.ph}</text>)}
       <polyline points={allPts.map(p=>p.join(',')).join(' ')} fill="none" stroke="#475569" strokeWidth={2}/>
       {allPts.map(([x,y],i)=><circle key={i} cx={x} cy={y} r={3} fill={segs[Math.floor(i/n)]?.c||'#475569'}/>)}
-      <text x={pL-4} y={20} textAnchor="end" fontSize={8} fill="#94a3b8">Hi</text>
-      <text x={pL-4} y={H+16} textAnchor="end" fontSize={8} fill="#94a3b8">Lo</text>
+      <text x={pL-4} y={20} textAnchor="end" fontSize={8} fill="var(--muted)">Hi</text>
+      <text x={pL-4} y={H+16} textAnchor="end" fontSize={8} fill="var(--muted)">Lo</text>
       <text x={W/2} y={H+42} textAnchor="middle" fontSize={8.5} fill="#64748b" fontStyle="italic">Return in A₂ → intervention caused the change</text>
     </svg>
   )
@@ -1203,11 +1203,11 @@ function ExtinctionGraph() {
       <line x1={pL-2} y1={16} x2={pL-2} y2={H+16} stroke="#e2e8f0" strokeWidth={1}/>
       <line x1={burstX} y1={16} x2={burstX} y2={H+16} stroke="#f59e0b" strokeDasharray="4,3" strokeWidth={1.5}/>
       <text x={burstX+2} y={26} fontSize={8} fill="#92400e">Extinction begins</text>
-      <line x1={recX} y1={16} x2={recX} y2={H+16} stroke="#94a3b8" strokeDasharray="3,2" strokeWidth={1}/>
+      <line x1={recX} y1={16} x2={recX} y2={H+16} stroke="var(--muted)" strokeDasharray="3,2" strokeWidth={1}/>
       <polyline points={pp.map(p=>p.join(',')).join(' ')} fill="none" stroke="#dc2626" strokeWidth={2}/>
       {pp.map(([x,y],i)=><circle key={i} cx={x} cy={y} r={2.5} fill="#dc2626"/>)}
-      <text x={pL-4} y={20} textAnchor="end" fontSize={8} fill="#94a3b8">Hi</text>
-      <text x={pL-4} y={H+16} textAnchor="end" fontSize={8} fill="#94a3b8">Lo</text>
+      <text x={pL-4} y={20} textAnchor="end" fontSize={8} fill="var(--muted)">Hi</text>
+      <text x={pL-4} y={H+16} textAnchor="end" fontSize={8} fill="var(--muted)">Lo</text>
       <text x={(burstX+recX)/2} y={H+28} textAnchor="middle" fontSize={8.5} fill="#dc2626">Burst ↑</text>
       <text x={(recX+W-6)/2} y={H+28} textAnchor="middle" fontSize={8} fill="#64748b">Spont. Recovery</text>
       <text x={W/2} y={H+44} textAnchor="middle" fontSize={8.5} fill="#475569" fontStyle="italic">Extinction burst = temporary — not treatment failure</text>
@@ -1360,14 +1360,14 @@ function StatsCard({stats}) {
       {/* Stat grid */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'14px'}}>
         {[
-          { icon:'📅', label:'Days studied', value: days },
-          { icon:'⏱️', label:'Today',         value: formatDuration(stats?.todayMinutes||0) },
-          { icon:'✓',  label:'Quizzes passed', value: stats?.modulesPassed||0 },
-          { icon:'🕐', label:'Total time',     value: formatDuration(stats?.totalMinutes||0) },
+          { icon:'calendar', label:'Days studied', value: days },
+          { icon:'timer',    label:'Today',         value: formatDuration(stats?.todayMinutes||0) },
+          { icon:'target',   label:'Quizzes passed', value: stats?.modulesPassed||0 },
+          { icon:'clock',    label:'Total time',     value: formatDuration(stats?.totalMinutes||0) },
         ].map((s,i)=>(
           <div key={i} style={{padding:'10px 12px',borderRadius:12,background:'var(--surface-alt)',border:`1px solid ${C.border}`}}>
             <div style={{fontSize:11,color:C.muted,fontWeight:600,letterSpacing:'0.04em',display:'flex',alignItems:'center',gap:6}}>
-              <span>{s.icon}</span><span>{s.label}</span>
+              <Icon name={s.icon} size={12}/><span>{s.label}</span>
             </div>
             <div style={{fontSize:20,fontWeight:800,color:C.text,letterSpacing:'-0.02em',marginTop:2}}>{s.value}</div>
           </div>
@@ -1375,8 +1375,8 @@ function StatsCard({stats}) {
       </div>
       {((stats?.pretestsCompleted||0) > 0 || (stats?.examAttempts||0) > 0) && (
         <div style={{marginTop:14,paddingTop:14,borderTop:`1px solid ${C.border}`,fontSize:12,color:C.muted,display:'flex',gap:14,flexWrap:'wrap'}}>
-          {(stats?.pretestsCompleted||0) > 0 && <span>📝 {stats.pretestsCompleted} pretest{stats.pretestsCompleted===1?'':'s'}</span>}
-          {(stats?.examAttempts||0) > 0 && <span>🏁 {stats.examAttempts} mock exam{stats.examAttempts===1?'':'s'}</span>}
+          {(stats?.pretestsCompleted||0) > 0 && <span style={{display:'inline-flex',alignItems:'center',gap:5}}><Icon name="doc" size={12}/>{stats.pretestsCompleted} pretest{stats.pretestsCompleted===1?'':'s'}</span>}
+          {(stats?.examAttempts||0) > 0 && <span style={{display:'inline-flex',alignItems:'center',gap:5}}><Icon name="flag" size={12}/>{stats.examAttempts} mock exam{stats.examAttempts===1?'':'s'}</span>}
         </div>
       )}
     </div>
@@ -1411,7 +1411,7 @@ function AchievementsRow({stats, safmeds, moduleStatuses, examScores}) {
               WebkitBackdropFilter: b.earned ? 'blur(14px)' : 'none',
               cursor: 'help',
             }}>
-            <div style={{fontSize:24,lineHeight:1,marginBottom:4}}>{b.icon}</div>
+            <div style={{lineHeight:1,marginBottom:6,color:b.earned?'var(--gold)':C.muted}}><Icon name={b.icon} size={22}/></div>
             <div style={{fontSize:10,fontWeight:700,color:C.text,letterSpacing:'0.02em'}}>{b.label}</div>
           </div>
         ))}
@@ -1435,7 +1435,7 @@ function JourneyTimeline({steps}) {
       {steps.map((s, i) => {
         const dotBg  = s.state==='done' ? 'var(--green)' : s.state==='current' ? C.accent : 'transparent'
         const dotBd  = s.state==='done' ? 'var(--green)' : s.state==='current' ? C.accent : C.border
-        const dotCol = s.state==='locked' ? C.muted : '#fff'
+        const dotCol = s.state==='locked' ? C.muted : s.state==='current' ? 'var(--gold-ink)' : '#fff'
         const dotIcn = s.state==='done' ? '✓' : s.state==='current' ? `${i+1}` : `${i+1}`
         return (
           <div key={i} style={{display:'flex',gap:14,marginBottom: i===steps.length-1?0:18,alignItems:'flex-start',position:'relative',zIndex:1}}>
@@ -1699,7 +1699,7 @@ function Welcome({st,onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpot
                     <span key={b.id} className="badge" title={b.description}
                       style={{background: ['var(--gold-bg)','var(--peach-bg)','var(--coral-bg)','var(--berry-bg)'][i % 4],
                               color: ['var(--gold)','var(--peach)','var(--coral)','var(--berry)'][i % 4]}}>
-                      {b.icon}
+                      <Icon name={b.icon} size={16}/>
                     </span>
                   ))}
                 </div>
@@ -2071,8 +2071,8 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
           ))}
           <span style={{fontSize:12,color:C.muted,marginLeft:6,flex:1}}>{conceptIdx+1} / {mod.concepts.length}</span>
           <button onClick={()=>setShowMap(s=>!s)}
-            style={{padding:'5px 11px',borderRadius:99,border:`1px solid ${C.border}`,background:showMap?ctype.color:C.white,color:showMap?'#fff':ctype.color,cursor:'pointer',fontSize:11,fontWeight:700,fontFamily:'inherit'}}>
-            🗺️ Map
+            style={{display:'inline-flex',alignItems:'center',gap:5,padding:'5px 11px',borderRadius:99,border:`1px solid ${C.border}`,background:showMap?ctype.color:C.white,color:showMap?'#fff':ctype.color,cursor:'pointer',fontSize:11,fontWeight:700,fontFamily:'inherit'}}>
+            <Icon name="map" size={12}/>Map
           </button>
         </div>
         {showMap && (
@@ -2114,11 +2114,11 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
 
             {/* Applied example */}
             {concept.example && (
-              <div style={{marginTop:20,background:'#fffbeb',borderLeft:'4px solid #f59e0b',borderRadius:'0 12px 12px 0',padding:'14px 16px'}}>
-                <div style={{fontSize:11,fontWeight:800,color:'#92400e',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:8,display:'flex',alignItems:'center',gap:5}}>
-                  <span>📋</span> Applied Example
+              <div style={{marginTop:20,background:'var(--gold-bg)',borderLeft:'3px solid var(--gold)',borderRadius:'0 12px 12px 0',padding:'14px 16px'}}>
+                <div style={{fontSize:11,fontWeight:800,color:'var(--gold)',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:8,display:'flex',alignItems:'center',gap:6}}>
+                  <Icon name="clipboard" size={13}/> Applied Example
                 </div>
-                <p style={{fontSize:14,lineHeight:1.72,color:'#374151',margin:0,fontStyle:'italic'}}>{concept.example}</p>
+                <p style={{fontSize:14,lineHeight:1.72,color:C.text,margin:0,fontStyle:'italic'}}>{concept.example}</p>
               </div>
             )}
 
@@ -2139,8 +2139,8 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
             {/* Key term flip cards */}
             {concept.keyTerms && concept.keyTerms.length > 0 && (
               <div style={{marginTop:20}}>
-                <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:10,display:'flex',alignItems:'center',gap:5}}>
-                  <span>🔑</span> Key Terms · tap cards to reveal definitions
+                <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:10,display:'flex',alignItems:'center',gap:6}}>
+                  <Icon name="key" size={13}/> Key Terms · tap cards to reveal definitions
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(138px,1fr))',gap:8}}>
                   {concept.keyTerms.map((kt,ki)=>(
@@ -2422,7 +2422,7 @@ function ExamScreen({questions,answers,qIndex,timerSeconds,onAnswer,onNav,onSubm
 function SelfGraph({history}) {
   const recent = (history||[]).slice(-15)
   if (recent.length < 2) {
-    return <div style={{textAlign:'center',padding:'18px 12px',fontSize:12,color:C.muted,fontStyle:'italic'}}>📊 Run at least 2 timed sessions to see your fluency curve.</div>
+    return <div style={{textAlign:'center',padding:'18px 12px',fontSize:12,color:C.muted,fontStyle:'italic'}}>Run at least 2 timed sessions to see your fluency curve.</div>
   }
   const W=300, H=110, padL=22, padB=18, padT=10
   const rates = recent.map(r => r.rate || 0)
@@ -2435,17 +2435,17 @@ function SelfGraph({history}) {
   const polyLine = pts.map(p => p.join(',')).join(' ')
   return (
     <div>
-      <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:6}}>📊 Your Fluency (last {recent.length} sessions)</div>
+      <div style={{fontSize:11,fontWeight:800,color:C.muted,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:6}}>Your Fluency (last {recent.length} sessions)</div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',display:'block'}}>
         <line x1={padL} y1={padT} x2={padL} y2={H-padB} stroke="#e2e8f0" strokeWidth={1}/>
         <line x1={padL} y1={H-padB} x2={W-4} y2={H-padB} stroke="#e2e8f0" strokeWidth={1}/>
-        <text x={padL-3} y={padT+4} textAnchor="end" fontSize={8} fill="#94a3b8">{Math.ceil(maxRate)}/min</text>
-        <text x={padL-3} y={H-padB+2} textAnchor="end" fontSize={8} fill="#94a3b8">0</text>
+        <text x={padL-3} y={padT+4} textAnchor="end" fontSize={8} fill="var(--muted)">{Math.ceil(maxRate)}/min</text>
+        <text x={padL-3} y={H-padB+2} textAnchor="end" fontSize={8} fill="var(--muted)">0</text>
         <polyline points={polyLine} fill="none" stroke={C.primary} strokeWidth={2}/>
         {pts.map(([x,y],i)=>(
           <circle key={i} cx={x} cy={y} r={3} fill={C.primary}/>
         ))}
-        <text x={W/2} y={H-3} textAnchor="middle" fontSize={8} fill="#94a3b8">→ correct/min over time</text>
+        <text x={W/2} y={H-3} textAnchor="middle" fontSize={8} fill="var(--muted)">→ correct/min over time</text>
       </svg>
     </div>
   )
@@ -2456,11 +2456,11 @@ function SafmedsCard({safmeds, onOpen}) {
   const tokens = safmeds?.totalTokens || 0
   const bestBeginner = safmeds?.decks?.beginner?.high60s || 0
   return (
-    <div style={{marginBottom:20,background:'linear-gradient(135deg, #ede9fe 0%, #c4b5fd 100%)',border:'1px solid #a78bfa',borderRadius:14,padding:'16px 18px',display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+    <div style={{marginBottom:20,background:'var(--berry-bg)',border:'1px solid var(--berry)',borderRadius:14,padding:'16px 18px',display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap'}}>
       <div>
         <h3 style={{fontSize:14,fontWeight:800,color:'var(--berry)',margin:'0 0 4px',textTransform:'uppercase',letterSpacing:'0.06em'}}>SAFMEDS Fluency Drill</h3>
-        <p style={{fontSize:13,color:'var(--berry)',margin:0,opacity:0.85}}>
-          🪙 <strong>{tokens}</strong> tokens · Best (Beginner 60s): <strong>{bestBeginner}</strong>
+        <p style={{fontSize:13,color:'var(--berry)',margin:0,opacity:0.85,display:'flex',alignItems:'center',gap:5}}>
+          <Icon name="coin" size={13}/><strong>{tokens}</strong> tokens · Best (Beginner 60s): <strong>{bestBeginner}</strong>
         </p>
       </div>
       <button onClick={onOpen} style={{padding:'10px 18px',background:'var(--berry)',color:'#fff',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>
@@ -2486,7 +2486,7 @@ function SafmedsProgress({safmeds, onBack}) {
   const domainOptions = Object.keys(MODULE_ENHANCEMENTS).map(d => ({ id: `domain:${d}`, label: d, group: 'Per-Domain' }))
   const allOptions = [
     { id: 'mega-or-all', label: '◆ All sessions (every deck)', group: 'Combined' },
-    { id: 'mega', label: '🧠 Mega Deck only', group: 'Combined' },
+    { id: 'mega', label: '◆ Mega Deck only', group: 'Combined' },
     { id: 'all', label: 'All Terms only', group: 'Combined' },
     ...baseLevelOptions,
     ...domainOptions,
@@ -2635,7 +2635,7 @@ function SafmedsProgress({safmeds, onBack}) {
       <div style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:12,padding:'18px 18px 12px'}}>
         {filtered.length === 0 ? (
           <div style={{textAlign:'center',padding:'48px 12px',fontSize:13,color:C.muted,fontStyle:'italic'}}>
-            📊 No sessions match this filter yet. Run a SAFMEDS drill to start your data.
+            No sessions match this filter yet. Run a SAFMEDS drill to start your data.
           </div>
         ) : chartType === 'scc' ? (
           <SCCChart filtered={filtered}/>
@@ -2729,7 +2729,7 @@ function SCCChart({ filtered }) {
   if (timed.length === 0) {
     return (
       <div style={{textAlign:'center',padding:'48px 12px',fontSize:13,color:'#64748b',fontStyle:'italic'}}>
-        📊 No timed sessions yet. The Standard Celeration Chart only displays timed (rate-based) data. Switch to a timed sprint and grade some cards.
+        No timed sessions yet. The Standard Celeration Chart only displays timed (rate-based) data. Switch to a timed sprint and grade some cards.
       </div>
     )
   }
@@ -2778,7 +2778,7 @@ function SCCChart({ filtered }) {
         {/* Day-of-month vertical gridlines */}
         {dayLines.map(({ i, isSunday, isFirstOfMonth }) => (
           <line key={`v${i}`} x1={xFor(i)} y1={padT} x2={xFor(i)} y2={H - padB}
-            stroke={isFirstOfMonth ? '#94a3b8' : isSunday ? '#cbd5e1' : '#eef2f6'}
+            stroke={isFirstOfMonth ? 'var(--muted)' : isSunday ? 'var(--border)' : 'var(--border)'}
             strokeWidth={isFirstOfMonth ? 1.2 : 0.8} />
         ))}
         {/* Sub-decade horizontal gridlines (light) */}
@@ -2792,7 +2792,7 @@ function SCCChart({ filtered }) {
         {/* Decade horizontal gridlines (dark) + labels */}
         {decades.map(d => (
           <g key={`dec${d}`}>
-            <line x1={padL} y1={yFor(d)} x2={W - padR} y2={yFor(d)} stroke="#94a3b8" strokeWidth={1} />
+            <line x1={padL} y1={yFor(d)} x2={W - padR} y2={yFor(d)} stroke="var(--muted)" strokeWidth={1} />
             <text x={padL - 8} y={yFor(d) + 3} textAnchor="end" fontSize={10} fill="#475569" fontWeight={700}>{d}</text>
           </g>
         ))}
@@ -2853,7 +2853,6 @@ function SafmedsHub({safmeds, onStart, onBack, onProgress}) {
   const domainDecks = Object.keys(MODULE_ENHANCEMENTS).map(d => ({
     id: `domain:${d}`,
     label: d,
-    icon: MODULES[d]?.icon || '📚',
     count: getSafmedsCards(`domain:${d}`).length,
   }))
 
@@ -2866,10 +2865,10 @@ function SafmedsHub({safmeds, onStart, onBack, onProgress}) {
       <p style={{fontSize:14,color:C.muted,margin:'0 0 18px'}}>Say All Fast Minute Each Day Shuffled · See definition → recall term → self-grade</p>
 
       {/* Token + level summary */}
-      <div style={{background:'linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%)',border:'1px solid #c4b5fd',borderRadius:14,padding:'14px 18px',marginBottom:20,display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+      <div style={{background:'var(--berry-bg)',border:'1px solid var(--berry)',borderRadius:14,padding:'14px 18px',marginBottom:20,display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap'}}>
         <div>
           <div style={{fontSize:11,fontWeight:800,color:'var(--berry)',textTransform:'uppercase',letterSpacing:'0.06em'}}>Token Balance</div>
-          <div style={{fontSize:24,fontWeight:900,color:'var(--berry)'}}>🪙 {tokens}</div>
+          <div style={{fontSize:24,fontWeight:900,color:'var(--berry)',display:'flex',alignItems:'center',gap:7}}><Icon name="coin" size={20}/>{tokens}</div>
         </div>
         <div style={{flex:1,minWidth:200}}>
           <SelfGraph history={safmeds?.history}/>
@@ -2891,7 +2890,7 @@ function SafmedsHub({safmeds, onStart, onBack, onProgress}) {
             <span style={{fontSize:12,color:C.muted,marginRight:4}}>Timer:</span>
             {SAFMEDS_TIMERS.map(t=>(
               <button key={t} onClick={()=>setTimer(t)}
-                style={{padding:'5px 12px',borderRadius:8,border:`1px solid ${timer===t?'var(--berry)':C.border}`,background:timer===t?'#ede9fe':C.white,color:timer===t?'var(--berry)':C.text,cursor:'pointer',fontSize:12,fontWeight:600,fontFamily:'inherit'}}>
+                style={{padding:'5px 12px',borderRadius:8,border:`1px solid ${timer===t?'var(--berry)':C.border}`,background:timer===t?'var(--berry-bg)':C.white,color:timer===t?'var(--berry)':C.text,cursor:'pointer',fontSize:12,fontWeight:600,fontFamily:'inherit'}}>
                 {t}s
               </button>
             ))}
@@ -2912,11 +2911,11 @@ function SafmedsHub({safmeds, onStart, onBack, onProgress}) {
                 background:unlocked?C.white:C.grayLight,cursor:unlocked && cards.length>0?'pointer':'default',
                 opacity:unlocked?1:0.6,fontFamily:'inherit'}}>
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
-                <span style={{fontSize:18}}>{unlocked?lvl.icon:'🔒'}</span>
+                <span style={{display:'inline-flex',color:unlocked?lvl.color:C.muted}}><Icon name={unlocked?lvl.icon:'lock'} size={17}/></span>
                 <span style={{fontSize:14,fontWeight:800,color:unlocked?lvl.color:C.muted}}>{lvl.label}</span>
               </div>
               <div style={{fontSize:11,color:C.muted}}>{cards.length} cards{cards.length===0?' (loading…)':''}</div>
-              {!unlocked && <div style={{fontSize:11,color:C.muted,marginTop:4}}>🪙 {lvl.unlock} tokens to unlock</div>}
+              {!unlocked && <div style={{fontSize:11,color:C.muted,marginTop:4,display:'flex',alignItems:'center',gap:5}}><Icon name="coin" size={12}/>{lvl.unlock} tokens to unlock</div>}
               {unlocked && stats.high60s > 0 && <div style={{fontSize:11,color:lvl.color,marginTop:4}}>Best 60s: <strong>{stats.high60s}</strong></div>}
             </button>
           )
@@ -2929,7 +2928,7 @@ function SafmedsHub({safmeds, onStart, onBack, onProgress}) {
         <button onClick={()=>startDeck('mega')}
           style={{textAlign:'left',padding:'14px 16px',borderRadius:12,border:'2px solid var(--berry)',background:'var(--berry-bg)',cursor:'pointer',fontFamily:'inherit'}}>
           <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
-            <span style={{fontSize:18}}>🧠</span>
+            <span style={{display:'inline-flex',color:'var(--berry)'}}><Icon name="brain" size={17}/></span>
             <span style={{fontSize:14,fontWeight:800,color:'var(--berry)'}}>Mega Deck</span>
           </div>
           <div style={{fontSize:11,color:'var(--berry)',opacity:0.8}}>{getSafmedsCards('mega').length} cards · everything mixed (levels + domains)</div>
@@ -2958,8 +2957,8 @@ function SafmedsHub({safmeds, onStart, onBack, onProgress}) {
         {domainDecks.filter(d=>d.count>0).map(d=>(
           <button key={d.id} onClick={()=>startDeck(d.id)}
             style={{textAlign:'left',padding:'12px',borderRadius:10,border:`1px solid ${C.border}`,background:C.white,cursor:'pointer',fontFamily:'inherit'}}>
-            <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3}}>
-              <span style={{fontSize:14}}>{d.icon}</span>
+            <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:3}}>
+              <span style={{width:20,height:20,borderRadius:6,background:'var(--gold-bg)',color:'var(--gold)',display:'inline-flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:11,flexShrink:0}}>{d.label[0]}</span>
               <span style={{fontSize:12,fontWeight:700,color:C.primary,lineHeight:1.2}}>{d.label}</span>
             </div>
             <div style={{fontSize:10,color:C.muted}}>{d.count} cards</div>
@@ -3000,7 +2999,7 @@ function SafmedsSession({deckId, mode, timer, cards, cardIdx, revealed, correct,
       </div>
 
       {/* Card */}
-      <div style={{minHeight:280,background:C.white,border:`2px solid ${revealed?C.greenBorder:'#a78bfa'}`,borderRadius:18,padding:'30px 26px',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',marginBottom:10,boxShadow:'0 6px 24px rgba(91,33,182,0.12)'}}>
+      <div style={{minHeight:280,background:C.white,border:`2px solid ${revealed?C.greenBorder:'var(--berry)'}`,borderRadius:18,padding:'30px 26px',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',marginBottom:10,boxShadow:'0 6px 24px rgba(0,0,0,0.08)'}}>
         <div style={{fontSize:11,fontWeight:800,color:revealed?C.green:'var(--berry)',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:14}}>
           {revealed?'✓ Term':'Definition'}
         </div>
@@ -3051,7 +3050,9 @@ function SafmedsResults({results, safmeds, onAgain, onPickAnother, onDone}) {
   const stars = mode === 'timed' ? safmedsStars(correct, timer) : 0
   return (
     <div style={{maxWidth:580,margin:'0 auto',padding:'40px 20px',textAlign:'center',fontFamily:'system-ui'}}>
-      <div style={{fontSize:48,marginBottom:8}}>{isPB ? '🏆' : '🎴'}</div>
+      {isPB
+        ? <div style={{fontSize:48,marginBottom:8}}>🏆</div>
+        : <div style={{marginBottom:10,color:'var(--berry)'}}><Icon name="cards" size={42}/></div>}
       <h2 style={{fontSize:22,fontWeight:700,color:'var(--berry)',fontFamily:'Georgia,serif',margin:'0 0 4px'}}>
         {isPB ? 'New Personal Best!' : 'Session Complete'}
       </h2>
@@ -3059,8 +3060,8 @@ function SafmedsResults({results, safmeds, onAgain, onPickAnother, onDone}) {
 
       {/* Stars row */}
       {mode === 'timed' && (
-        <div style={{display:'flex',justifyContent:'center',gap:8,marginBottom:14,fontSize:32}}>
-          {[1,2,3].map(i=>(<span key={i} style={{filter:i<=stars?'none':'grayscale(1) opacity(0.3)'}}>⭐</span>))}
+        <div style={{display:'flex',justifyContent:'center',gap:8,marginBottom:14}}>
+          {[1,2,3].map(i=>(<span key={i} style={{color:i<=stars?'var(--gold)':C.border}}><Icon name="star" size={28} stroke={1.9}/></span>))}
         </div>
       )}
 
@@ -3074,17 +3075,17 @@ function SafmedsResults({results, safmeds, onAgain, onPickAnother, onDone}) {
           <div style={{fontSize:24,fontWeight:900,color:C.red}}>{missed}</div>
           <div style={{fontSize:11,color:C.red,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em'}}>Missed</div>
         </div>
-        <div style={{padding:'14px 8px',borderRadius:12,background:'#ede9fe',border:'1px solid #a78bfa'}}>
+        <div style={{padding:'14px 8px',borderRadius:12,background:'var(--berry-bg)',border:'1px solid var(--berry)'}}>
           <div style={{fontSize:24,fontWeight:900,color:'var(--berry)'}}>{mode==='timed'?`${rate}`:correct+missed}</div>
           <div style={{fontSize:11,color:'var(--berry)',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em'}}>{mode==='timed'?'Per Minute':'Total'}</div>
         </div>
       </div>
 
       {/* Token earnings */}
-      <div style={{padding:'14px',borderRadius:12,background:'#fef9ec',border:`1px solid ${C.accentBorder}`,marginBottom:20}}>
-        <div style={{fontSize:14,color:C.accent,fontWeight:700}}>🪙 +{tokensEarned} tokens earned</div>
+      <div style={{padding:'14px',borderRadius:12,background:C.accentBg,border:`1px solid ${C.accentBorder}`,marginBottom:20}}>
+        <div style={{fontSize:14,color:C.accent,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Icon name="coin" size={14}/>+{tokensEarned} tokens earned</div>
         {isPB && prevHigh!==undefined && <div style={{fontSize:12,color:C.accent,marginTop:4}}>Beat previous best of {prevHigh} (+5 PB bonus)</div>}
-        <div style={{fontSize:11,color:C.muted,marginTop:6}}>Total balance: 🪙 {safmeds?.totalTokens || 0}</div>
+        <div style={{fontSize:11,color:C.muted,marginTop:6}}>Total balance: {safmeds?.totalTokens || 0} tokens</div>
       </div>
 
       <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
@@ -3164,11 +3165,11 @@ function WeakSpotReview({queue, idx, answers, onAnswer, onNext, onQuit, startCou
           <div style={{padding:'10px 14px',borderRadius:10,marginBottom:12,fontSize:13,fontWeight:700,
             background:isCorrect?C.greenBg:C.redBg,color:isCorrect?C.green:C.red,
             border:`1px solid ${isCorrect?C.greenBorder:C.redBorder}`,textAlign:'center'}}>
-            {isCorrect ? `✓ Right! ${(item.consecutiveCorrect||0)+1 >= 2 ? 'Graduated 🎓' : `One more in a row to graduate`}` : '✗ Stays in queue — try again next time'}
+            {isCorrect ? `✓ Right! ${(item.consecutiveCorrect||0)+1 >= 2 ? 'Graduated' : `One more in a row to graduate`}` : '✗ Stays in queue — try again next time'}
           </div>
-          <Card style={{background:C.grayLight,marginBottom:14}}>
+          <Card style={{background:C.grayLight,marginBottom:14,borderLeft:'3px solid var(--gold)'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-              <div style={{fontSize:11,fontWeight:800,color:C.primary,textTransform:'uppercase',letterSpacing:'0.07em'}}>📘 Rationale</div>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',textTransform:'uppercase',color:'var(--gold)'}}>Why</div>
               <TTSButton token={`rat:weak:${idx}`} text={q.rationale} label="" size="xs"/>
             </div>
             <p style={{fontSize:13.5,color:C.text,margin:0,lineHeight:1.7}}>{q.rationale}</p>
@@ -3198,7 +3199,7 @@ function WeakSpotSummary({queue, answers, startCount, onContinue, onDone, remain
           <div style={{fontSize:11,color:C.green,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em'}}>Correct</div>
         </div>
         <div style={{padding:'14px 8px',borderRadius:12,background:C.accentBg,border:`1px solid ${C.accentBorder}`}}>
-          <div style={{fontSize:24,fontWeight:900,color:C.accent}}>🎓 {graduatedCount}</div>
+          <div style={{fontSize:24,fontWeight:900,color:C.accent,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Icon name="gradcap" size={20}/>{graduatedCount}</div>
           <div style={{fontSize:11,color:C.accent,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em'}}>Graduated</div>
         </div>
         <div style={{padding:'14px 8px',borderRadius:12,background:C.redBg,border:`1px solid ${C.redBorder}`}}>
@@ -3215,8 +3216,8 @@ function WeakSpotSummary({queue, answers, startCount, onContinue, onDone, remain
           </button>
         )}
         <button onClick={onDone}
-          style={{padding:'13px 24px',background:remaining>0?C.white:C.primary,color:remaining>0?C.primary:C.white,border:remaining>0?`2px solid ${C.primary}`:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>
-          🏠 Back to Home
+          style={{display:'inline-flex',alignItems:'center',gap:7,padding:'13px 24px',background:remaining>0?C.white:C.primary,color:remaining>0?C.primary:'var(--bg-base)',border:remaining>0?`2px solid ${C.primary}`:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>
+          <Icon name="home" size={15}/>Back to Home
         </button>
       </div>
     </div>
@@ -3242,7 +3243,7 @@ function DomainQuizResults({domain, questions, answers, onReview, onTryAnother, 
         </p>
       </div>
       <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
-        <button onClick={onReview} style={{padding:'12px 20px',background:C.primary,color:'var(--bg-base)',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>📖 Review Questions</button>
+        <button onClick={onReview} style={{display:'inline-flex',alignItems:'center',gap:7,padding:'12px 20px',background:C.primary,color:'var(--bg-base)',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}><Icon name="book" size={15}/>Review Questions</button>
         <button onClick={onTryAnother} style={{padding:'12px 20px',background:C.white,color:C.accent,border:`2px solid ${C.accent}`,borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer'}}>↻ New 20 Questions</button>
         <button onClick={onBack} style={{padding:'12px 18px',background:'transparent',color:C.muted,border:'none',cursor:'pointer',fontSize:13,fontWeight:600}}>← Back to Study Plan</button>
       </div>

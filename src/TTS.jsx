@@ -86,7 +86,16 @@ export async function playTTS(text, token) {
  *
  * Renders disabled with a tooltip if TTS_ENDPOINT is unset.
  */
-export function TTSButton({ text, token, label = '🔊 Read aloud', size = 'sm', style = {} }) {
+function SpeakerGlyph({ size = 13 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"
+      strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: '-2px' }} aria-hidden="true">
+      <path d="M11 5 6 9H3v6h3l5 4zM15.5 9a4.2 4.2 0 0 1 0 6M18.2 7a7.4 7.4 0 0 1 0 10"/>
+    </svg>
+  )
+}
+
+export function TTSButton({ text, token, label = 'Read aloud', size = 'sm', style = {} }) {
   const state = useTTSState(token)
   const configured = isConfigured()
   const disabled = !configured || !text
@@ -107,16 +116,17 @@ export function TTSButton({ text, token, label = '🔊 Read aloud', size = 'sm',
       title={!configured ? 'Voice playback not yet set up' : isPlaying ? 'Tap to stop' : 'Read aloud'}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 6,
-        background: isPlaying ? '#5b21b6' : 'transparent',
-        color: isPlaying ? '#fff' : (disabled ? 'rgba(0,0,0,0.3)' : '#5b21b6'),
-        border: `1px solid ${disabled ? 'rgba(0,0,0,0.12)' : '#5b21b6'}`,
+        background: isPlaying ? 'var(--berry, #1e4d2b)' : 'transparent',
+        color: isPlaying ? '#fff' : (disabled ? 'var(--muted, #999)' : 'var(--berry, #1e4d2b)'),
+        opacity: disabled ? 0.55 : 1,
+        border: `1px solid ${disabled ? 'var(--border, rgba(0,0,0,0.12))' : 'var(--berry, #1e4d2b)'}`,
         borderRadius: 99, fontWeight: 700, cursor: disabled ? 'not-allowed' : 'pointer',
         fontFamily: 'inherit', whiteSpace: 'nowrap',
         ...sizes[size],
         ...style,
       }}
     >
-      <span aria-hidden>{isLoading ? '⏳' : isPlaying ? '⏹' : '🔊'}</span>
+      <span aria-hidden style={{ display: 'inline-flex', alignItems: 'center' }}>{isLoading ? '…' : isPlaying ? '■' : <SpeakerGlyph/>}</span>
       {label && <span>{isLoading ? 'Loading…' : isPlaying ? 'Stop' : label.replace('🔊 ', '')}</span>}
     </button>
   )
