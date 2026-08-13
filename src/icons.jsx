@@ -19,6 +19,19 @@ const PATHS = {
   gear: <><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M19.4 4.6l-2.1 2.1M6.7 17.3l-2.1 2.1"/></>,
   alert: <><path d="M12 3 22 21H2z"/><path d="M12 10v5M12 18.4v.1"/></>,
   bulb: <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.7 1 1.5 1 2.5h6c0-1 .2-1.8 1-2.5A6 6 0 0 0 12 3z"/>,
+  flag: <path d="M5 21V4m0 0h12l-2.5 4L17 12H5"/>,
+  star: <path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.2 6L12 16.7l-5.5 2.9 1.2-6L3.2 9.4l6.1-.8z"/>,
+  trophy: <path d="M8 3h8v6a4 4 0 0 1-8 0zM8 5H4c0 3 1.6 5 4 5m8-7h4c0 3-1.6 5-4 5m-4 5v4m-4 4h8m-4-4v4"/>,
+  sprout: <path d="M12 21v-8m0 0c0-4.2-3-6.5-7.5-6.5C4.5 10.7 7.5 13 12 13zm0 0c0-4.2 3-6.5 7.5-6.5C19.5 10.7 16.5 13 12 13z"/>,
+  lock: <><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></>,
+  coin: <><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/></>,
+  brain: <path d="M12 4v14M12 4a3 3 0 0 0-5.8 1A3.5 3.5 0 0 0 4 11a3.5 3.5 0 0 0 1.5 6A3.2 3.2 0 0 0 12 18M12 4a3 3 0 0 1 5.8 1A3.5 3.5 0 0 1 20 11a3.5 3.5 0 0 1-1.5 6A3.2 3.2 0 0 1 12 18"/>,
+  gradcap: <path d="M2 9l10-5 10 5-10 5zM6 11.5V16c0 1.6 2.7 3 6 3s6-1.4 6-3v-4.5M22 9v6"/>,
+  key: <><circle cx="8" cy="12" r="4.5"/><path d="M12.5 12H21m-3 0v3.5m-3.5-3.5v2.5"/></>,
+  map: <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zm0 0v14m6-12v14"/>,
+  calendar: <path d="M4 5h16v16H4zM4 10h16M8 3v4m8-4v4"/>,
+  gem: <path d="M6 3h12l4 6-10 12L2 9zM2 9h20M12 21 8 9l4-6 4 6z"/>,
+  clock: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></>,
 }
 
 export function Icon({ name, size = 18, stroke = 1.7, style = {} }) {

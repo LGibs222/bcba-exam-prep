@@ -1894,7 +1894,7 @@ function PretestResults({scores,weakDomains,onStudy,onSkip}) {
   return (
     <div style={{maxWidth:680,margin:'0 auto',padding:'32px 20px',fontFamily:'system-ui'}}>
       <div style={{textAlign:'center',marginBottom:28}}>
-        <div style={{fontSize:48,marginBottom:8}}>{overall>=70?'📊':'📉'}</div>
+        <div style={{marginBottom:8,color:'var(--gold)'}}><Icon name="chart" size={44}/></div>
         <h2 style={{fontSize:24,fontWeight:700,color:C.primary,margin:'0 0 4px',fontFamily:'Georgia,serif'}}>Diagnostic Results</h2>
         <p style={{fontSize:15,color:C.muted,margin:0}}>Average across domains: <strong style={{color:C.primary}}>{overall}%</strong></p>
       </div>
@@ -2200,7 +2200,9 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
     return (
       <div style={{maxWidth:660,margin:'0 auto',padding:passed?'48px 20px':'32px 20px',fontFamily:'system-ui'}}>
         <div style={{textAlign:'center',marginBottom:24}}>
-          <div style={{fontSize:52,marginBottom:10}}>{passed?'🎉':'📖'}</div>
+          {passed
+            ? <div style={{fontSize:52,marginBottom:10}}>🎉</div>
+            : <div style={{marginBottom:12,color:'var(--gold)'}}><Icon name="book" size={44}/></div>}
           <h2 style={{fontSize:22,fontWeight:700,color:passed?C.green:C.red,fontFamily:'Georgia,serif',margin:'0 0 6px'}}>
             {passed?'Module Passed!':'Not Quite Yet'}
           </h2>
@@ -2291,12 +2293,15 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
 function ExamIntro({onStart}) {
   return (
     <div style={{maxWidth:580,margin:'0 auto',padding:'56px 20px',textAlign:'center',fontFamily:'system-ui'}}>
-      <div style={{fontSize:52,marginBottom:12}}>🏁</div>
+      <div style={{marginBottom:12,color:'var(--gold)'}}><Icon name="flag" size={44}/></div>
       <h2 style={{fontSize:24,fontWeight:700,color:C.primary,fontFamily:'Georgia,serif',marginBottom:8}}>Full BCBA Mock Exam</h2>
-      <p style={{fontSize:15,color:C.muted,marginBottom:28,lineHeight:1.6}}>
+      <p style={{fontSize:15,color:C.muted,marginBottom:12,lineHeight:1.6}}>
         185 questions (175 scored + 10 unscored pilot) · 4-hour timer · All 9 domains<br/>
         Mirrors the BCBA® 6th Edition Test Content Outline (2025+).<br/>
         Reported as a scaled score (0–500); estimated pass mark <strong>400</strong>
+      </p>
+      <p style={{fontSize:12,color:C.muted,fontStyle:'italic',fontFamily:'Georgia,serif',margin:'0 0 28px'}}>
+        Like the real exam, domain and difficulty stay hidden while you test — revealed in your results.
       </p>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:32}}>
         {[['185','Questions'],['4 hrs','Time Limit'],['400 / 500','Pass Mark']].map(([v,l])=>(
@@ -2322,42 +2327,44 @@ function ExamScreen({questions,answers,qIndex,timerSeconds,onAnswer,onNav,onSubm
   const hrs = Math.floor(timerSeconds/3600)
   const mins = Math.floor((timerSeconds%3600)/60)
   const secs = timerSeconds%60
-  const timerColor = timerSeconds<1800?C.red:timerSeconds<3600?C.accent:C.white
+  const timerColor = timerSeconds<1800?C.red:timerSeconds<3600?C.accent:C.text
   const [showMap,setShowMap] = useState(false)
+  const isFlagged = flagged.has(qIndex)
 
   return (
     <div style={{maxWidth:700,margin:'0 auto',padding:'20px 20px',fontFamily:'system-ui'}}>
-      <div style={{background:C.primary,borderRadius:12,padding:'10px 16px',marginBottom:20,display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:8}}>
-        <div>
-          <Pill text={q.domain_name} color={C.primary} bg={C.white}/>
-          <span style={{marginLeft:8,fontSize:12,color:'#93c5fd'}}>Q {qIndex+1}/{total}</span>
-        </div>
+      <div style={{background:'var(--surface-solid)',border:`1px solid ${C.border}`,borderBottom:'none',borderRadius:'12px 12px 0 0',padding:'12px 18px',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:8}}>
+        <span style={{fontSize:10.5,fontWeight:700,letterSpacing:'0.2em',textTransform:'uppercase',color:C.muted}}>Full Mock Exam</span>
         <div style={{display:'flex',alignItems:'center',gap:16}}>
-          <span style={{fontSize:13,color:'rgba(255,255,255,0.75)'}}>{answered}/{total} answered</span>
-          <span style={{fontSize:20,fontWeight:800,color:timerColor,fontVariantNumeric:'tabular-nums'}}>
+          <span style={{fontSize:12,color:C.muted}}>{answered}/{total} answered</span>
+          <span style={{fontFamily:'Consolas,monospace',fontSize:17,fontWeight:700,color:timerColor,fontVariantNumeric:'tabular-nums',letterSpacing:'0.05em'}}>
             {String(hrs).padStart(2,'0')}:{String(mins).padStart(2,'0')}:{String(secs).padStart(2,'0')}
           </span>
         </div>
       </div>
-      <div style={{height:3,background:C.border,borderRadius:99,marginBottom:20,overflow:'hidden'}}>
-        <div style={{width:`${(answered/total)*100}%`,height:'100%',background:C.primaryMid,borderRadius:99}}/>
+      <div style={{height:2,background:C.border,marginBottom:18,overflow:'hidden'}}>
+        <div style={{width:`${(answered/total)*100}%`,height:'100%',background:C.accent}}/>
       </div>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12,flexWrap:'wrap'}}>
+        <Pill text={`Question ${qIndex+1}`} color={C.muted} bg={'transparent'} style={{border:`1px solid ${C.border}`}}/>
+        <button onClick={()=>onFlag(qIndex)}
+          style={{display:'inline-flex',alignItems:'center',gap:6,padding:'4px 12px',borderRadius:99,border:`1px solid ${isFlagged?C.accent:C.border}`,background:isFlagged?C.accentBg:'transparent',color:isFlagged?C.accent:C.muted,cursor:'pointer',fontSize:10.5,fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',fontFamily:'inherit'}}>
+          <Icon name="flag" size={12}/>{isFlagged?'Flagged':'Flag for review'}
+        </button>
+        <span style={{marginLeft:'auto',fontFamily:'Consolas,monospace',fontSize:12,color:C.muted,fontVariantNumeric:'tabular-nums'}}>{qIndex+1} / {total}</span>
+      </div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
         <Card style={{flex:1,padding:'16px 20px'}}>
           <p style={{fontSize:16,lineHeight:1.65,color:C.text,margin:0,fontFamily:'Georgia,serif',fontWeight:500}}>{q.stem}</p>
         </Card>
       </div>
-      <button onClick={()=>onFlag(qIndex)}
-        style={{marginBottom:12,padding:'5px 12px',borderRadius:8,border:`1px solid ${flagged.has(qIndex)?C.accent:C.border}`,background:flagged.has(qIndex)?C.accentBg:C.white,color:flagged.has(qIndex)?C.accent:C.muted,cursor:'pointer',fontSize:12,fontWeight:600}}>
-        {flagged.has(qIndex)?'🚩 Flagged':'🏳 Flag for Review'}
-      </button>
       <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:24}}>
         {q.options.map((opt,i)=>{
           const isSel=selected===i
           return (
             <button key={i} onClick={()=>onAnswer(qIndex,i)}
-              style={{textAlign:'left',padding:'13px 16px',borderRadius:12,border:`2px solid ${isSel?C.primary:C.border}`,background:isSel?C.primaryLight:C.white,cursor:'pointer',fontSize:14,color:C.text,display:'flex',alignItems:'center',gap:12}}>
-              <span style={{width:26,height:26,borderRadius:'50%',border:`2px solid ${isSel?C.primary:C.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:isSel?C.primary:C.muted,flexShrink:0,background:isSel?C.white:'transparent'}}>
+              style={{textAlign:'left',padding:'13px 16px',borderRadius:12,border:`2px solid ${isSel?C.accent:C.border}`,background:C.white,cursor:'pointer',fontSize:14,color:C.text,display:'flex',alignItems:'center',gap:12}}>
+              <span style={{width:26,height:26,borderRadius:'50%',border:`2px solid ${isSel?C.accent:C.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:isSel?'var(--gold-ink)':C.muted,flexShrink:0,background:isSel?C.accent:'transparent'}}>
                 {['A','B','C','D'][i]}
               </span>
               {opt}
@@ -2369,9 +2376,9 @@ function ExamScreen({questions,answers,qIndex,timerSeconds,onAnswer,onNav,onSubm
         <button onClick={()=>onNav(-1)} disabled={qIndex===0}
           style={{padding:'10px 20px',borderRadius:10,border:`1px solid ${C.border}`,background:C.white,color:qIndex===0?C.muted:C.primary,cursor:qIndex===0?'default':'pointer',fontSize:14,fontWeight:600}}>← Back</button>
         <button onClick={()=>setShowMap(!showMap)}
-          style={{padding:'8px 14px',borderRadius:10,border:`1px solid ${C.border}`,background:C.white,color:C.primary,cursor:'pointer',fontSize:13,fontWeight:600}}>📋 Navigator</button>
+          style={{display:'inline-flex',alignItems:'center',gap:6,padding:'8px 14px',borderRadius:10,border:`1px solid ${C.border}`,background:C.white,color:C.primary,cursor:'pointer',fontSize:13,fontWeight:600}}><Icon name="clipboard" size={14}/>Navigator</button>
         {qIndex<total-1
-          ?<button onClick={()=>onNav(1)} style={{padding:'10px 20px',borderRadius:10,border:'none',background:C.primary,color:'var(--bg-base)',cursor:'pointer',fontSize:14,fontWeight:600}}>Next →</button>
+          ?<button onClick={()=>onNav(1)} style={{padding:'10px 20px',borderRadius:10,border:'none',background:C.accent,color:'var(--gold-ink)',cursor:'pointer',fontSize:14,fontWeight:600}}>Next →</button>
           :<button onClick={onSubmit} disabled={answered<total}
               style={{padding:'10px 20px',borderRadius:10,border:'none',background:answered<total?C.muted:C.accent,color:answered<total?'#fff':'var(--gold-ink)',cursor:answered<total?'default':'pointer',fontSize:14,fontWeight:600}}>
               {answered<total?`${total-answered} left`:'Submit Exam ✓'}
@@ -2390,7 +2397,7 @@ function ExamScreen({questions,answers,qIndex,timerSeconds,onAnswer,onNav,onSubm
               const isCur=i===qIndex
               return (
                 <button key={i} onClick={()=>{onNav(i-qIndex);setShowMap(false)}}
-                  style={{aspectRatio:'1',borderRadius:6,border:isCur?`2px solid ${C.primary}`:'none',background:isFlag?C.accentBg:isAns?C.primaryLight:C.grayLight,color:isFlag?C.accent:isAns?C.primary:C.muted,fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                  style={{aspectRatio:'1',borderRadius:6,border:isCur?`2px solid ${C.accent}`:'none',background:isFlag?C.accentBg:isAns?C.primaryLight:C.grayLight,color:isFlag?C.accent:isAns?C.primary:C.muted,fontSize:11,fontWeight:700,cursor:'pointer'}}>
                   {i+1}
                 </button>
               )
@@ -3267,10 +3274,10 @@ function ExamReview({questions, answers, onBack}) {
 
   const q = filtered[Math.min(idx, Math.max(0, filtered.length-1))]
 
-  const filterPill = (val, label, count, color) => (
+  const filterPill = (val, label, count, color, activeText) => (
     <button onClick={()=>setFilter(val)}
       style={{padding:'6px 12px',borderRadius:99,border:`1.5px solid ${filter===val?color:C.border}`,
-        background:filter===val?color:C.white,color:filter===val?'#fff':color,
+        background:filter===val?color:C.white,color:filter===val?activeText:color,
         cursor:'pointer',fontSize:12,fontWeight:700,whiteSpace:'nowrap'}}>
       {label} ({count})
     </button>
@@ -3279,13 +3286,13 @@ function ExamReview({questions, answers, onBack}) {
   return (
     <div style={{maxWidth:720,margin:'0 auto',padding:'24px 20px',fontFamily:'system-ui'}}>
       <button onClick={onBack} style={{background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:14,marginBottom:14,padding:0}}>← Back to Results</button>
-      <h2 style={{fontSize:22,fontWeight:700,color:C.primary,margin:'0 0 14px',fontFamily:'Georgia,serif'}}>📖 Exam Review</h2>
+      <h2 style={{fontSize:22,fontWeight:700,color:C.primary,margin:'0 0 14px',fontFamily:'Georgia,serif',display:'flex',alignItems:'center',gap:9}}><Icon name="book" size={20}/>Exam Review</h2>
 
       {/* Filter pills */}
       <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10}}>
-        {filterPill('all','All',questions.length,C.primary)}
-        {filterPill('missed','Missed',missedCount,C.red)}
-        {filterPill('correct','Correct',correctCount,C.green)}
+        {filterPill('all','All',questions.length,C.primary,'var(--bg-base)')}
+        {filterPill('missed','Missed',missedCount,C.red,'#fff')}
+        {filterPill('correct','Correct',correctCount,C.green,'#fff')}
       </div>
 
       {/* Domain dropdown */}
@@ -3343,9 +3350,9 @@ function ExamReview({questions, answers, onBack}) {
           </div>
 
           {/* Rationale */}
-          <Card style={{background:C.grayLight,marginBottom:16}}>
+          <Card style={{background:C.grayLight,marginBottom:16,borderLeft:'3px solid var(--gold)'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-              <div style={{fontSize:11,fontWeight:800,color:C.primary,textTransform:'uppercase',letterSpacing:'0.07em'}}>📘 Rationale</div>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',textTransform:'uppercase',color:'var(--gold)'}}>Why</div>
               <TTSButton token={`rat:exam:${q.id||q.stem?.slice(0,30)}`} text={q.rationale} label="" size="xs"/>
             </div>
             <p style={{fontSize:13.5,color:C.text,margin:0,lineHeight:1.7}}>{q.rationale}</p>
@@ -3357,7 +3364,7 @@ function ExamReview({questions, answers, onBack}) {
               style={{padding:'10px 18px',borderRadius:10,border:`1px solid ${C.border}`,background:C.white,
                 color:idx===0?C.muted:C.primary,cursor:idx===0?'default':'pointer',fontSize:13,fontWeight:600}}>← Previous</button>
             <button onClick={()=>setShowNav(v=>!v)}
-              style={{padding:'8px 12px',borderRadius:10,border:`1px solid ${C.border}`,background:C.white,color:C.primary,cursor:'pointer',fontSize:12,fontWeight:600}}>📋 Navigator</button>
+              style={{display:'inline-flex',alignItems:'center',gap:6,padding:'8px 12px',borderRadius:10,border:`1px solid ${C.border}`,background:C.white,color:C.primary,cursor:'pointer',fontSize:12,fontWeight:600}}><Icon name="clipboard" size={13}/>Navigator</button>
             <button onClick={()=>setIdx(i=>Math.min(filtered.length-1,i+1))} disabled={idx===filtered.length-1}
               style={{padding:'10px 18px',borderRadius:10,border:'none',background:idx===filtered.length-1?C.muted:C.primary,color:idx===filtered.length-1?'#fff':'var(--bg-base)',cursor:idx===filtered.length-1?'default':'pointer',fontSize:13,fontWeight:600}}>Next →</button>
           </div>
@@ -3403,7 +3410,9 @@ function FinalResults({examScores,examResult,examQuestions,examAnswers,pretestSc
   return (
     <div style={{maxWidth:680,margin:'0 auto',padding:'32px 20px',fontFamily:'system-ui'}}>
       <div style={{textAlign:'center',marginBottom:28}}>
-        <div style={{fontSize:52,marginBottom:8}}>{passed?'🏆':'📖'}</div>
+        {passed
+          ? <div style={{fontSize:52,marginBottom:8}}>🏆</div>
+          : <div style={{marginBottom:10,color:'var(--gold)'}}><Icon name="book" size={44}/></div>}
         <h2 style={{fontSize:24,fontWeight:700,color:passed?C.green:C.red,margin:'0 0 4px',fontFamily:'Georgia,serif'}}>
           {passed?'Exam Passed!':'Keep Studying'}
         </h2>
@@ -3437,7 +3446,7 @@ function FinalResults({examScores,examResult,examQuestions,examAnswers,pretestSc
       </Card>
       {pretestScores&&(
         <Card style={{marginBottom:20,background:C.accentBg,border:`1px solid ${C.accentBorder}`}}>
-          <h3 style={{fontSize:15,fontWeight:700,color:C.accent,margin:'0 0 12px'}}>📈 Growth: Pretest → Exam</h3>
+          <h3 style={{fontSize:15,fontWeight:700,color:C.accent,margin:'0 0 12px',display:'flex',alignItems:'center',gap:7}}><Icon name="chart" size={15}/>Growth: Pretest → Exam</h3>
           {domains.map(d=>{
             const pre=pretestScores[d]
             const exam=examScores[d]
@@ -3458,7 +3467,7 @@ function FinalResults({examScores,examResult,examQuestions,examAnswers,pretestSc
       )}
       <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
         <button onClick={onReview} style={{flex:'2 1 220px',padding:'14px',background:C.accent,color:'var(--gold-ink)',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
-          📖 Review All Questions →
+          Review All Questions →
         </button>
         <button onClick={onReset} style={{flex:'1 1 140px',padding:'14px',background:C.white,color:C.primary,border:`2px solid ${C.primary}`,borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>
           Start Over
