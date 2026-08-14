@@ -1804,6 +1804,14 @@ function Welcome({st,onStart,onSkipPretest,stats,weakSpotsCount,onReviewWeakSpot
             </p>
           </div>
         )}
+
+        {/* FEEDBACK — dedicated home-page space */}
+        <div className="fade-up fade-up-7" style={{marginTop:32}}>
+          <FeedbackCard eyebrow="Your voice shapes this app" prompt="How's the app working for you?"
+            placeholder="Ideas, bugs, requests, confusing spots — anything helps. (optional)"
+            event="app_feedback" payload={{source:'home'}} allowRepeat
+            thanks="✓ Got it — thanks. Every note here gets read."/>
+        </div>
       </div>
 
       <style>{`
@@ -1987,33 +1995,40 @@ function ModuleHub({weakDomains,moduleStatuses,onSelect,onExam,onSpotCheck}) {
 
 // ── LEARNING MODULE ──────────────────────────────────────
 // ── MISSED QUESTION CARD (quiz remediation) ─────────────
-// ── MODULE FEEDBACK ──────────────────────────────────────
-// Rating + comment on the module-complete screen. Rides the existing
-// tracking pipeline (track → Apps Script → Sheets) as event 'module_feedback';
-// one submission per module per device (localStorage guard).
-function ModuleFeedbackCard({domain, passed}) {
-  const fbKey = `ol-fb:BCBA:${domain}`
-  const [sent,setSent] = useState(() => { try { return !!localStorage.getItem(fbKey) } catch { return false } })
+// ── FEEDBACK ─────────────────────────────────────────────
+// Rating + comment cards riding the existing tracking pipeline
+// (track → Apps Script → Sheets). storageKey makes a card one-shot per
+// device; allowRepeat lets the thanks state offer another round.
+function FeedbackCard({eyebrow='Quick feedback', prompt, placeholder='Anything confusing, missing, or great? (optional)', event, payload={}, storageKey, allowRepeat=false, thanks='✓ Feedback received — thanks for helping improve this.', style={}}) {
+  const [sent,setSent] = useState(() => { try { return !!(storageKey && localStorage.getItem(storageKey)) } catch { return false } })
   const [rating,setRating] = useState(0)
   const [hover,setHover] = useState(0)
   const [comment,setComment] = useState('')
   if (sent) return (
-    <Card style={{marginTop:22,textAlign:'center',padding:'14px 18px'}}>
-      <span style={{fontSize:13,color:C.green,fontWeight:700}}>✓ Feedback received — thanks for helping improve this module.</span>
+    <Card style={{textAlign:'center',padding:'14px 18px',...style}}>
+      <span style={{fontSize:13,color:C.green,fontWeight:700}}>{thanks}</span>
+      {allowRepeat && (
+        <div style={{marginTop:8}}>
+          <button onClick={()=>{setSent(false);setRating(0);setComment('')}}
+            style={{background:'none',border:'none',color:C.muted,fontSize:12,fontWeight:600,cursor:'pointer',textDecoration:'underline'}}>
+            Send more feedback
+          </button>
+        </div>
+      )}
     </Card>
   )
   const submit = () => {
     if (!rating) return
-    track('module_feedback', { domain, rating, comment: comment.trim().slice(0,600), passed: !!passed })
-    try { localStorage.setItem(fbKey, String(rating)) } catch {}
+    track(event, { ...payload, rating, comment: comment.trim().slice(0,600) })
+    if (storageKey) { try { localStorage.setItem(storageKey, String(rating)) } catch {} }
     setSent(true)
   }
   const active = hover || rating
   return (
-    <Card style={{marginTop:22,padding:'18px 20px'}}>
-      <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',textTransform:'uppercase',color:'var(--gold)',marginBottom:6}}>Quick feedback</div>
+    <Card style={{padding:'18px 20px',...style}}>
+      <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',textTransform:'uppercase',color:'var(--gold)',marginBottom:6}}>{eyebrow}</div>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:14,flexWrap:'wrap'}}>
-        <div style={{fontSize:14,fontWeight:600,color:C.text}}>How was this module?</div>
+        <div style={{fontSize:14,fontWeight:600,color:C.text}}>{prompt}</div>
         <div style={{display:'flex',gap:4}} onMouseLeave={()=>setHover(0)}>
           {[1,2,3,4,5].map(n=>(
             <button key={n} onClick={()=>setRating(n)} onMouseEnter={()=>setHover(n)}
@@ -2027,7 +2042,7 @@ function ModuleFeedbackCard({domain, passed}) {
       {rating>0 && (
         <>
           <textarea value={comment} onChange={e=>setComment(e.target.value)} rows={2} maxLength={600}
-            placeholder="Anything confusing, missing, or great? (optional)"
+            placeholder={placeholder}
             style={{width:'100%',marginTop:12,padding:'10px 12px',borderRadius:10,border:`1px solid ${C.border}`,background:'var(--surface-alt)',color:C.text,fontSize:13,fontFamily:'inherit',resize:'vertical',boxSizing:'border-box'}}/>
           <div style={{display:'flex',justifyContent:'flex-end',marginTop:10}}>
             <button onClick={submit}
@@ -2039,6 +2054,13 @@ function ModuleFeedbackCard({domain, passed}) {
       )}
     </Card>
   )
+}
+
+function ModuleFeedbackCard({domain, passed}) {
+  return <FeedbackCard prompt="How was this module?" event="module_feedback"
+    payload={{domain, passed: !!passed}} storageKey={`ol-fb:BCBA:${domain}`}
+    thanks="✓ Feedback received — thanks for helping improve this module."
+    style={{marginTop:22}}/>
 }
 
 function MissedQuestionCard({q}) {
@@ -3529,6 +3551,12 @@ function FinalResults({examScores,examResult,examQuestions,examAnswers,pretestSc
           Start Over
         </button>
       </div>
+      <FeedbackCard eyebrow="Quick feedback" prompt="How realistic did this mock feel?"
+        placeholder="Difficulty vs the real exam? Question quality? Timing? (optional)"
+        event="exam_feedback" payload={{scaled, passed, rawScore}}
+        storageKey={`ol-fb:BCBA:mock:${scaled ?? 'na'}:${rawScore}`}
+        thanks="✓ Feedback received — this directly tunes future mock calibration."
+        style={{marginTop:22}}/>
     </div>
   )
 }
