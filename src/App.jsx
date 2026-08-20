@@ -303,7 +303,11 @@ function shuffleQuestions(qs) {
 function sampleDomainQuestions(domain, count=20, excludeStems=[]) {
   const exclude = new Set(excludeStems.map(s => (s||'').substring(0,60)))
   const pool = QUESTION_BANK.filter(q => q.domain_name === domain && !exclude.has(q.stem.substring(0,60)))
-  return [...pool].sort(()=>Math.random()-0.5).slice(0, Math.min(count, pool.length)).map(shuffleQuestion)
+  // Module quizzes are acquisition-stage: draw from easy+moderate first so the
+  // exam-level hard tier (mock territory) only appears if the pool runs short.
+  const acquisition = [...pool.filter(q => q.difficulty !== 'hard')].sort(()=>Math.random()-0.5)
+  const hard = [...pool.filter(q => q.difficulty === 'hard')].sort(()=>Math.random()-0.5)
+  return [...acquisition, ...hard].slice(0, Math.min(count, pool.length)).map(shuffleQuestion)
 }
 
 // Official BCBA 6th Edition Test Content Outline (2025+)
