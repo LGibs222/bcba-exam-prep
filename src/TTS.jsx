@@ -46,8 +46,10 @@ export function stopTTS() {
   setCurrent(null, 'idle')
 }
 
+// text: a string, or an array of the app's own strings read in order (the backend
+// checks each piece against the app's published content).
 export async function playTTS(text, token) {
-  if (!isConfigured() || !text) return
+  if (!isConfigured() || !(Array.isArray(text) ? text.join('') : text)) return
   const audio = getAudio()
   // If this same token is currently playing, treat as toggle-stop.
   if (currentToken === token && currentState === 'playing') {
@@ -59,10 +61,11 @@ export async function playTTS(text, token) {
   try {
     let code = '', name = ''
     try { code = localStorage.getItem('ol-code') || ''; name = localStorage.getItem('ol-user') || '' } catch {}
+    const parts = Array.isArray(text) ? text : [text]
     const res = await fetch(TTS_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text.slice(0, 1500), app: TTS_APP, code, name }),
+      body: JSON.stringify({ parts, text: parts.join('').slice(0, 1500), app: TTS_APP, code, name }),
     })
     if (!res.ok) throw new Error(`tts_${res.status}`)
     // Budget/auth refusals come back as JSON instead of audio.
@@ -98,7 +101,7 @@ function SpeakerGlyph({ size = 13 }) {
 export function TTSButton({ text, token, label = 'Read aloud', size = 'sm', style = {} }) {
   const state = useTTSState(token)
   const configured = isConfigured()
-  const disabled = !configured || !text
+  const disabled = !configured || !(Array.isArray(text) ? text.join('') : text)
   const isPlaying = state === 'playing'
   const isLoading = state === 'loading'
 

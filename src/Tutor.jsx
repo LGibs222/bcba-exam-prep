@@ -184,7 +184,8 @@ export function TutorFab({ blocked }) {
     if (text) setMessages(m => [...m, { role: 'user', content: text }])
     else setMessages(m => [...m, { role: 'user', content: 'Voice message…', pendingVoice: true }])
     try {
-      const history = messages.filter(m => !m.pendingVoice).map(m => ({ role: m.role, content: m.content }))
+      // The backend only keeps replies that carry the signature it issued.
+      const history = messages.filter(m => !m.pendingVoice).map(m => ({ role: m.role, content: m.content, sig: m.sig }))
       const r = await fetch(TUTOR_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -206,7 +207,7 @@ export function TutorFab({ blocked }) {
       setMessages(m => [
         ...m.filter(x => !x.pendingVoice),
         ...(text ? [] : [{ role: 'user', content: j.transcript }]),
-        { role: 'assistant', content: j.reply },
+        { role: 'assistant', content: j.reply, sig: j.sig },
       ])
       if (j.remainingToday !== null && j.remainingToday !== undefined) setRemaining(j.remainingToday)
       if (j.audioBase64 && !muted) playReply(j.audioBase64)

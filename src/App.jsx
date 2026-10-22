@@ -2185,7 +2185,7 @@ function LearningModule({domain,phase,qIndex,answers,onAnswer,onBack,onStartQuiz
               <h3 style={{fontSize:17,fontWeight:800,color:ctype.color,margin:0,lineHeight:1.35,flex:1}}>{concept.title}</h3>
               <TTSButton
                 token={`mod:${domain}:${conceptIdx}`}
-                text={`${concept.title}. ${concept.body}${concept.example ? '. Example: ' + concept.example : ''}`}
+                text={[concept.title, '. ', concept.body, ...(concept.example ? ['. Example: ', concept.example] : [])]}
                 label="Read"
                 size="xs"
               />
@@ -3098,7 +3098,7 @@ function SafmedsSession({deckId, mode, timer, cards, cardIdx, revealed, correct,
       <div style={{display:'flex',justifyContent:'center',marginBottom:18}}>
         <TTSButton
           token={`sfx:${cardIdx}:${revealed?'back':'front'}`}
-          text={revealed ? `${card.term}. ${card.def}` : card.def}
+          text={revealed ? [card.term, '. ', card.def] : card.def}
           label="Read aloud"
           size="sm"
         />

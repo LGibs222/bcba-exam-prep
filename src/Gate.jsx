@@ -1,39 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 
 /**
- * One Love access gate — client-side soft password protection.
+ * One Love access gate.
  *
- * SECURITY NOTE: this is a soft gate. The hash + bundle are public, so a
- * determined visitor with DevTools can still see the questions. It stops
- * casual access — for paying-client protection later, swap this for
- * Cloudflare Access in front of the site (see notes in repo README).
+ * Codes are checked server-side only: the Apps Script validate action here, and
+ * again by the tutor and read-aloud backends on every request. There is no
+ * client-side fallback code, so if the server can't be reached, sign-in waits
+ * until it can. (The question bank still ships in the public bundle; this gate
+ * controls who gets the metered features, not who can read the content.)
  *
- * To CHANGE THE PASSWORD:
- *   1. Pick a new password.
- *   2. In your terminal:
- *        node -e "const c=require('crypto');console.log(c.createHash('sha256').update('onelove-bcba:NEW_PASSWORD_HERE').digest('hex'))"
- *   3. Paste the resulting 64-char hex string into ACCESS_HASH below.
- *   4. Commit + push.
- *
- * To ENABLE LOGIN TRACKING (Google Sheet):
- *   1. Follow setup in repo README — deploy the Apps Script web app.
- *   2. Paste the deployment URL into LOG_ENDPOINT below.
- *   3. Commit + push. Each successful login will append a row.
- *   If LOG_ENDPOINT stays as the placeholder, logging is silently disabled.
+ * Login tracking: each successful login appends a row via LOG_ENDPOINT.
  *
  * Access code is required on every page load — no "remember me", no
  * persisted session. Refreshing the tab returns the user to this gate.
  */
-const ACCESS_SALT = 'onelove-bcba'
-const ACCESS_HASH = '808db059f54ff2c19407024f7029b20519afff487be32f5639f53f2b0ddd0648' // sha256("onelove-bcba:onelove2026")
 const APP_NAME = 'BCBA'
 const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycby5bv49s8z-oA525hit-LnvfgHDam4hUrSmsN79huqC-rnxMFJpB7QbI0isnjdjxQ/exec'
-
-async function sha256Hex(s) {
-  const bytes = new TextEncoder().encode(s)
-  const buf = await crypto.subtle.digest('SHA-256', bytes)
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
-}
 
 // Fire-and-forget login log. Uses no-cors so a failing endpoint never
 // blocks the user, and does NOT await — the gate proceeds regardless.
@@ -150,12 +132,8 @@ export default function Gate({ children }) {
       const res = await validateCode(code)
       if (res && res.valid) { admit(res.name || name, code); return }
       if (res && res.valid === false) { setError('That access code isn’t recognized. Request one below.'); return }
-      const candidate = await sha256Hex(`${ACCESS_SALT}:${code}`)
-      if (candidate === ACCESS_HASH) {
-        admit(name, code)
-      } else {
-        setError('That access code didn’t match. Check with your provider.')
-      }
+      // backend unreachable (res == null): there is no offline code to fall back to
+      setError('Couldn’t reach the sign-in server. Check your connection and try again.')
     } catch {
       setError('Browser couldn’t verify. Try a different browser.')
     } finally {

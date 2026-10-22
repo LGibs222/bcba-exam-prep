@@ -1,3 +1,4 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-export default defineConfig({ plugins: [react()], base: '/bcba-exam-prep/' })
+import contentHashes from './content-hashes.js'
+export default defineConfig({ plugins: [react(), contentHashes()], base: '/bcba-exam-prep/' })
